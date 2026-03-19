@@ -15,10 +15,10 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--white);min-height:100vh;padding:24px;}
 
 /* HEADER */
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--blue);}
+.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--blue);}
 .header-left h1{font-size:22px;font-weight:700;letter-spacing:.5px;}
-.header-left p{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;}
-.header-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+.header-left p{font-size:12px;color:var(--muted);margin-top:3px;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .week-filter,.btn-secondary{background:var(--panel);border:1px solid var(--border);color:var(--white);padding:7px 14px;border-radius:6px;font-size:13px;cursor:pointer;outline:none;}
 .week-filter:focus,.btn-secondary:hover{border-color:var(--blue);}
 .btn-primary{background:var(--blue);color:white;border:none;padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
@@ -46,6 +46,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .kpi-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
 .kpi-budget{font-size:11px;color:var(--gold);}
 .kpi-rag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.rag-yellow{background:rgba(240,180,41,.15);color:#F0B429;}
+.kpi-row-kma{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap);margin-bottom:var(--gap);}
+.kma-section-label{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.kma-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:8px;letter-spacing:.4px;text-transform:uppercase;margin-left:8px;vertical-align:middle;}
+.kma-badge.leading{background:rgba(31,111,235,.15);color:#4D9FFF;}
+.kma-badge.lagging{background:rgba(63,185,80,.15);color:#3FB950;}
+.kma-update-btn{font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;background:none;border:none;padding:0;margin-top:2px;}
+.kma-update-btn:hover{color:var(--white);}
 .rag-green{background:rgba(63,185,80,.15);color:var(--green);}
 .rag-red{background:rgba(248,81,73,.15);color:var(--red);}
 .rag-gray{background:rgba(139,148,158,.15);color:var(--muted);}
@@ -147,7 +155,7 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
 
 <!-- HEADER -->
 <div class="header">
-  <div class="header-left" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgOTAiIHdpZHRoPSIzMjAiIGhlaWdodD0iOTAiPgogIDwhLS0gQnVpbGRpbmcgc2t5bGluZSAtIHdhcm0gYmVpZ2UvY29wcGVyIGNvbG9yIC0tPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0M4OTU2QSIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiPgogICAgPCEtLSBHcm91bmQgbGluZSAtLT4KICAgIDxsaW5lIHgxPSIxMCIgeTE9IjU4IiB4Mj0iMzEwIiB5Mj0iNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgMSAobGVmdCwgbWVkaXVtKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjEwLDU4IDEwLDM4IDI2LDM4IDI2LDMwIDM2LDMwIDM2LDM4IDQ4LDM4IDQ4LDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDIgLS0+CiAgICA8cG9seWxpbmUgcG9pbnRzPSI1MCw1OCA1MCwyMCA1OCwyMCA1OCwxNCA3NCwxNCA3NCwyMCA4MiwyMCA4Miw1OCIvPgogICAgPCEtLSBCdWlsZGluZyAzICh0YWxsIGNlbnRlci1sZWZ0KSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9Ijg0LDU4IDg0LDEwIDg4LDEwIDg4LDQgMTAwLDQgMTAwLDEwIDEwNCwxMCAxMDQsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgNCAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjEwNiw1OCAxMDYsMjIgMTE2LDIyIDExNiwxNiAxMjgsMTYgMTI4LDIyIDEzOCwyMiAxMzgsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgNSAoY2VudGVyLCBzdGVwcGVkKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjE0MCw1OCAxNDAsMjggMTQ4LDI4IDE0OCwxOCAxNTgsMTggMTU4LDEyIDE2OCwxMiAxNjgsMTggMTc4LDE4IDE3OCwyOCAxODYsMjggMTg2LDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDYgLS0+CiAgICA8cG9seWxpbmUgcG9pbnRzPSIxODgsNTggMTg4LDIwIDE5OCwyMCAxOTgsMTQgMjEwLDE0IDIxMCwyMCAyMjAsMjAgMjIwLDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDcgKHRhbGwgcmlnaHQtY2VudGVyKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjIyMiw1OCAyMjIsOCAyMjYsOCAyMjYsMiAyMzgsMiAyMzgsOCAyNDIsOCAyNDIsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgOCAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjI0NCw1OCAyNDQsMjQgMjU0LDI0IDI1NCwxOCAyNjQsMTggMjY0LDI0IDI3NCwyNCAyNzQsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgOSAocmlnaHQpIC0tPgogICAgPHBvbHlsaW5lIHBvaW50cz0iMjc2LDU4IDI3NiwzMiAyODQsMzIgMjg0LDI2IDI5NCwyNiAyOTQsMzIgMzAyLDMyIDMwMiw1OCIvPgogICAgPCEtLSBTbWFsbCB3aW5kb3dzL2RldGFpbHMgLS0+CiAgICA8cmVjdCB4PSI5MSIgeT0iMTYiIHdpZHRoPSI1IiBoZWlnaHQ9IjUiLz4KICAgIDxyZWN0IHg9Ijk4IiB5PSIxNiIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogICAgPHJlY3QgeD0iMTYyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPgogICAgPHJlY3QgeD0iMjI5IiB5PSIxNCIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogICAgPHJlY3QgeD0iMjM2IiB5PSIxNCIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogIDwvZz4KICA8IS0tIENvbXBhbnkgbmFtZSAtLT4KICA8dGV4dCB4PSIxNjAiIHk9Ijc4IiBmb250LWZhbWlseT0iJ1NlZ29lIFVJJywgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMuNSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI0NDNTUwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjAuMyI+Uk0gRW50cmVwcmVuYWQgJmFtcDsgRmFzYWQgQUI8L3RleHQ+Cjwvc3ZnPgo=" alt="RM Entreprenad och Fasad" style="height:84px;width:auto;">
+  <div class="header-left" style="display:flex;align-items:center;gap:16px;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgOTAiIHdpZHRoPSIzMjAiIGhlaWdodD0iOTAiPgogIDwhLS0gQnVpbGRpbmcgc2t5bGluZSAtIHdhcm0gYmVpZ2UvY29wcGVyIGNvbG9yIC0tPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0M4OTU2QSIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiPgogICAgPCEtLSBHcm91bmQgbGluZSAtLT4KICAgIDxsaW5lIHgxPSIxMCIgeTE9IjU4IiB4Mj0iMzEwIiB5Mj0iNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgMSAobGVmdCwgbWVkaXVtKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjEwLDU4IDEwLDM4IDI2LDM4IDI2LDMwIDM2LDMwIDM2LDM4IDQ4LDM4IDQ4LDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDIgLS0+CiAgICA8cG9seWxpbmUgcG9pbnRzPSI1MCw1OCA1MCwyMCA1OCwyMCA1OCwxNCA3NCwxNCA3NCwyMCA4MiwyMCA4Miw1OCIvPgogICAgPCEtLSBCdWlsZGluZyAzICh0YWxsIGNlbnRlci1sZWZ0KSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9Ijg0LDU4IDg0LDEwIDg4LDEwIDg4LDQgMTAwLDQgMTAwLDEwIDEwNCwxMCAxMDQsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgNCAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjEwNiw1OCAxMDYsMjIgMTE2LDIyIDExNiwxNiAxMjgsMTYgMTI4LDIyIDEzOCwyMiAxMzgsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgNSAoY2VudGVyLCBzdGVwcGVkKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjE0MCw1OCAxNDAsMjggMTQ4LDI4IDE0OCwxOCAxNTgsMTggMTU4LDEyIDE2OCwxMiAxNjgsMTggMTc4LDE4IDE3OCwyOCAxODYsMjggMTg2LDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDYgLS0+CiAgICA8cG9seWxpbmUgcG9pbnRzPSIxODgsNTggMTg4LDIwIDE5OCwyMCAxOTgsMTQgMjEwLDE0IDIxMCwyMCAyMjAsMjAgMjIwLDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDcgKHRhbGwgcmlnaHQtY2VudGVyKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjIyMiw1OCAyMjIsOCAyMjYsOCAyMjYsMiAyMzgsMiAyMzgsOCAyNDIsOCAyNDIsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgOCAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjI0NCw1OCAyNDQsMjQgMjU0LDI0IDI1NCwxOCAyNjQsMTggMjY0LDI0IDI3NCwyNCAyNzQsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgOSAocmlnaHQpIC0tPgogICAgPHBvbHlsaW5lIHBvaW50cz0iMjc2LDU4IDI3NiwzMiAyODQsMzIgMjg0LDI2IDI5NCwyNiAyOTQsMzIgMzAyLDMyIDMwMiw1OCIvPgogICAgPCEtLSBTbWFsbCB3aW5kb3dzL2RldGFpbHMgLS0+CiAgICA8cmVjdCB4PSI5MSIgeT0iMTYiIHdpZHRoPSI1IiBoZWlnaHQ9IjUiLz4KICAgIDxyZWN0IHg9Ijk4IiB5PSIxNiIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogICAgPHJlY3QgeD0iMTYyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPgogICAgPHJlY3QgeD0iMjI5IiB5PSIxNCIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogICAgPHJlY3QgeD0iMjM2IiB5PSIxNCIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogIDwvZz4KICA8IS0tIENvbXBhbnkgbmFtZSAtLT4KICA8dGV4dCB4PSIxNjAiIHk9Ijc4IiBmb250LWZhbWlseT0iJ1NlZ29lIFVJJywgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMuNSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI0NDNTUwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjAuMyI+Uk0gRW50cmVwcmVuYWQgJmFtcDsgRmFzYWQgQUI8L3RleHQ+Cjwvc3ZnPgo=" alt="RM Entreprenad och Fasad" style="height:84px;width:auto;">
     <p>KPI DASHBOARD &nbsp;·&nbsp; Räkenskapsår 1 nov 2025 – 31 okt 2026 &nbsp;·&nbsp; Uppdateras varje måndag</p>
   </div>
   <div class="header-right">
@@ -350,14 +358,29 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
       <span class="kpi-rag rag-gray" id="rag-kassa">–</span>
     </div>
   </div>
-  <div class="kpi-card" style="--accent:#8B949E">
-    <div class="kpi-label">Kvalitet</div>
-    <div class="kpi-value empty" id="kpi-kval" style="font-size:14px;margin-top:6px;">–</div>
-    <div class="kpi-sub"></div>
+</div>
+
+<!-- KMA KORT -->
+<div class="kpi-row-kma">
+  <div class="kpi-card" style="--accent:#4D9FFF">
+    <div class="kpi-label">Egenkontroll <span class="kma-badge leading">Ledande</span></div>
+    <div class="kpi-value empty" id="kpi-ek">–</div>
+    <div class="kpi-sub" id="kpi-ek-sub">Inga data — klicka Uppdatera KMA</div>
     <div class="kpi-meta">
-      <span class="kpi-budget">Senaste kommentar</span>
-      <span class="kpi-rag rag-gray" id="rag-kval">–</span>
+      <span class="kpi-budget">Mål: 100%</span>
+      <span class="kpi-rag rag-gray" id="rag-ek">–</span>
     </div>
+    <button class="kma-update-btn" onclick="openKMAModal()">Uppdatera KMA</button>
+  </div>
+  <div class="kpi-card" style="--accent:#3FB950">
+    <div class="kpi-label">Besiktningsutfall <span class="kma-badge lagging">Utfall</span></div>
+    <div class="kpi-value empty" id="kpi-bes">–</div>
+    <div class="kpi-sub" id="kpi-bes-sub">Inga besiktningar ännu</div>
+    <div class="kpi-meta">
+      <span class="kpi-budget">Mål: 100%</span>
+      <span class="kpi-rag rag-gray" id="rag-bes">–</span>
+    </div>
+    <button class="kma-update-btn" onclick="openKMAModal()">Uppdatera KMA</button>
   </div>
 </div>
 
@@ -437,6 +460,49 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
   </div>
 </div>
 
+<!-- KMA MODAL -->
+<div class="modal-overlay" id="kmaModal" onclick="if(event.target===this)closeKMAModal()" style="display:none">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">KMA – Uppdatera</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Egenkontroll och besiktningsutfall</div>
+      </div>
+      <button class="btn-icon" onclick="closeKMAModal()">✕</button>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#4D9FFF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Egenkontroll</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Genomförda checkpunkter</label>
+          <input type="number" id="inp-ek-genomf" min="0" placeholder="t.ex. 28">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Planerade checkpunkter</label>
+          <input type="number" id="inp-ek-plan" min="0" placeholder="t.ex. 32">
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;color:#3FB950;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Besiktningsutfall</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Godkända projekt</label>
+          <input type="number" id="inp-bes-ok" min="0" placeholder="t.ex. 7">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Totalt antal projekt</label>
+          <input type="number" id="inp-bes-tot" min="0" placeholder="t.ex. 8">
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeKMAModal()">Avbryt</button>
+      <button class="btn-primary" onclick="saveKMA()">Spara</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // KONSTANTER & STORE
@@ -444,6 +510,7 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
 const FY_START   = new Date('2025-11-03');
 const KEY_DATA   = 'rm_kpi_v3_data';
 const KEY_BUDGET = 'rm_kpi_v3_budget';
+const KEY_KMA    = 'rm_kpi_v3_kma';
 
 const store = (() => {
   let mem={}, ok=false;
@@ -453,6 +520,77 @@ const store = (() => {
     set: (k,v) => { try{ if(ok){ localStorage.setItem(k,v); return; } }catch(e){} mem[k]=v; }
   };
 })();
+
+// ═══════════════════════════════════════════════════════════════════
+// KMA — egenkontroll & besiktningsutfall
+// ═══════════════════════════════════════════════════════════════════
+let KMA = JSON.parse(store.get(KEY_KMA) || 'null') || {ekGenomd:0,ekPlan:0,besOk:0,besTot:0};
+
+function ragKMA(pct) {
+  if(pct === null) return 'rag-gray';
+  if(pct >= 95) return 'rag-green';
+  if(pct >= 80) return 'rag-yellow';
+  return 'rag-red';
+}
+function ragLabelKMA(pct) {
+  if(pct === null) return '–';
+  if(pct >= 95) return 'På plan';
+  if(pct >= 80) return 'Följ upp';
+  return 'Åtgärd!';
+}
+
+function renderKMA() {
+  const ekPct  = KMA.ekPlan  > 0 ? Math.round(KMA.ekGenomd / KMA.ekPlan  * 100) : null;
+  const besPct = KMA.besTot  > 0 ? Math.round(KMA.besOk    / KMA.besTot  * 100) : null;
+
+  const ekEl   = document.getElementById('kpi-ek');
+  const ekRag  = document.getElementById('rag-ek');
+  const ekSub  = document.getElementById('kpi-ek-sub');
+  if(ekPct !== null) {
+    ekEl.textContent  = ekPct + '%'; ekEl.className = 'kpi-value';
+    ekSub.textContent = KMA.ekGenomd + '/' + KMA.ekPlan + ' checkpunkter genomförda';
+    ekRag.className   = 'kpi-rag ' + ragKMA(ekPct);
+    ekRag.textContent = ragLabelKMA(ekPct);
+  } else {
+    ekEl.textContent  = '–'; ekEl.className = 'kpi-value empty';
+    ekSub.textContent = 'Inga data — klicka Uppdatera KMA';
+    ekRag.className   = 'kpi-rag rag-gray'; ekRag.textContent = '–';
+  }
+
+  const besEl  = document.getElementById('kpi-bes');
+  const besRag = document.getElementById('rag-bes');
+  const besSub = document.getElementById('kpi-bes-sub');
+  if(besPct !== null) {
+    besEl.textContent  = besPct + '%'; besEl.className = 'kpi-value';
+    besSub.textContent = KMA.besOk + '/' + KMA.besTot + ' projekt godkända vid besiktning';
+    besRag.className   = 'kpi-rag ' + ragKMA(besPct);
+    besRag.textContent = ragLabelKMA(besPct);
+  } else {
+    besEl.textContent  = '–'; besEl.className = 'kpi-value empty';
+    besSub.textContent = 'Inga besiktningar ännu';
+    besRag.className   = 'kpi-rag rag-gray'; besRag.textContent = '–';
+  }
+}
+
+function openKMAModal() {
+  document.getElementById('inp-ek-genomf').value = KMA.ekGenomd || '';
+  document.getElementById('inp-ek-plan').value   = KMA.ekPlan   || '';
+  document.getElementById('inp-bes-ok').value    = KMA.besOk    || '';
+  document.getElementById('inp-bes-tot').value   = KMA.besTot   || '';
+  document.getElementById('kmaModal').style.display = 'flex';
+}
+function closeKMAModal() {
+  document.getElementById('kmaModal').style.display = 'none';
+}
+function saveKMA() {
+  KMA.ekGenomd = parseInt(document.getElementById('inp-ek-genomf').value) || 0;
+  KMA.ekPlan   = parseInt(document.getElementById('inp-ek-plan').value)   || 0;
+  KMA.besOk    = parseInt(document.getElementById('inp-bes-ok').value)    || 0;
+  KMA.besTot   = parseInt(document.getElementById('inp-bes-tot').value)   || 0;
+  store.set(KEY_KMA, JSON.stringify(KMA));
+  closeKMAModal();
+  renderKMA();
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // BUDGET — period-baserad modell
@@ -604,15 +742,12 @@ function render() {
   const latOms   = lastVal('oms');
   const latTB1   = lastVal('tb1');
   const latKassa = lastVal('kassa');
-  const latKval  = lastVal('kval');
   const wb       = lw ? getBudgetForWeek(lw.vecka) : {oms:null,tb1:null,kassa:null};
 
   // KPI-kort
   setKPI('kpi-oms',   latOms   !=null ? latOms.toFixed(2)+' Mkr' : '–', latOms==null);
   setKPI('kpi-tb1',   latTB1   !=null ? latTB1.toFixed(1)+' %'   : '–', latTB1==null);
   setKPI('kpi-kassa', latKassa !=null ? latKassa+' tkr'           : '–', latKassa==null);
-  const kEl=document.getElementById('kpi-kval');
-  kEl.textContent=latKval||'–'; kEl.style.fontSize=latKval&&latKval.length>20?'12px':'14px';
 
   document.getElementById('kpi-oms-sub').textContent   = lw ? `V${lw.vecka} · ${weekLabel(lw.vecka)} · Budget ${wb.oms.toFixed(2)} Mkr` : '';
   document.getElementById('kpi-tb1-sub').textContent   = lw ? `V${lw.vecka} · Budget ${wb.tb1.toFixed(1)}%` : '';
@@ -625,7 +760,7 @@ function render() {
   setRAG('rag-oms',   latOms,   wb.oms);
   setRAG('rag-tb1',   latTB1,   wb.tb1);
   setRAG('rag-kassa', latKassa, wb.kassa);
-  if(latKval){document.getElementById('rag-kval').className='kpi-rag rag-green';document.getElementById('rag-kval').textContent='OK';}
+  renderKMA();
 
   // Varningsbanner
   const bar = document.getElementById('alertBar');
