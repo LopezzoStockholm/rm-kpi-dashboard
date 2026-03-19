@@ -571,289 +571,452 @@ function getWindowWeeks() {
   const n = getN();
   const lw = lastWeek();
   const lastW = lw ? lw.vecka : currentFYWeek();
-  // Placera senaste datavecka ca 40% från vänster → mer framtid syns till höger
-  const pastWeeks = Math.round(n * 0.4);
-  let startW = Math.max(1, lastW - pastWeeks);
-  let endW   = startW + n - 1;
-  // Klipp mot v52
-  if(endW > 52) { endW = 52; startW = Math.max(1, endW - n + 1); }
-  const res=[];
-  for(let w=startW;w<=endW;w++) res.push(w);
-  return res;
+  // Placera senaste datavecka ca 40% från vě��\�8���Y\���[]Y�[��[0��\���ۜ�\��YZ��HX]���[�
+�
+��
+N]�\��HX]�X^
+K\��H\��YZ��N][��H�\��
+��HN���\[��L��Y�[���
+L�H�[��H
+L���\��HX]�X^
+K[��H�
+�JN�B��ۜ��\�V�N�܊]�\�\����Y[������H�\˜\�
+�N�]\���\�B���[��[ۈ�]�JY�[[\JH�ۜ�[Y��[Y[���][[Y[��RY
+Y
+N[�^�۝[�]�[�[��\�Ә[YOY[\O���K]�[YH[\IΉ��K]�[YI�B���[��[ۈ�]�Q�Y�[�Y
+H�ۜ�[Y��[Y[���][[Y[��RY
+Y
+NY��[OO[�[
+^�[��\�Ә[YOI��K\�Y��Y�Yܘ^I��[�^�۝[�I��$��ܙ]\���B��ۜ�]�[X�Y[��\�Ә[YOI��K\�Y�	���L�ܘY�YܙY[�ΉܘY�\�Y	�N[�^�۝[�J�L���Ή��J��њ^Y
+X]�X��
+OL�N�
+NB���[��[ۈ�[�\�
+H�ۜ��[��YZ��H�]�[����YZ��
+N�ۜ�X�[�H�[��YZ�˛X\
+�O�	��YZ�X�[
+�_X
+N�ۜ�]SX\H�NUK��ܑXX�
+O��]SX\���X��WOY�JN��ۜ��H\��YZ�
+N�ۜ�]�\�H\��[
+	��\��N�ۜ�]�HH\��[
+	��I�N�ۜ�]�\��HH\��[
+	��\��I�N�ۜ�]ݘ[H\��[
+	�ݘ[	�N�ۜ�؈H���]�Y�]�ܕ�YZ�˝�X��JH���\Λ�[�N��[�\��N��[N����KZ�ܝ��]�J	��K[�\��]�\�O[�[�]�\˝њ^Y
+�J��Z܉��	��$��]�\�O[�[
+N�]�J	��K]�I�]�HO[�[�]�K�њ^Y
+JJ��	I��	��$��]�OO[�[
+N�]�J	��KZ�\��I�]�\��HO[�[�]�\��J��܉��	��$��]�\��OO[�[
+N�ۜ��[Y��[Y[���][[Y[��RY
+	��KZݘ[	�N�[�^�۝[�[]ݘ[	��$����[��[K��۝�^�O[]ݘ[	��]ݘ[�[������L�	Ή�M	����[Y[���][[Y[��RY
+	��K[�\�\�X��K�^�۝[�H����˝�X��_H0��	��YZ�X�[
+˝�X��J_H0���Y�]	�؋��\˝њ^Y
+�_HZܘ�	����[Y[���][[Y[��RY
+	��K]�K\�X��K�^�۝[�H����˝�X��_H0���Y�]	�؋��K�њ^Y
+J_IX�	����[Y[���][[Y[��RY
+	��KZ�\��K\�X��K�^�۝[�H����˝�X��_H0���Y�]	�؋��\��_Hܘ�	���ۜ��\�YX\�\��]H�Q�U�\�[�˛[����Q�U�\�[��ЕQ�U�\�[�˛[��LWK��\�[�
+L�
+L��[Y[���][[Y[��RY
+	؝Y[�\�[�	�K�^�۝[�Hp�[	��\�YX\�\��]HZ܋��\���[Y[���][[Y[��RY
+	؝Y]�K[�	�K�^�۝[�H؋��HO[�[��Y�]�	�؋��_IX�	НY�]�8�$����[Y[���][[Y[��RY
+	؝YZ�\��K[�	�K�^�۝[�H؋��\��HO[�[��Y�]�	�؋��\��_Hܘ�	НY�]�8�$����]�Q�	ܘY�[�\��]�\�؋��\�N�]�Q�	ܘY�]�I�]�K؋��JN�]�Q�	ܘY�Z�\��I�]�\��K؋��\��JNY�]ݘ[
+^���[Y[���][[Y[��RY
+	ܘY�Zݘ[	�K��\�Ә[YOI��K\�Y��Y�YܙY[�����[Y[���][[Y[��RY
+	ܘY�Zݘ[	�K�^�۝[�I�����B�����\��[��ؘ[��\���ۜ��\�H��[Y[���][[Y[��RY
+	�[\��\��N�ۜ�[\��H�NY�ɉ�]�\�O[�[	��]�\�؋��\�B�[\�˜\�
+�[��\��H�[\�X�\����ۙϓ�T�S�T����ۙψ]�[	�]�\˝њ^Y
+�_HZ܈0���Y�]	�؋��\˝њ^Y
+�_HZ܈0���\	�؋��\�[]�\�K�њ^Y
+�_HZ܏��[��
+NY�ɉ�]�HO[�[	��]�O؋��JB�[\�˜\�
+�[��\��H�[\�X�\����ۙϕ�HS�T����ۙψ]�[	�]�K�њ^Y
+J_IH0���Y�]	�؋��K�њ^Y
+J_IH0���\	�؋��K[]�JK�њ^Y
+J_H��[��
+NY�ɉ�]�\��HO[�[	��]�\��O؋��\��JB�[\�˜\�
+�[��\��H�[\�X�\����ۙϒ�T��HS�T����ۙψ]�[	�]�\��_H܈0���Y�]	�؋��\��_H܈0���\	�؋��\��K[]�\��_H܏��[��
+NY�[\�˛[��	���^��\��[��\�SX[\�˚��[�	��N��\���\��\��Y
+	�����N�B�[�H�\���\��\���[[ݙJ	�����N����\�Y\���ۜ���\�H�[��YZ�˛X\
+�O��]�Y�]�ܕ�YZ��K��\�N�ۜ���HH�[��YZ�˛X\
+�O��]�Y�]�ܕ�YZ��K��JN�ۜ���\��HH�[��YZ�˛X\
+�O��]�Y�]�ܕ�YZ��K��\��JN�ۜ�S�\�H�[��YZ�˛X\
+�O���ۜ�Y]SX\��N��]\��	����\�O[�[	����\�OOI��ӝ[X�\���\�H��[�JN�ۜ�U�HH�[��YZ�˛X\
+�O���ۜ�Y]SX\��N��]\��	����HO[�[	����HOOI��ӝ[X�\���JH��[�JN�ۜ�R�\��HH�[��YZ�˛X\
+�O���ۜ�Y]SX\��N��]\��	����\��HO[�[	����\��HOOI��ӝ[X�\���\��JN��[�JN��ۜ��Y[�HH
+]K�
+OO�X�[��]K\N��[�I���ܙ\���܎��ь��I��ܙ\��Y���ܙ\�\��͋
+K��[��Y]\Ό�[��[�K[��[ێ�ܙ\��B�JN���K[X^�[Y8�iHX^]��Y�][��[�
+��H
+LZ܈�[�����[H0�\�]�\�\�B��ۜ��\�X^HX]��Z[
+X]�X^
+�����\�J�K�
+�N�ۜ��P[Hˋ��U�K��[\��O��O[�[
+K�����WN�ۜ��SX^HX]��Z[
+X]�X^
+����P[
+J�K�MJN�ۜ��SZ[�HX]�X^
+X]���܊X]�Z[�����P[
+J��
+JJN�ۜ��\��P[Hˋ��R�\��K��[\��O��O[�[
+K�����\��WN�ۜ��\��SX^HX]��Z[
+X]�X^
+����\��P[
+J�K��N���[Y[���][[Y[��RY
+	��\��\�]I�K�^�۝[�B��\���[��X��[][\�]
+Z܊H0��p�[�	��\�YX\�\��]HZܘ�Z��\�
+	��\��\��	�[�I�X�[��X�[��]�[	�]N�S�\��ܙ\���܎���Q���P���X��ܛ�[���܎�ܙؘJ�KLLK��K�JI��ܙ\��Y���K[��[ێ����[��Y]\Ό��[�ݙ\��Y]\΍��[��X��ܛ�[���܎���Q���P���[��YK�[��\Ι�[�Kܙ\���K��Y[�J��\��Y�]8�����\�YX\�\��]HZܘ
+B�K�O���њ^Y
+
+J��Z܉��O���њ^Y
+�J��Z܉��\�X^
+N�Z��\�
+	��\��I�	�[�I�X�[��X�[��]�[	�]N�U�K�ܙ\���܎���ѐ�ML	��X��ܛ�[���܎�ܙؘJ
+��N
+K�JI��ܙ\��Y���K[��[ێ����[��Y]\Ό��[�ݙ\��Y]\΍��[��X��ܛ�[���܎���ѐ�ML	��[��YK�[��\Ι�[�Kܙ\���K��Y[�J��K	НY�]\�\�[�	�B�K�O���њ^Y
+
+J��I��O���њ^Y
+JJ��I��SZ[��SX^
+N�Z��\�
+	��\��\��I�	ؘ\��X�[��X�[��]�[	�]N�R�\��K��X��ܛ�[���܎��[��YZ�˛X\
+�O���ۜ�Y]SX\��N�Y�Y��\��OO[�[
+H�]\��	ܙؘJ�KLLK��K��I���]\���[X�\���\��JO�]�Y�]�ܕ�YZ��K��\��O�ܙؘJ�K
+����JIΉܙؘJ
+��N
+K��JI��JK��ܙ\���܎��[��YZ�˛X\
+�O���ۜ�Y]SX\��N�Y�Y��\��OO[�[
+H�]\��	��Q���P����]\���[X�\���\��JO�]�Y�]�ܕ�YZ��K��\��O��ю
+LMIΉ��ѐ�ML	��JK��ܙ\��Y�K�ܙ\��Y]\΍ܙ\����K�ˋ���Y[�J��\��K	НY�]\�\�[�	�K�X��ܛ�[���܎���[��\�[�	�B�K�O����܉��O����܉��\��SX^
+N��[�\�X�J�[��YZ�˛X\
+�O�]SX\��JK��[\����X[�JN���[Y[���][[Y[��RY
+	ٛ��\��K�^�۝[�H��[�\�\]\�Y���˝�X��_H0��	��YZ�X�[
+˝�X��J_H0��	�UK�[��H�X��܈[�X]YX��	�\�]H�x�$݌�YY0���X��H��[��X��H�[\���[�Z[�X]�[�Ȉ�휈]\]\�I�B���[��[ۈ�[�\�X�J����H�ۜ���OY��[Y[���][[Y[��RY
+	�X�P��I�NY�\���˛[��
+^��K�[��\�SI������[�H�H��[OH�^X[Yێ��[�\����܎��\�K[]]Y
+N�Y[�Ό���[��H�X��܈H�[�훜�\��������]\��B��ۜ��ܝYVˋ������K��ܝ
+
+K�OO����X��KXK��X��JN��K�[��\�S\�ܝY�X\
+O��ۜ��Y�]�Y�]�ܕ�YZ���X��JN�ۜ��Y��\�O[�[	����\�OOI������\�X���\�K�њ^Y
+�N��[�ۜ�Y��HO[�[	����HOOI������KX���JK�њ^Y
+JN��[�ۜ��Y��\��HO[�[	����\��HOOI������\��KX���\��JN��[�ۜ���]�O��O[�[�ݘ[[�]]�[	Ν��L�ݘ[\��Ήݘ[[�Y���ۜ��]]�O��O[�[���$�Ί��L���Ή��Jݎ�]\����������X��_H0��	��YZ�X�[
+��X��J_O������][_	��$��O�������\�O[�[	����\�OOI��ӝ[X�\���\�K�њ^Y
+�J��Z܉Ή��$��O����\��H�����_H��ٛ]
+�_I��O[�[��Z܉Ή��O�������HO[�[	����HOOI��ӝ[X�\���JK�њ^Y
+JJ��	IΉ��$��O����\��H����
+_H��ٛ]
+
+_I�O[�[��	IΉ��O�������\��HO[�[	����\��HOOI�����\��J��܉Ή��$��O����\��H�����_H��ٛ]
+�_I��O[�[��܉Ή��O����[OH�^X[Yێ�Y��X^]�Y�M�ݙ\���ΚY[��^[ݙ\���Ι[\�\���]K\�X�N���ܘ\����ݘ[	��$��O������JK���[�	��NB����8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d���S�S���B���8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d��[��[ۈ���T[�[
+[�[Y��Y
+H�ۜ�[�[Y��[Y[���][[Y[��RY
+[�[Y
+N�ۜ���Y��[Y[���][[Y[��RY
+��Y
+N�ۜ��[�\[�[��\��\���۝Z[��	�����N���0���[H[�[\���؝Y�][�[	�	؝[�[�[	�K��ܑXX�
+YO���[Y[���][[Y[��RY
+Y
+K��\��\���[[ݙJ	�����NJN�؝��Y�]	�	؝��[��K��ܑXX�
+YO���[Y[���][[Y[��RY
+Y
+K��\��\���[[ݙJ	؝�XX�]�I�NJNY�[�[�^[�[��\��\��Y
+	�����N����\��\��Y
+	؝�XX�]�I�NY�[�[YOOI؝Y�][�[	�H�[�Y�][�[
+
+NY�[�[YOOI؝[�[�[	�H�[�[�[�[
+
+NB�B���[��[ۈ�[�[�[�[
+
+H��]]�Y�[�X���[�\��[����[�H���H�X��HY�\��[�\�H]K[H�]�\�[�H�K]�X��B��ۜ��H\��YZ�
+N�ۜ����U�H��X]�Z[�
+L�˝�X��H
+�JH�N�ۜ���HX]�Z[�
+L�X]�X^
+���U��\��[��U�YZ�
+JJN�ۜ����Q[H��[Y[���][[Y[��RY
+	ؚ�Y���I�N�ۜ��[H��[Y[���][[Y[��RY
+	ؚ�]��NY�Y���Q[��[YJH����Q[��[YHH���U����[Y[���][[Y[��RY
+	ؚ�Y���KZ[�	�K�^�۝[�H�YZ�X�[
+���U�N�B�Y�]�[��[YJH��[��[YHH�����[Y[���][[Y[��RY
+	ؚ�]�Z[�	�K�^�۝[�H�YZ�X�[
+��N�B��[��]�Y]�
+NB����8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d����Q�UTS�S���8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d��[��[ۈ�[�Y�][�[
+
+H�[�\�\�[�����
+NB���[��[ۈ�[�\�\�[�����
+H�ۜ��Y��[Y[���][[Y[��RY
+	�\�[���۝Z[�\��N˚[��\�SI���Q�U�\�[�˙�ܑXX�
+
+JOO��ۜ����Y��[Y[��ܙX]Q[[Y[�
+	�]��N��˘�\�Ә[YOI�\�[�\������˙]\�]�YZN��˚[��\�SX�[�]\OH��[X�\��Z[�H�H�X^H�L���[YOH������U�YZ�H�X�Z�\�H�H�ۘ�[��OH�\]T\�[�
+	�_K	ٜ��U�YZ��\˝�[YJH���[�]\OH��[X�\��Z[�H�H�X^H�L���[YOH�����YZ�H�X�Z�\�H�L��ۘ�[��OH�\]T\�[�
+	�_K	���YZ��\˝�[YJH���[�]\OH�^��[YOH���X�[	��H�X�Z�\�H��[[�0�H\�[�[��ۘ�[��OH�\]T\�[�
+	�_K	�X�[	�\˝�[YJH���[�]\OH��[X�\���\H��H��[YOH����\��\�O[�[���\��\����H�X�Z�\�H���ۘ�[��OH�\]T\�[�
+	�_K	��\��\�	�\˝�[YJH���[�]\OH��[X�\���\H��H��[YOH����\�[�O[�[���\�[����H�X�Z�\�H�L��ۘ�[��OH�\]T\�[�
+	�_K	��\�[�	�\˝�[YJH���[�]\OH��[X�\���\H��H��[YOH����_H�X�Z�\�H����ۘ�[��OH�\]T\�[�
+	�_K	��I�\˝�[YJH���[�]\OH��[X�\���[YOH����\��_H�X�Z�\�H�L�ۘ�[��OH�\]T\�[�
+	�_K	��\��I�\˝�[YJH����]ۈ�\��H�[X���ۘ�X��H�[]T\�[�
+	�_JH�]OH�H�ܝ���%O؝]ۏ�˘\[��[
+���NJNB���[��[ۈ\]T\�[�
+K�Y[�[
+H�Q�U�\�[���WVٚY[HH
+�Y[OOI�X�[	�H��[�\��Q��]
+�[
+_B���[��[ۈ[]T\�[�
+JH�Q�U�\�[�˜�X�JKJN�[�\�\�[�����
+NB���[��[ۈY\�[����
+H�ۜ�\�P�Q�U�\�[��ЕQ�U�\�[�˛[��LW_���YZΌ�\�[��N�Q�U�\�[�˜\�
+ٜ��U�YZΛ\����YZ��K��YZ΍L��\��\��\���\�[��\�[��L�N����\��N�LX�[�ӞH\�[�	�JN�[�\�\�[�����
+NB���[��[ۈ�]�P�Y�][�[
+
+H�ܙK��]
+�VWЕQ�U��Ӌ���[��Y�J�Q�U
+JN�ۜ�\��Y��[Y[���][[Y[��RY
+	؝Y�]�]�Y\���N\�˘�\��\��Y
+	�����N�][Y[�]
+
+
+OO�\�˘�\��\���[[ݙJ	�����K�L
+N�[�\�
+NB����8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d����S�RS�PU�S���8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d8�d�]�S[�HH	��	����	��	�	�Z܉�	���\	��[��[ۈ�]�S[�J[�JH�S[�HH[�N�ۜ���Y[�H��[Y[���][[Y[��RY
+	��KY�Y[�\�	�N�ۜ�Zܑ�Y[�H��[Y[���][[Y[��RY
+	��KY�Y[�[Z܉�N�ۜ�[�H��[Y[���][[Y[��RY
+	��K[[�KZ[�	�N�ۜ����H��[Y[���][[Y[��RY
+	��K[[�K\�	�N�ۜ���Z܈H��[Y[���][[Y[��RY
+	��K[[�K[Z܉�N�ۜ�����\H��[Y[���][[Y[��RY
+	��K[[�K\��\	�N��0�]\��0�ۘ\\��؝����Z܋����\K��ܑXX�
+�O�����[K��X��ܛ�[�X���[K��X��ܛ�[�Iݘ\�KX��I�����[K���܏Iݘ\�K[]]Y
+I�����[K��۝�ZY�I�	��JNY�[�OOOI��	�H��Y[˜�[K�\�^OI��۝[����Zܑ�Y[˜�[K�\�^OIۛۙI����[��HZ܋Y����H�[[H���[�[�H0���\�[�H�\��ۚ[��[���ؚ�X��]�Y���I�	ؚ�X��]�]��K��ܑXX�
+YO���[Y[���][[Y[��RY
+Y
+K��[YOI��N�����[K��X��ܛ�[�Iݘ\�KYܙY[�I�N������[K���܏I��	�������[K��۝�ZY�I��	�[��^�۝[�I�0��ۚ[���ܘYH	H8�%�^��H�	I�B�Y�[�OOOI�Z܉�H��Y[˜�[K�\�^OIۛۙI��Zܑ�Y[˜�[K�\�^OI��۝[������[��H�Y����ؚ�]�KY���I�	ؚ�]�K]��K��ܑXX�
+YO���[Y[���][[Y[��RY
+Y
+K��[YOI��N��Z܋��[K��X��ܛ�[�Iݘ\�KYܙY[�I����Z܋��[K���܏I��	����Z܋��[K��۝�ZY�I��	�[��^�۝[�I��HHܛۛ܈
+Z܊H8�%�IH�\��ۘ\����[��\��B�Y�[�OOOI���\	�H��Y[˜�[K�\�^OIۛۙI��Zܑ�Y[˜�[K�\�^OIۛۙI��ؚ�]�KY���I�	ؚ�]�K]��	ؚ�X��]�Y���I�	ؚ�X��]�]��K��ܑXX�
+YO���[Y[���][[Y[��RY
+Y
+K��[YOI��N����\��[K��X��ܛ�[�Iݘ\�KX�ܙ\�I������\��[K���܏Iݘ\�K]�]JI������\��[K��۝�ZY�I��	�[��^�۝[�I��H�\�\�[�H�휈\��H�X��܉�B��[��]�Y]�
+NB����0���[�Y�����]\��\�H[�\��\�YH���[�\��X��B��[��[ۈ�[��[ԛ����
+H�ۜ��HH�
+�N�ۜ���X�H�OOHH��
+�H�H�
+�HJN��ۜ�ٗ�H\��Q��]
+��[Y[���][[Y[��RY
+	ؚ�[�\�Y���I�K��[YJN�ۜ��H\��Q��]
+��[Y[���][[Y[��RY
+	ؚ�[�\�]��K��[YJN�ۜ���H\��Q��]
+��[Y[���][[Y[��RY
+	ؚ�]�KY���I�K��[YJN�ۜ�H\��Q��]
+��[Y[���][[Y[��RY
+	ؚ�]�K]��K��[YJN�ۜ����H\��Q��]
+��[Y[���][[Y[��RY
+	؝�X��]�Y���I�K��[YJN�ۜ��H\��Q��]
+��[Y[���][[Y[��RY
+	؝�X��]�]��K��[YJN�ۜ�وH\��Q��]
+��[Y[���][[Y[��RY
+	ؚ�Z�\��KY���I�K��[YJN�ۜ��H\��Q��]
+��[Y[���][[Y[��RY
+	؝�Z�\��K]��K��[YJN��ۜ��\�H
+Z\ӘS�ٗ�I��Z\ӘS��
+JH�\�
+ٗ����X�H��[�ۜ��\��HH
+Z\ӘS�يI��Z\ӘS��
+JH�X]���[�
+ي��ZيJ���X�H��[����N��\��]��[0��H
+��Z܈���\
+B�]�HH�[Y��S[�HOOH	��	�	��Z\ӘS���H	��Z\ӘS�
+JH�HHX]���[�
+\�
+����X�J�L
+K�LH[�HY��S[�HOOH	�Z܉�	��Z\ӘS����H	��Z\ӘS��
+JH�ۜ���]�H\�
+������X�N�HH
+�\�	���\��
+H�X]���[�
+
+��]���\�H
+�L
+H�L��[B����S[de === 'skip' → tb1 förblir null
+
+  return { oms, tb1, kassa };
 }
 
-function setKPI(id, val, empty) {
-  const el=document.getElementById(id);
-  el.textContent=val; el.className=empty?'kpi-value empty':'kpi-value';
-}
+function bulkPreview() {
+  const f = parseInt(document.getElementById('bk-from').value)||0;
+  const t = parseInt(document.getElementById('bk-to').value)||0;
 
-function setRAG(id, val, bud) {
-  const el=document.getElementById(id);
-  if(val===null){el.className='kpi-rag rag-gray';el.textContent='–';return;}
-  const d=val-bud;
-  el.className='kpi-rag '+(d>=0?'rag-green':'rag-red');
-  el.textContent=(d>=0?'+':'')+d.toFixed(Math.abs(d)<10?1:0);
-}
+  if(f>=1&&f<=52) document.getElementById('bk-from-hint').textContent = weekLabel(f);
+  if(t>=1&&t<=52) document.getElementById('bk-to-hint').textContent   = weekLabel(t);
 
-function render() {
-  const winWeeks = getWindowWeeks();
-  const labels   = winWeeks.map(w=>`${weekLabel(w)}`);
-  const dataMap  = {};
-  DATA.forEach(d=>{ dataMap[d.vecka]=d; });
+  const prev = document.getElementById('bulkPreviewTxt');
+  if(!f||!t||f>t||f<1||t>52){ prev.textContent='Fyll i "Från vecka" och "Till vecka" ovan (1–52, från måste vara ≤ till).'; return; }
 
-  const lw       = lastWeek();
-  const latOms   = lastVal('oms');
-  const latTB1   = lastVal('tb1');
-  const latKassa = lastVal('kassa');
-  const latKval  = lastVal('kval');
-  const wb       = lw ? getBudgetForWeek(lw.vecka) : {oms:null,tb1:null,kassa:null};
+  const n = t-f+1;
+  const lines = [];
+  const showWeeks = n<=6 ? Array.from({length:n},(_,i)=>f+i) : [f, f+1, '…', t-1, t];
 
-  // KPI-kort
-  setKPI('kpi-oms',   latOms   !=null ? latOms.toFixed(2)+' Mkr' : '–', latOms==null);
-  setKPI('kpi-tb1',   latTB1   !=null ? latTB1.toFixed(1)+' %'   : '–', latTB1==null);
-  setKPI('kpi-kassa', latKassa !=null ? latKassa+' tkr'           : '–', latKassa==null);
-  const kEl=document.getElementById('kpi-kval');
-  kEl.textContent=latKval||'–'; kEl.style.fontSize=latKval&&latKval.length>20?'12px':'14px';
-
-  document.getElementById('kpi-oms-sub').textContent   = lw ? `V${lw.vecka} · ${weekLabel(lw.vecka)} · Budget ${wb.oms.toFixed(2)} Mkr` : '';
-  document.getElementById('kpi-tb1-sub').textContent   = lw ? `V${lw.vecka} · Budget ${wb.tb1.toFixed(1)}%` : '';
-  document.getElementById('kpi-kassa-sub').textContent = lw ? `V${lw.vecka} · Budget ${wb.kassa} tkr` : '';
-  const omsYearTarget = BUDGET.periods.length ? BUDGET.periods[BUDGET.periods.length-1].omsEnd||50 : 50;
-  document.getElementById('bud-oms-lbl').textContent   = `Mål ${omsYearTarget} Mkr/år`;
-  document.getElementById('bud-tb1-lbl').textContent   = wb.tb1!=null ? `Budget: ${wb.tb1}%` : 'Budget: –';
-  document.getElementById('bud-kassa-lbl').textContent = wb.kassa!=null ? `Budget: ${wb.kassa} tkr` : 'Budget: –';
-
-  setRAG('rag-oms',   latOms,   wb.oms);
-  setRAG('rag-tb1',   latTB1,   wb.tb1);
-  setRAG('rag-kassa', latKassa, wb.kassa);
-  if(latKval){document.getElementById('rag-kval').className='kpi-rag rag-green';document.getElementById('rag-kval').textContent='OK';}
-
-  // Varningsbanner
-  const bar = document.getElementById('alertBar');
-  const alerts = [];
-  if(lw&&latOms!=null&&latOms<wb.oms)
-    alerts.push(`<span class="alert-chip"><strong>OMS UNDER</strong> Utfall ${latOms.toFixed(2)} Mkr · Budget ${wb.oms.toFixed(2)} Mkr · Gap ${(wb.oms-latOms).toFixed(2)} Mkr</span>`);
-  if(lw&&latTB1!=null&&latTB1<wb.tb1)
-    alerts.push(`<span class="alert-chip"><strong>TB1 UNDER</strong> Utfall ${latTB1.toFixed(1)}% · Budget ${wb.tb1.toFixed(1)}% · Gap ${(wb.tb1-latTB1).toFixed(1)} pp</span>`);
-  if(lw&&latKassa!=null&&latKassa<wb.kassa)
-    alerts.push(`<span class="alert-chip"><strong>KASSA UNDER</strong> Utfall ${latKassa} tkr · Budget ${wb.kassa} tkr · Gap ${wb.kassa-latKassa} tkr</span>`);
-  if(alerts.length&&lw){ bar.innerHTML=alerts.join(''); bar.classList.add('show'); }
-  else bar.classList.remove('show');
-
-  // Serier
-  const bOms   = winWeeks.map(w=>getBudgetForWeek(w).oms);
-  const bTB1   = winWeeks.map(w=>getBudgetForWeek(w).tb1);
-  const bKassa = winWeeks.map(w=>getBudgetForWeek(w).kassa);
-  const uOms   = winWeeks.map(w=>{ const d=dataMap[w]; return d&&d.oms  !=null&&d.oms  !==''?Number(d.oms)  :null; });
-  const uTB1   = winWeeks.map(w=>{ const d=dataMap[w]; return d&&d.tb1  !=null&&d.tb1  !==''?Number(d.tb1)  :null; });
-  const uKassa = winWeeks.map(w=>{ const d=dataMap[w]; return d&&d.kassa!=null&&d.kassa!==''?Number(d.kassa):null; });
-
-  const budLine = (data,lbl)=>({
-    label:lbl, data, type:'line',
-    borderColor:'#F0B429', borderWidth:2, borderDash:[6,4],
-    pointRadius:0, fill:false, tension:0, order:1
-  });
-
-  // Y-max: alltid ≥ max av budgetlinjen (så 50 Mkr syns när hela året visas)
-  const omsMax = Math.ceil(Math.max(...bOms)*1.06);
-  const tb1All = [...uTB1.filter(v=>v!=null),...bTB1];
-  const tb1Max = Math.ceil(Math.max(...tb1All)*1.15);
-  const tb1Min = Math.max(0,Math.floor(Math.min(...tb1All)*0.85));
-  const kassaAll = [...uKassa.filter(v=>v!=null),...bKassa];
-  const kassaMax = Math.ceil(Math.max(...kassaAll)*1.2);
-
-  document.getElementById('chartOmsTitle').textContent =
-    `Omsättning ackumulerat (Mkr) · Mål: ${omsYearTarget} Mkr`;
-
-  mkChart('chartOms','line',labels,[
-    {label:'Utfall',data:uOms,borderColor:'#1F6FEB',backgroundColor:'rgba(31,111,235,.1)',borderWidth:2.5,tension:.2,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#1F6FEB',fill:true,spanGaps:false,order:2},
-    budLine(bOms,`Budget →${omsYearTarget} Mkr`)
-  ],v=>v.toFixed(0)+' Mkr',v=>v.toFixed(2)+' Mkr',0,omsMax);
-
-  mkChart('chartTB1','line',labels,[
-    {label:'Utfall',data:uTB1,borderColor:'#3FB950',backgroundColor:'rgba(63,185,80,.1)',borderWidth:2.5,tension:.2,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#3FB950',fill:true,spanGaps:false,order:2},
-    budLine(bTB1,'Budget per period')
-  ],v=>v.toFixed(0)+'%',v=>v.toFixed(1)+'%',tb1Min,tb1Max);
-
-  mkChart('chartKassa','bar',labels,[
-    {label:'Utfall',data:uKassa,
-      backgroundColor:winWeeks.map(w=>{ const d=dataMap[w]; if(!d||d.kassa==null) return 'rgba(31,111,235,.3)'; return Number(d.kassa)<getBudgetForWeek(w).kassa?'rgba(248,81,73,.75)':'rgba(63,185,80,.75)'; }),
-      borderColor:    winWeeks.map(w=>{ const d=dataMap[w]; if(!d||d.kassa==null) return '#1F6FEB'; return Number(d.kassa)<getBudgetForWeek(w).kassa?'#F85149':'#3FB950'; }),
-      borderWidth:1, borderRadius:4, order:2
-    },
-    {...budLine(bKassa,'Budget per period'),backgroundColor:'transparent'}
-  ],v=>v+' tkr',v=>v+' tkr',0,kassaMax);
-
-  renderTable(winWeeks.map(w=>dataMap[w]).filter(Boolean));
-
-  document.getElementById('footer').textContent = lw
-    ? `Senast uppdaterad: V${lw.vecka} · ${weekLabel(lw.vecka)} · ${DATA.length} veckor inmatade`
-    : 'Testdata v1–v20 laddad · Klicka "+ En vecka" eller "Bulk-inmatning" för att uppdatera';
-}
-
-function renderTable(rows) {
-  const body=document.getElementById('tableBody');
-  if(!rows.length){
-    body.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:28px">Inga veckor i valt fönster</td></tr>';
-    return;
+  for(const w of showWeeks) {
+    if(w==='…'){ lines.push('<em style="color:var(--muted)">…</em>'); continue; }
+    const r = bulkCalcRow(w,f,t);
+    const omsTxt   = r.oms   != null ? r.oms.toFixed(2)+' Mkr'   : '–';
+    const tb1Txt   = r.tb1   != null ? r.tb1.toFixed(1)+'%'      : '–';
+    const kassaTxt = r.kassa != null ? r.kassa+' tkr'             : '–';
+    lines.push(`<strong>V${w}</strong> ${weekLabel(w)}: oms <b>${omsTxt}</b> · TB1 <b>${tb1Txt}</b> · kassa <b>${kassaTxt}</b>`);
   }
-  const sorted=[...rows].sort((a,b)=>b.vecka-a.vecka);
-  body.innerHTML=sorted.map(d=>{
-    const b=getBudgetForWeek(d.vecka);
-    const dO=d.oms!=null&&d.oms!==''?+(d.oms-b.oms).toFixed(2):null;
-    const dT=d.tb1!=null&&d.tb1!==''?+(d.tb1-b.tb1).toFixed(1):null;
-    const dK=d.kassa!=null&&d.kassa!==''?+(d.kassa-b.kassa):null;
-    const cls=v=>v==null?'val-neutral':v>=0?'val-pos':'val-neg';
-    const fmt=v=>v==null?'–':(v>=0?'+':'')+v;
-    return `<tr>
-      <td>V${d.vecka} · ${weekLabel(d.vecka)}</td>
-      <td>${d.datum||'–'}</td>
-      <td>${d.oms!=null&&d.oms!==''?Number(d.oms).toFixed(2)+' Mkr':'–'}</td>
-      <td class="${cls(dO)}">${fmt(dO)}${dO!=null?' Mkr':''}</td>
-      <td>${d.tb1!=null&&d.tb1!==''?Number(d.tb1).toFixed(1)+' %':'–'}</td>
-      <td class="${cls(dT)}">${fmt(dT)}${dT!=null?' %':''}</td>
-      <td>${d.kassa!=null&&d.kassa!==''?d.kassa+' tkr':'–'}</td>
-      <td class="${cls(dK)}">${fmt(dK)}${dK!=null?' tkr':''}</td>
-      <td style="text-align:left;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.kval||'–'}</td>
-    </tr>`;
-  }).join('');
+  prev.innerHTML = `<span style="color:var(--blue);font-weight:700">${n} veckor</span> &nbsp;·&nbsp; ${lines.join(' &nbsp;|&nbsp; ')}`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// PANEL TOGGLE
-// ═══════════════════════════════════════════════════════════════════
-function togglePanel(panelId, btnId) {
-  const panel=document.getElementById(panelId);
-  const btn=document.getElementById(btnId);
-  const open=panel.classList.contains('show');
-  // Stäng alla paneler
-  ['budgetPanel','bulkPanel'].forEach(id=>{
-    document.getElementById(id).classList.remove('show');
-  });
-  ['btnBudget','btnBulk'].forEach(id=>{
-    document.getElementById(id).classList.remove('btn-active');
-  });
-  if(!open){
-    panel.classList.add('show');
-    btn.classList.add('btn-active');
-    if(panelId==='budgetPanel') fillBudgetPanel();
-    if(panelId==='bulkPanel')   fillBulkPanel();
+function saveBulk() {
+  const f   = parseInt(document.getElementById('bk-from').value);
+  const t   = parseInt(document.getElementById('bk-to').value);
+  const kval= document.getElementById('bk-kval').value.trim();
+  const ow  = document.getElementById('bk-overwrite').value === 'overwrite';
+
+  if(!f||!t||f>t||f<1||t>52){ alert('Fyll i "Från vecka" och "Till vecka" (1–52, från ≤ till).'); return; }
+
+  let added=0, skipped=0;
+  for(let w=f;w<=t;w++){
+    const existing=DATA.findIndex(d=>d.vecka===w);
+    if(existing>=0&&!ow){ skipped++; continue; }
+    const r = bulkCalcRow(w,f,t);
+    const row = {
+      vecka: w,
+      datum: weekDate(w),
+      oms:   r.oms   != null ? r.oms   : '',
+      tb1:   r.tb1   != null ? r.tb1   : '',
+      kassa: r.kassa != null ? r.kassa : '',
+      kval
+    };
+    if(existing>=0) DATA[existing]=row; else DATA.push(row);
+    added++;
   }
-}
-
-function fillBulkPanel() {
-  // Auto-fyll veckointervall: från = nästa vecka efter senaste data, till = nuvarande FY-vecka
-  const lw = lastWeek();
-  const fromW = lw ? Math.min(52, lw.vecka + 1) : 1;
-  const toW   = Math.min(52, Math.max(fromW, currentFYWeek()));
-  const fromEl = document.getElementById('bk-from');
-  const toEl   = document.getElementById('bk-to');
-  if(!fromEl.value) { fromEl.value = fromW; document.getElementById('bk-from-hint').textContent = weekLabel(fromW); }
-  if(!toEl.value)   { toEl.value   = toW;   document.getElementById('bk-to-hint').textContent   = weekLabel(toW); }
-  bulkPreview();
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BUDGET-PANEL
-// ═══════════════════════════════════════════════════════════════════
-function fillBudgetPanel() {
-  renderPeriodRows();
-}
-
-function renderPeriodRows() {
-  const c=document.getElementById('periodsContainer');
-  c.innerHTML='';
-  BUDGET.periods.forEach((p,i)=>{
-    const row=document.createElement('div');
-    row.className='period-row';
-    row.dataset.idx=i;
-    row.innerHTML=`
-      <input type="number" min="1" max="52" value="${p.fromWeek}" placeholder="1" onchange="updatePeriod(${i},'fromWeek',this.value)">
-      <input type="number" min="1" max="52" value="${p.toWeek}"   placeholder="52" onchange="updatePeriod(${i},'toWeek',this.value)">
-      <input type="text"   value="${p.label||''}"                 placeholder="Namn på perioden" onchange="updatePeriod(${i},'label',this.value)">
-      <input type="number" step="0.1" value="${p.omsStart!=null?p.omsStart:''}" placeholder="0.0" onchange="updatePeriod(${i},'omsStart',this.value)">
-      <input type="number" step="0.1" value="${p.omsEnd!=null?p.omsEnd:''}"     placeholder="50.0" onchange="updatePeriod(${i},'omsEnd',this.value)">
-      <input type="number" step="0.1" value="${p.tb1}"            placeholder="20.0" onchange="updatePeriod(${i},'tb1',this.value)">
-      <input type="number" value="${p.kassa}"                     placeholder="500"  onchange="updatePeriod(${i},'kassa',this.value)">
-      <button class="del-btn" onclick="deletePeriod(${i})" title="Ta bort">✕</button>`;
-    c.appendChild(row);
-  });
-}
-
-function updatePeriod(i, field, val) {
-  BUDGET.periods[i][field] = (field==='label') ? val : parseFloat(val)||0;
-}
-
-function deletePeriod(i) {
-  BUDGET.periods.splice(i,1);
-  renderPeriodRows();
-}
-
-function addPeriodRow() {
-  const last=BUDGET.periods[BUDGET.periods.length-1]||{toWeek:0, omsEnd:0};
-  BUDGET.periods.push({fromWeek:last.toWeek+1, toWeek:52, omsStart:last.omsEnd||0, omsEnd:50, tb1:20.0, kassa:500, label:'Ny period'});
-  renderPeriodRows();
-}
-
-function saveBudgetPanel() {
-  store.set(KEY_BUDGET, JSON.stringify(BUDGET));
-  const msg=document.getElementById('budgetSavedMsg');
+  saveData(DATA);
+  const msg=document.getElementById('bulkSavedMsg');
+  msg.textContent=`${added} veckor sparade${skipped?', '+skipped+' hoppades över':''}`;
   msg.classList.add('show');
-  setTimeout(()=>msg.classList.remove('show'),2500);
+  setTimeout(()=>msg.classList.remove('show'),3000);
   render();
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// BULK-INMATNING
+// ENSTAKA VECKA
 // ═══════════════════════════════════════════════════════════════════
-let tb1Mode = 'pct'; // 'pct' | 'mkr' | 'skip'
-
-function setTb1Mode(mode) {
-  tb1Mode = mode;
-  const pctFields = document.getElementById('tb1-fields-pct');
-  const mkrFields = document.getElementById('tb1-fields-mkr');
-  const hint      = document.getElementById('tb1-mode-hint');
-  const btnPct    = document.getElementById('tb1-mode-pct');
-  const btnMkr    = document.getElementById('tb1-mode-mkr');
-  const btnSkip   = document.getElementById('tb1-mode-skip');
-  // Återställ knappar
-  [btnPct, btnMkr, btnSkip].forEach(b => { b.style.background=b.style.background='var(--bg)'; b.style.color='var(--muted)'; b.style.fontWeight='400'; });
-  if(mode==='pct')  {
-    pctFields.style.display='contents'; mkrFields.style.display='none';
-    // Rensa mkr-fält så gamla värden inte läcker in i beräkningen
-    ['bk-brutto-from','bk-brutto-to'].forEach(id=>document.getElementById(id).value='');
-    btnPct.style.background='var(--green)'; btnPct.style.color='#000'; btnPct.style.fontWeight='700';
-    hint.textContent='Täckningsgrad i % — t.ex. 20 = 20%';
-  }
-  if(mode==='mkr')  {
-    pctFields.style.display='none'; mkrFields.style.display='contents';
-    // Rensa pct-fält
-    ['bk-tb1-from','bk-tb1-to'].forEach(id=>document.getElementById(id).value='');
-    btnMkr.style.background='var(--green)'; btnMkr.style.color='#000'; btnMkr.style.fontWeight='700';
-    hint.textContent='TB1 i kronor (Mkr) — TB1% beräknas från oms';
-  }
-  if(mode==='skip') {
-    pctFields.style.display='none'; mkrFields.style.display='none';
-    ['bk-tb1-from','bk-tb1-to','bk-brutto-from','bk-brutto-to'].forEach(id=>document.getElementById(id).value='');
-    btnSkip.style.background='var(--border)'; btnSkip.style.color='var(--white)'; btnSkip.style.fontWeight='700';
-    hint.textContent='TB1 sparas inte för dessa veckor';
-  }
-  bulkPreview();
+function openSingleModal() {
+  const sorted=[...DATA].sort((a,b)=>a.vecka-b.vecka);
+  const last=sorted.length?sorted[sorted.length-1].vecka:0;
+  const fyW=currentFYWeek();
+  const sug=Math.min(52,Math.max(last+1,fyW));
+  document.getElementById('inp-vecka').value=sug;
+  document.getElementById('inp-datum').value=weekDate(sug);
+  ['inp-oms','inp-tb1','inp-kassa','inp-kval'].forEach(id=>document.getElementById(id).value='');
+  updateVeckaHint();
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('inp-oms').focus(),100);
 }
 
-// Läs bulk-fält och returnera interpolerade värden per vecka
-function bulkCalcRow(w, f, t) {
-  const n = t - f + 1;
-  const frac = n === 1 ? 0 : (w - f) / (n - 1);
+function updateVeckaHint() {
+  const v=parseInt(document.getElementById('inp-vecka').value);
+  const el=document.getElementById('vecka-hint');
+  if(v>=1&&v<=52){
+    el.textContent=`V${v} = ${weekLabel(v)}`;
+    document.getElementById('inp-datum').value=weekDate(v);
+  } else {
+    el.textContent='V1 = 3 nov 2025 · V52 = 26 okt 2026';
+  }
+}
 
-  const of_ = parseFloat(document.getElementById('bk-oms-from').value);
-  const ot  = parseFloat(document.getElementById('bk-oms-to').value);
-  const tf_ = parseFloat(document.getElementById('bk-tb1-from').value);
-  const tt  = parseFloat(document.getElementById('bk-tb1-to').value);
-  const bf_ = parseFloat(document.getElementById('bk-brutto-from').value);
-  const bt  = parseFloat(document.getElementById('bk-brutto-to').value);
-  const kf  = parseFloat(document.getElementById('bk-kassa-from').value);
-  const kt  = parseFloat(document.getElementById('bk-kassa-to').value);
+function saveSingleWeek() {
+  const v=parseInt(document.getElementById('inp-vecka').value);
+  if(!v||v<1||v>52){ alert('Ange vecka 1–52.'); return; }
+  const row={
+    vecka:v,
+    datum:document.getElementById('inp-datum').value,
+    oms:  document.getElementById('inp-oms').value   !==''?parseFloat(document.getElementById('inp-oms').value)  :'',
+    tb1:  document.getElementById('inp-tb1').value   !==''?parseFloat(document.getElementById('inp-tb1').value)  :'',
+    kassa:document.getElementById('inp-kassa').value !==''?parseFloat(document.getElementById('inp-kassa').value):'',
+    kval: document.getElementById('inp-kval').value.trim()
+  };
+  const idx=DATA.findIndex(d=>d.vecka===v);
+  if(idx>=0) DATA[idx]=row; else DATA.push(row);
+  saveData(DATA);
+  closeModal();
+  render();
+}
 
-  const oms   = (!isNaN(of_)&&!isNaN(ot)) ? lerp(of_,ot,frac) : null;
-  const kassa = (!isNaN(kf)&&!isNaN(kt))  ? Math.round(kf+(kt-kf)*frac) : null;\n\n  // TB1: styrs av valt l\u00e4ge (pct / mkr / skip)\n  let tb1 = null;\n  if(tb1Mode === 'pct' && !isNaN(tf_) && !isNaN(tt)) {\n    tb1 = Math.round(lerp(tf_,tt,frac)*10)/10;\n  } else if(tb1Mode === 'mkr' && !isNaN(bf_) && !isNaN(bt)) {\n    const brutto = lerp(bf_,bt,frac);\n    tb1 = (oms && oms > 0) ? Math.round((brutto / oms) * 1000) / 10 : null;\n  }\n  // tb1Mode === 'skip' \u2192 tb1 f\u00f6rblir null\n\n  return { oms, tb1, kassa };\n}\n\nfunction bulkPreview() {\n  const f = parseInt(document.getElementById('bk-from').value)||0;\n  const t = parseInt(document.getElementById('bk-to').value)||0;\n\n  if(f>=1&&f<=52) document.getElementById('bk-from-hint').textContent = weekLabel(f);\n  if(t>=1&&t<=52) document.getElementById('bk-to-hint').textContent   = weekLabel(t);\n\n  const prev = document.getElementById('bulkPreviewTxt');\n  if(!f||!t||f>t||f<1||t>52){ prev.textContent='Fyll i \"Fr\u00e5n vecka\" och \"Till vecka\" ovan (1\u201352, fr\u00e5n m\u00e5ste vara \u2264 till).'; return; }\n\n  const n = t-f+1;\n  const lines = [];\n  const showWeeks = n<=6 ? Array.from({length:n},(_,i)=>f+i) : [f, f+1, '\u2026', t-1, t];\n\n  for(const w of showWeeks) {\n    if(w==='\u2026'){ lines.push('<em style=\"color:var(--muted)\">\u2026</em>'); continue; }\n    const r = bulkCalcRow(w,f,t);\n    const omsTxt   = r.oms   != null ? r.oms.toFixed(2)+' Mkr'   : '\u2013';\n    const tb1Txt   = r.tb1   != null ? r.tb1.toFixed(1)+'%'      : '\u2013';\n    const kassaTxt = r.kassa != null ? r.kassa+' tkr'             : '\u2013';\n    lines.push(`<strong>V${w}</strong> ${weekLabel(w)}: oms <b>${omsTxt}</b> \u00b7 TB1 <b>${tb1Txt}</b> \u00b7 kassa <b>${kassaTxt}</b>`);\n  }\n  prev.innerHTML = `<span style=\"color:var(--blue);font-weight:700\">${n} veckor</span> &nbsp;\u00b7&nbsp; ${lines.join(' &nbsp;|&nbsp; ')}`;\n}\n\nfunction saveBulk() {\n  const f   = parseInt(document.getElementById('bk-from').value);\n  const t   = parseInt(document.getElementById('bk-to').value);\n  const kval= document.getElementById('bk-kval').value.trim();\n  const ow  = document.getElementById('bk-overwrite').value === 'overwrite';\n\n  if(!f||!t||f>t||f<1||t>52){ alert('Fyll i \"Fr\u00e5n vecka\" och \"Till vecka\" (1\u201352, fr\u00e5n \u2264 till).'); return; }\n\n  let added=0, skipped=0;\n  for(let w=f;w<=t;w++){\n    const existing=DATA.findIndex(d=>d.vecka===w);\n    if(existing>=0&&!ow){ skipped++; continue; }\n    const r = bulkCalcRow(w,f,t);\n    const row = {\n      vecka: w,\n      datum: weekDate(w),\n      oms:   r.oms   != null ? r.oms   : '',\n      tb1:   r.tb1   != null ? r.tb1   : '',\n      kassa: r.kassa != null ? r.kassa : '',\n      kval\n    };\n    if(existing>=0) DATA[existing]=row; else DATA.push(row);\n    added++;\n  }\n  saveData(DATA);\n  const msg=document.getElementById('bulkSavedMsg');\n  msg.textContent=`${added} veckor sparade${skipped?', '+skipped+' hoppades \u00f6ver':''}`;\n  msg.classList.add('show');\n  setTimeout(()=>msg.classList.remove('show'),3000);\n  render();\n}\n\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// ENSTAKA VECKA\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\nfunction openSingleModal() {\n  const sorted=[...DATA].sort((a,b)=>a.vecka-b.vecka);\n  const last=sorted.length?sorted[sorted.length-1].vecka:0;\n  const fyW=currentFYWeek();\n  const sug=Math.min(52,Math.max(last+1,fyW));\n  document.getElementById('inp-vecka').value=sug;\n  document.getElementById('inp-datum').value=weekDate(sug);\n  ['inp-oms','inp-tb1','inp-kassa','inp-kval'].forEach(id=>document.getElementById(id).value='');\n  updateVeckaHint();\n  document.getElementById('modalOverlay').classList.add('open');\n  setTimeout(()=>document.getElementById('inp-oms').focus(),100);\n}\n\nfunction updateVeckaHint() {\n  const v=parseInt(document.getElementById('inp-vecka').value);\n  const el=document.getElementById('vecka-hint');\n  if(v>=1&&v<=52){\n    el.textContent=`V${v} = ${weekLabel(v)}`;\n    document.getElementById('inp-datum').value=weekDate(v);\n  } else {\n    el.textContent='V1 = 3 nov 2025 \u00b7 V52 = 26 okt 2026';\n  }\n}\n\nfunction saveSingleWeek() {\n  const v=parseInt(document.getElementById('inp-vecka').value);\n  if(!v||v<1||v>52){ alert('Ange vecka 1\u201352.'); return; }\n  const row={\n    vecka:v,\n    datum:document.getElementById('inp-datum').value,\n    oms:  document.getElementById('inp-oms').value   !==''?parseFloat(document.getElementById('inp-oms').value)  :'',\n    tb1:  document.getElementById('inp-tb1').value   !==''?parseFloat(document.getElementById('inp-tb1').value)  :'',\n    kassa:document.getElementById('inp-kassa').value !==''?parseFloat(document.getElementById('inp-kassa').value):'',\n    kval: document.getElementById('inp-kval').value.trim()\n  };\n  const idx=DATA.findIndex(d=>d.vecka===v);\n  if(idx>=0) DATA[idx]=row; else DATA.push(row);\n  saveData(DATA);\n  closeModal();\n  render();\n}\n\nfunction closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }\n\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// EXPORT / IMPORT\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\n// PDF \u2014 utskriftsv\u00e4nlig rapport\nfunction exportPDF() {\n  window.print();\n}\n\n// CSV \u2014 \u00f6ppnas direkt i Excel\nfunction exportCSV() {\n  const sorted = [...DATA].sort((a,b)=>a.vecka-b.vecka);\n  const rows = [['Vecka','Datum','Oms\u00e4ttning ack. (Mkr)','TB1 (%)','Kassafl\u00f6de (tkr)','Budget oms (Mkr)','Budget TB1 (%)','Budget kassa (tkr)','Kvalitet']];\n  sorted.forEach(d=>{\n    const b = getBudgetForWeek(d.vecka);\n    rows.push([d.vecka, d.datum, d.oms, d.tb1, d.kassa, b.oms, b.tb1, b.kassa, d.kval||'']);\n  });\n  const csv = rows.map(r=>r.map(v=>'\"'+(v!=null?v:'')+'\"').join(';')).join('\\r\\n');\n  const bom  = '\\uFEFF'; // BOM f\u00f6r Excel-kompatibilitet (svenska tecken)\n  const blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8'});\n  const a=document.createElement('a');\n  a.href=URL.createObjectURL(blob);\n  a.download='RM_KPI_'+new Date().toISOString().slice(0,10)+'.csv';\n  a.click();\n}\n\n// Backup-meny (JSON)\nfunction showBackupMenu() {\n  const m=document.getElementById('backupMenu');\n  m.classList.toggle('open');\n  // St\u00e4ng vid klick utanf\u00f6r\n  const close=e=>{ if(!m.contains(e.target)&&e.target.getAttribute('onclick')!=='showBackupMenu()'){ m.classList.remove('open'); document.removeEventListener('click',close); }};\n  setTimeout(()=>document.addEventListener('click',close),0);\n}\n\nfunction exportData() {\n  const blob=new Blob([JSON.stringify({budget:BUDGET,data:DATA,exported:new Date().toISOString()},null,2)],{type:'application/json'});\n  const a=document.createElement('a');\n  a.href=URL.createObjectURL(blob);\n  a.download='RM_KPI_backup_'+new Date().toISOString().slice(0,10)+'.json';\n  a.click();\n  document.getElementById('backupMenu').classList.remove('open');\n}\n\nfunction importData() {\n  const inp=document.createElement('input');\n  inp.type='file'; inp.accept='.json';\n  inp.onchange=e=>{\n    const f=e.target.files[0]; if(!f)return;\n    const r=new FileReader();\n    r.onload=ev=>{\n      try{\n        const p=JSON.parse(ev.target.result);\n        if(p.data)  { DATA=p.data; saveData(DATA); }\n        if(p.budget){ BUDGET=p.budget; store.set(KEY_BUDGET,JSON.stringify(BUDGET)); }\n        render();\n        alert('\u00c5terst\u00e4lld \u2014 '+DATA.length+' veckor inl\u00e4sta.');\n      }catch(err){ alert('Kunde inte l\u00e4sa filen.'); }\n    };\n    r.readAsText(f);\n  };\n  inp.click();\n  document.getElementById('backupMenu').classList.remove('open');\n}\n\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// INIT\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\ndocument.getElementById('modalOverlay').addEventListener('click',e=>{\n  if(e.target===document.getElementById('modalOverlay')) closeModal();\n});\ndocument.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });\n\nrender();\n</script>\n</body>\n</html>\n
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════════════
+
+// PDF — utskriftsvänlig rapport
+function exportPDF() {
+  window.print();
+}
+
+// CSV — öppnas direkt i Excel
+function exportCSV() {
+  const sorted = [...DATA].sort((a,b)=>a.vecka-b.vecka);
+  const rows = [['Vecka','Datum','Omsättning ack. (Mkr)','TB1 (%)','Kassaflöde (tkr)','Budget oms (Mkr)",'Budget TB1 (%)','Budget kassa (tkr)','Kvalitet']];
+  sorted.forEach(d=>{
+    const b = getBudgetForWeek(d.vecka);
+    rows.push([d.vecka, d.datum, d.oms, d.tb1, d.kassa, b.oms, b.tb1, b.kassa, d.kval||'']);
+  });
+  const csv = rows.map(r=>r.map(v=>'"'+(v!=null?v:'')+'"').join(';')).join('\r\n');
+  const bom  = '\uFEFF'; // BOM för Excel-kompatibilitet (svenska tecken)
+  const blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='RM_KPI_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// Backup-meny (JSON)
+function showBackupMenu() {
+  const m=document.getElementById('backupMenu');
+  m.classList.toggle('open');
+  // Stäng vid klick utanför
+  const close=e=>{ if(!m.contains(e.target)&&e.target.getAttribute('onclick')!=='showBackupMenu()'){ m.classList.remove('open'); document.removeEventListener('click',close); }};
+  setTimeout(()=>document.addEventListener('click',close),0);
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify({budget:BUDGET,data:DATA,exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='RM_KPI_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  document.getElementById('backupMenu').classList.remove('open');
+}
+
+function importData() {
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.json';
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const p=JSON.parse(ev.target.result);
+        if(p.data)  { DATA=p.data; saveData(DATA); }
+        if(p.budget){ BUDGET=p.budget; store.set(KEY_BUDGET,JSON.stringify(BUDGET)); }
+        render();
+        alert('Återställd — '+DATA.length+' veckor inlästa.');
+      }catch(err){ alert('Kunde inte läsa filen.'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+  document.getElementById('backupMenu').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('modalOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('modalOverlay')) closeModal();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+render();
+</script>
+</body>
+</html>
