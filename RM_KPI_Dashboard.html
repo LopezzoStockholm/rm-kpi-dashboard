@@ -456,6 +456,105 @@
             </div>
         </div>
 
+        <!-- Orderstock & Pipeline -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Orderstock -->
+            <div class="card card-top-border" style="border-top-color: #A371F7;">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-sm font-semibold text-[#8B949E]">Orderstock</label>
+                    <button class="text-xs text-[#1F6FEB] hover:underline" onclick="openPipelineModal()">Hantera</button>
+                </div>
+                <div class="mb-1">
+                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="orderstockValue">0</span>
+                    <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
+                </div>
+                <div class="text-sm text-[#8B949E]" id="orderstockMonths">0 månaders täckning</div>
+                <div class="text-xs text-[#484F58] mt-2">Kontrakterat arbete kvar att leverera</div>
+            </div>
+
+            <!-- Offerter ute -->
+            <div class="card card-top-border" style="border-top-color: #D2A8FF;">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-sm font-semibold text-[#8B949E]">Offerter ute</label>
+                    <span class="text-xs text-[#8B949E]" id="pipelineCount">0 st</span>
+                </div>
+                <div class="mb-1">
+                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="pipelineValue">0</span>
+                    <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
+                </div>
+                <div class="text-sm text-[#8B949E]" id="pipelineHitrate">Hit rate: 0%</div>
+                <div class="text-xs text-[#484F58] mt-2">Vägt värde: <span id="pipelineWeighted">0</span> Mkr</div>
+            </div>
+
+            <!-- Fakturerat vs inbetalt -->
+            <div class="card card-top-border" style="border-top-color: #F85149;">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-sm font-semibold text-[#8B949E]">Utestående fordringar</label>
+                </div>
+                <div class="mb-1">
+                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="receivablesValue">0</span>
+                    <span class="text-lg text-[#8B949E] ml-1">tkr</span>
+                </div>
+                <div class="text-sm" id="receivablesAge">
+                    <span class="text-[#3FB950]" id="recv0to30">0 tkr 0-30d</span>
+                    <span class="text-[#F0B429] ml-2" id="recv30to60">0 tkr 30-60d</span>
+                    <span class="text-[#F85149] ml-2" id="recv60plus">0 tkr >60d</span>
+                </div>
+                <div class="text-xs text-[#484F58] mt-2">Fakturerat ej inbetalt</div>
+            </div>
+        </div>
+
+        <!-- Kassaflödesprognos 8 veckor -->
+        <div class="card mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-[#F0F6FC]">Kassaflödesprognos 8 veckor</h2>
+                <button class="btn-primary text-xs" onclick="openCashflowModal()">Uppdatera prognos</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vecka</th>
+                            <th>Kassa IB</th>
+                            <th>Förväntad inbetalning</th>
+                            <th>Frisläppta UE-betalningar</th>
+                            <th>Övrigt ut</th>
+                            <th>Netto</th>
+                            <th>Kassa UB</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cashflowTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3 text-xs text-[#484F58]">Regel: UE betalas inte förrän kund har betalat. Parkerade fakturor visas nedan.</div>
+        </div>
+
+        <!-- Parkerade leverantörsfakturor -->
+        <div class="card mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-[#F0F6FC]">Parkerade leverantörsfakturor</h2>
+                <button class="btn-primary text-xs" onclick="openParkedModal()">Lägg till</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Leverantör</th>
+                            <th>Fakturanr</th>
+                            <th>Belopp</th>
+                            <th>Kopplar till kund</th>
+                            <th>Förfaller</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parkedTableBody">
+                        <tr><td colspan="6" class="text-center text-[#484F58]">Inga parkerade fakturor</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Charts -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="card">
@@ -634,10 +733,85 @@
         </div>
     </div>
 
+    <!-- Pipeline Modal -->
+    <div id="pipelineModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-[#F0F6FC] mb-4">Orderstock & Pipeline</h3>
+            <div id="pipelineItems"></div>
+            <button class="btn-secondary text-xs mt-2 mb-4" onclick="addPipelineRow()">+ Lägg till rad</button>
+            <div class="divider"></div>
+            <div class="flex gap-4">
+                <button class="btn-primary flex-1" onclick="savePipeline()">Spara</button>
+                <button class="btn-secondary flex-1" onclick="closePipelineModal()">Avbryt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cashflow Forecast Modal -->
+    <div id="cashflowModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-[#F0F6FC] mb-4">Kassaflödesprognos</h3>
+            <div class="form-group">
+                <label class="form-label">Kassa idag (tkr)</label>
+                <input type="number" id="cfStartKassa" class="form-input" step="10" value="147">
+            </div>
+            <div id="cashflowRows"></div>
+            <div class="divider"></div>
+            <div class="flex gap-4">
+                <button class="btn-primary flex-1" onclick="saveCashflow()">Spara</button>
+                <button class="btn-secondary flex-1" onclick="closeCashflowModal()">Avbryt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parked Invoices Modal -->
+    <div id="parkedModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-[#F0F6FC] mb-4">Parkerad leverantörsfaktura</h3>
+            <div class="form-group">
+                <label class="form-label">Leverantör</label>
+                <input type="text" id="parkedSupplier" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fakturanr</label>
+                <input type="text" id="parkedInvNo" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Belopp (tkr)</label>
+                <input type="number" id="parkedAmount" class="form-input" step="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kopplar till kund/projekt</label>
+                <input type="text" id="parkedCustomer" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Förfallodatum</label>
+                <input type="date" id="parkedDue" class="form-input">
+            </div>
+            <div class="divider"></div>
+            <div class="flex gap-4">
+                <button class="btn-primary flex-1" onclick="saveParked()">Spara</button>
+                <button class="btn-secondary flex-1" onclick="closeParkedModal()">Avbryt</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ========== STATE & INITIALIZATION ==========
+        // API-READY: Datastrukturerna mappar 1:1 till Next Project API + Fortnox API
+        // PIPELINE  → Next: GET /project/ (type=order) + GET /workorder/ (offers)
+        // CASHFLOW  → Fortnox: GET /invoices (kundfakturor) + GET /supplierpayments
+        // PARKED    → Fortnox: GET /supplierinvoices (status=unpaid, koppla mot kundfaktura)
+        // DATA      → Fortnox: GET /accounts (ack. omsättning) + Next: GET /forecast/
+        // BUDGET    → Next: GET /budget/ + /budget_revision/
+        // Vid API-integration: ersätt localStorage-anrop med fetch() mot serverless backend
+
         let DATA = [];
         let BUDGET = [];
+        let PIPELINE = []; // {name, customer, value, type:'order'|'offer', hitrate, status}
+        let CASHFLOW = []; // {week, inPayment, uePayment, otherOut}
+        let PARKED = [];   // {supplier, invNo, amount, customer, due, status:'parkerad'|'frislappt'}
+        let CF_START_KASSA = 147;
         let charts = {};
 
         const WEEK_START_DATE = new Date(2025, 10, 3); // 3 nov 2025
@@ -695,6 +869,13 @@
                 } else {
                     BUDGET = generateDefaultBudget();
                 }
+                // Ladda nya datakällor
+                const pipeStr = localStorage.getItem('rm_kpi_v4_pipeline');
+                if (pipeStr) PIPELINE = JSON.parse(pipeStr);
+                const cfStr = localStorage.getItem('rm_kpi_v4_cashflow');
+                if (cfStr) { CASHFLOW = JSON.parse(cfStr).rows || []; CF_START_KASSA = JSON.parse(cfStr).startKassa || 147; }
+                const parkedStr = localStorage.getItem('rm_kpi_v4_parked');
+                if (parkedStr) PARKED = JSON.parse(parkedStr);
             } catch (e) {
                 console.error('Load error:', e);
                 DATA = generateSeedData();
@@ -1249,8 +1430,191 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             renderDashboard();
+            updatePipelineCards();
+            updateCashflowTable();
+            updateParkedTable();
+            updateReceivablesCard();
             document.getElementById('modalWeek').addEventListener('change', updateModalDate);
         });
+
+        // ========== PIPELINE & ORDERSTOCK ==========
+        function openPipelineModal() {
+            renderPipelineModal();
+            document.getElementById('pipelineModal').classList.add('active');
+        }
+        function closePipelineModal() { document.getElementById('pipelineModal').classList.remove('active'); }
+
+        function renderPipelineModal() {
+            const c = document.getElementById('pipelineItems');
+            c.innerHTML = '';
+            PIPELINE.forEach((p, i) => {
+                c.innerHTML += `
+                <div class="p-3 mb-2 rounded" style="background:#161B22;border:1px solid #30363D;">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input class="form-input text-xs" placeholder="Projekt/kund" value="${p.name||''}" onchange="PIPELINE[${i}].name=this.value">
+                        <select class="form-input text-xs" onchange="PIPELINE[${i}].type=this.value">
+                            <option value="order" ${p.type==='order'?'selected':''}>Orderstock</option>
+                            <option value="offer" ${p.type==='offer'?'selected':''}>Offert</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><label class="text-[10px] text-[#8B949E]">Värde Mkr</label><input type="number" class="form-input text-xs" step="0.1" value="${p.value||0}" onchange="PIPELINE[${i}].value=+this.value"></div>
+                        <div><label class="text-[10px] text-[#8B949E]">Sannolikhet %</label><input type="number" class="form-input text-xs" min="0" max="100" value="${p.hitrate||0}" onchange="PIPELINE[${i}].hitrate=+this.value"></div>
+                        <div class="flex items-end"><button class="text-[#F85149] text-xs" onclick="PIPELINE.splice(${i},1);renderPipelineModal()">Ta bort</button></div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function addPipelineRow() {
+            PIPELINE.push({ name: '', customer: '', value: 0, type: 'offer', hitrate: 50, status: 'active' });
+            renderPipelineModal();
+        }
+
+        function savePipeline() {
+            localStorage.setItem('rm_kpi_v4_pipeline', JSON.stringify(PIPELINE));
+            closePipelineModal();
+            updatePipelineCards();
+        }
+
+        function updatePipelineCards() {
+            const orders = PIPELINE.filter(p => p.type === 'order');
+            const offers = PIPELINE.filter(p => p.type === 'offer');
+            const orderstockMkr = orders.reduce((s, p) => s + (p.value || 0), 0);
+            const monthlyCapacity = 1.7; // Mkr/mån budgeterat
+            const months = monthlyCapacity > 0 ? (orderstockMkr / monthlyCapacity).toFixed(1) : 0;
+            document.getElementById('orderstockValue').textContent = orderstockMkr.toFixed(1);
+            document.getElementById('orderstockMonths').textContent = `${months} månaders täckning`;
+
+            const offerTotal = offers.reduce((s, p) => s + (p.value || 0), 0);
+            const weightedTotal = offers.reduce((s, p) => s + (p.value || 0) * (p.hitrate || 0) / 100, 0);
+            const avgHitrate = offers.length > 0 ? (offers.reduce((s, p) => s + (p.hitrate || 0), 0) / offers.length).toFixed(0) : 0;
+            document.getElementById('pipelineValue').textContent = offerTotal.toFixed(1);
+            document.getElementById('pipelineCount').textContent = offers.length + ' st';
+            document.getElementById('pipelineHitrate').textContent = `Hit rate snitt: ${avgHitrate}%`;
+            document.getElementById('pipelineWeighted').textContent = weightedTotal.toFixed(1);
+        }
+
+        // ========== KASSAFLÖDESPROGNOS ==========
+        function openCashflowModal() {
+            document.getElementById('cfStartKassa').value = CF_START_KASSA;
+            renderCashflowModal();
+            document.getElementById('cashflowModal').classList.add('active');
+        }
+        function closeCashflowModal() { document.getElementById('cashflowModal').classList.remove('active'); }
+
+        function renderCashflowModal() {
+            const c = document.getElementById('cashflowRows');
+            // Beräkna nuvarande vecka
+            const now = new Date();
+            const diffDays = Math.floor((now - WEEK_START_DATE) / (1000 * 60 * 60 * 24));
+            const currentWeek = Math.max(1, Math.floor(diffDays / 7) + 1);
+
+            if (CASHFLOW.length === 0) {
+                for (let i = 0; i < 8; i++) {
+                    CASHFLOW.push({ week: currentWeek + i, inPayment: 0, uePayment: 0, otherOut: 0 });
+                }
+            }
+            c.innerHTML = '<div class="grid grid-cols-4 gap-1 mb-1 text-[10px] text-[#8B949E]"><span>Vecka</span><span>Inbetalning tkr</span><span>UE-bet tkr</span><span>Övrigt ut tkr</span></div>';
+            CASHFLOW.forEach((r, i) => {
+                c.innerHTML += `<div class="grid grid-cols-4 gap-1 mb-1">
+                    <input type="number" class="form-input text-xs" value="${r.week}" onchange="CASHFLOW[${i}].week=+this.value" style="width:100%">
+                    <input type="number" class="form-input text-xs" step="10" value="${r.inPayment}" onchange="CASHFLOW[${i}].inPayment=+this.value" style="width:100%">
+                    <input type="number" class="form-input text-xs" step="10" value="${r.uePayment}" onchange="CASHFLOW[${i}].uePayment=+this.value" style="width:100%">
+                    <input type="number" class="form-input text-xs" step="10" value="${r.otherOut}" onchange="CASHFLOW[${i}].otherOut=+this.value" style="width:100%">
+                </div>`;
+            });
+        }
+
+        function saveCashflow() {
+            CF_START_KASSA = parseInt(document.getElementById('cfStartKassa').value) || 147;
+            localStorage.setItem('rm_kpi_v4_cashflow', JSON.stringify({ startKassa: CF_START_KASSA, rows: CASHFLOW }));
+            closeCashflowModal();
+            updateCashflowTable();
+        }
+
+        function updateCashflowTable() {
+            const tbody = document.getElementById('cashflowTableBody');
+            if (CASHFLOW.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-[#484F58]">Ingen prognos inmatad</td></tr>'; return; }
+            let kassa = CF_START_KASSA;
+            tbody.innerHTML = '';
+            CASHFLOW.forEach(r => {
+                const netto = (r.inPayment || 0) - (r.uePayment || 0) - (r.otherOut || 0);
+                const kassaUB = kassa + netto;
+                const nettoClass = netto >= 0 ? 'text-positive' : 'text-negative';
+                const ubClass = kassaUB >= 0 ? '' : 'text-negative font-bold';
+                tbody.innerHTML += `<tr>
+                    <td>V${r.week}</td>
+                    <td>${kassa}</td>
+                    <td class="text-positive">+${r.inPayment || 0}</td>
+                    <td class="text-negative">-${r.uePayment || 0}</td>
+                    <td class="text-negative">-${r.otherOut || 0}</td>
+                    <td class="${nettoClass}">${netto >= 0 ? '+' : ''}${netto}</td>
+                    <td class="${ubClass}">${kassaUB}</td>
+                </tr>`;
+                kassa = kassaUB;
+            });
+        }
+
+        // ========== PARKERADE LEVERANTÖRSFAKTUROR ==========
+        function openParkedModal() {
+            document.getElementById('parkedSupplier').value = '';
+            document.getElementById('parkedInvNo').value = '';
+            document.getElementById('parkedAmount').value = '';
+            document.getElementById('parkedCustomer').value = '';
+            document.getElementById('parkedDue').value = '';
+            document.getElementById('parkedModal').classList.add('active');
+        }
+        function closeParkedModal() { document.getElementById('parkedModal').classList.remove('active'); }
+
+        function saveParked() {
+            const p = {
+                supplier: document.getElementById('parkedSupplier').value,
+                invNo: document.getElementById('parkedInvNo').value,
+                amount: parseInt(document.getElementById('parkedAmount').value) || 0,
+                customer: document.getElementById('parkedCustomer').value,
+                due: document.getElementById('parkedDue').value,
+                status: 'parkerad'
+            };
+            if (p.supplier) {
+                PARKED.push(p);
+                localStorage.setItem('rm_kpi_v4_parked', JSON.stringify(PARKED));
+            }
+            closeParkedModal();
+            updateParkedTable();
+            updateReceivablesCard();
+        }
+
+        function updateParkedTable() {
+            const tbody = document.getElementById('parkedTableBody');
+            if (PARKED.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-[#484F58]">Inga parkerade fakturor</td></tr>'; return; }
+            tbody.innerHTML = '';
+            PARKED.forEach((p, i) => {
+                const statusClass = p.status === 'parkerad' ? 'text-[#F0B429]' : 'text-[#3FB950]';
+                const statusBtn = p.status === 'parkerad'
+                    ? `<button class="text-xs text-[#3FB950]" onclick="releaseParked(${i})">Frisläpp</button>`
+                    : `<span class="text-xs text-[#3FB950]">Frisläppt</span>`;
+                tbody.innerHTML += `<tr>
+                    <td>${p.supplier}</td>
+                    <td>${p.invNo}</td>
+                    <td>${p.amount} tkr</td>
+                    <td>${p.customer}</td>
+                    <td>${p.due}</td>
+                    <td class="${statusClass}">${statusBtn}</td>
+                </tr>`;
+            });
+        }
+
+        function releaseParked(idx) {
+            PARKED[idx].status = 'frislappt';
+            localStorage.setItem('rm_kpi_v4_parked', JSON.stringify(PARKED));
+            updateParkedTable();
+        }
+
+        function updateReceivablesCard() {
+            const totalParked = PARKED.filter(p => p.status === 'parkerad').reduce((s, p) => s + p.amount, 0);
+            document.getElementById('receivablesValue').textContent = totalParked;
+        }
 
         // ========== EXPORT FUNCTIONS ==========
         function exportCSV() {
