@@ -907,7 +907,8 @@
 
             // Omsättning — senaste veckans ackumulerade värde (oms är redan kumulativ)
             const sorted = [...data].sort((a, b) => a.week - b.week);
-            const latest = sorted[sorted.length - 1];
+            // Hitta senaste vecka med faktisk data (oms > 0)
+            const latest = sorted.slice().reverse().find(d => d.oms > 0) || sorted[sorted.length - 1];
             const maxWeek = latest.week;
             const latOms = latest.oms;
             const budgetOms = getBudgetValue(maxWeek, 'oms');
