@@ -343,17 +343,24 @@
                     <label class="text-sm font-semibold text-[#8B949E]">Omsättning ack.</label>
                     <span class="text-xs text-[#8B949E]" id="oms-week-info">V1-V26</span>
                 </div>
-                <div class="mb-2">
+                <div class="mb-1">
                     <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="omsValue">0</span>
                     <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
                 </div>
-                <div class="text-xs text-[#8B949E] mb-4" id="oms-sub">Budget: 0 Mkr</div>
-                <div class="flex justify-between items-center pt-4 border-t border-[#30363D]">
-                    <span class="text-xs text-[#8B949E]">Differens mot budget</span>
-                    <span class="flex items-center" id="oms-rag">
+                <div class="flex justify-between items-center text-sm mb-2">
+                    <span class="text-[#F0B429] font-semibold" id="oms-sub">Budget: 0 Mkr</span>
+                    <span class="flex items-center gap-1" id="oms-rag">
                         <span class="traffic-light traffic-green"></span>
-                        <span id="oms-delta">+0</span>
+                        <span class="font-bold" id="oms-delta">+0</span>
                     </span>
+                </div>
+                <div class="w-full h-2 bg-[#30363D] rounded-full overflow-hidden mb-1">
+                    <div class="h-full rounded-full transition-all duration-500" id="oms-bar" style="width:0%;background:#1F6FEB;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-[#8B949E]">
+                    <span>0</span>
+                    <span id="oms-bar-label">0%</span>
+                    <span id="oms-bar-target">Mål: 0</span>
                 </div>
             </div>
 
@@ -363,17 +370,24 @@
                     <label class="text-sm font-semibold text-[#8B949E]">TB1 %</label>
                     <span class="text-xs text-[#8B949E]" id="tb1-week-info">V1-V26</span>
                 </div>
-                <div class="mb-2">
+                <div class="mb-1">
                     <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="tb1Value">0</span>
                     <span class="text-lg text-[#8B949E] ml-1">%</span>
                 </div>
-                <div class="text-xs text-[#8B949E] mb-4" id="tb1-sub">Budget: 0%</div>
-                <div class="flex justify-between items-center pt-4 border-t border-[#30363D]">
-                    <span class="text-xs text-[#8B949E]">Differens mot budget</span>
-                    <span class="flex items-center" id="tb1-rag">
+                <div class="flex justify-between items-center text-sm mb-2">
+                    <span class="text-[#F0B429] font-semibold" id="tb1-sub">Budget: 0%</span>
+                    <span class="flex items-center gap-1" id="tb1-rag">
                         <span class="traffic-light traffic-green"></span>
-                        <span id="tb1-delta">+0</span>
+                        <span class="font-bold" id="tb1-delta">+0</span>
                     </span>
+                </div>
+                <div class="w-full h-2 bg-[#30363D] rounded-full overflow-hidden mb-1">
+                    <div class="h-full rounded-full transition-all duration-500" id="tb1-bar" style="width:0%;background:#3FB950;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-[#8B949E]">
+                    <span>0%</span>
+                    <span id="tb1-bar-label">0%</span>
+                    <span id="tb1-bar-target">Mål: 0%</span>
                 </div>
             </div>
 
@@ -383,17 +397,24 @@
                     <label class="text-sm font-semibold text-[#8B949E]">Kassaflöde</label>
                     <span class="text-xs text-[#8B949E]" id="kassa-week-info">V1-V26</span>
                 </div>
-                <div class="mb-2">
+                <div class="mb-1">
                     <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="kassaValue">0</span>
                     <span class="text-lg text-[#8B949E] ml-1">tkr/mån</span>
                 </div>
-                <div class="text-xs text-[#8B949E] mb-4" id="kassa-sub">Budget: 0 tkr/mån</div>
-                <div class="flex justify-between items-center pt-4 border-t border-[#30363D]">
-                    <span class="text-xs text-[#8B949E]">Differens mot budget</span>
-                    <span class="flex items-center" id="kassa-rag">
+                <div class="flex justify-between items-center text-sm mb-2">
+                    <span class="text-[#F0B429] font-semibold" id="kassa-sub">Budget: 0 tkr/mån</span>
+                    <span class="flex items-center gap-1" id="kassa-rag">
                         <span class="traffic-light traffic-green"></span>
-                        <span id="kassa-delta">+0</span>
+                        <span class="font-bold" id="kassa-delta">+0</span>
                     </span>
+                </div>
+                <div class="w-full h-2 bg-[#30363D] rounded-full overflow-hidden mb-1">
+                    <div class="h-full rounded-full transition-all duration-500" id="kassa-bar" style="width:0%;background:#F0B429;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-[#8B949E]">
+                    <span>0</span>
+                    <span id="kassa-bar-label">0%</span>
+                    <span id="kassa-bar-target">Mål: 0</span>
                 </div>
             </div>
         </div>
@@ -412,7 +433,7 @@
                         <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="ekValue">0</span>
                         <span class="text-lg text-[#8B949E]">%</span>
                     </div>
-                    <div class="text-sm text-[#8B949E]" id="ek-count">0 / 0 genomförda</div>
+                    <div class="text-sm text-[#8B949E]" id="ek-count">0 / 0 egenkontroller</div>
                 </div>
                 <div class="text-xs text-[#8B949E]">Mata in via + En vecka</div>
             </div>
@@ -584,11 +605,11 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Nya planerade checkpunkter</label>
+                    <label class="form-label">Nya planerade egenkontroller</label>
                     <input type="number" id="modalEKPlan" class="form-input" min="0" value="0">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Genomförda checkpunkter</label>
+                    <label class="form-label">Genomförda egenkontroller</label>
                     <input type="number" id="modalEKGenomford" class="form-input" min="0" value="0">
                 </div>
             </div>
@@ -922,6 +943,14 @@
             const omsRag = document.getElementById('oms-rag').querySelector('.traffic-light');
             omsRag.className = 'traffic-light ' + (omsDelta >= 0 ? 'traffic-green' : 'traffic-red');
 
+            // Omsättning progressbar — % av årsmål
+            const omsYearTarget = BUDGET.length ? BUDGET[BUDGET.length - 1].omsEnd || 50 : 50;
+            const omsPct = Math.min(100, Math.round(latOms / omsYearTarget * 100));
+            document.getElementById('oms-bar').style.width = omsPct + '%';
+            document.getElementById('oms-bar').style.background = omsDelta >= 0 ? '#1F6FEB' : '#F85149';
+            document.getElementById('oms-bar-label').textContent = omsPct + '% av årsmål';
+            document.getElementById('oms-bar-target').textContent = `Mål: ${omsYearTarget} Mkr`;
+
             // TB1 — senaste veckans värde
             const latTB1 = latest.tb1;
             const budgetTB1 = getBudgetValue(maxWeek, 'tb1');
@@ -935,6 +964,13 @@
             const tb1Rag = document.getElementById('tb1-rag').querySelector('.traffic-light');
             tb1Rag.className = 'traffic-light ' + (tb1Delta >= 0 ? 'traffic-green' : 'traffic-red');
 
+            // TB1 progressbar — % av budgetmål
+            const tb1Pct = budgetTB1 > 0 ? Math.min(100, Math.round(latTB1 / budgetTB1 * 100)) : 0;
+            document.getElementById('tb1-bar').style.width = tb1Pct + '%';
+            document.getElementById('tb1-bar').style.background = tb1Delta >= 0 ? '#3FB950' : '#F85149';
+            document.getElementById('tb1-bar-label').textContent = tb1Pct + '% av mål';
+            document.getElementById('tb1-bar-target').textContent = `Mål: ${budgetTB1.toFixed(0)}%`;
+
             // Kassaflöde — senaste veckans värde
             const latKassa = latest.kassa;
             const budgetKassa = getBudgetValue(maxWeek, 'kassa');
@@ -947,6 +983,13 @@
             document.getElementById('kassa-delta').textContent = (kassaDelta >= 0 ? '+' : '') + kassaDelta.toFixed(0);
             const kassaRag = document.getElementById('kassa-rag').querySelector('.traffic-light');
             kassaRag.className = 'traffic-light ' + (kassaDelta >= 0 ? 'traffic-green' : 'traffic-red');
+
+            // Kassaflöde progressbar
+            const kassaPct = budgetKassa > 0 ? Math.min(100, Math.round(latKassa / budgetKassa * 100)) : 0;
+            document.getElementById('kassa-bar').style.width = kassaPct + '%';
+            document.getElementById('kassa-bar').style.background = kassaDelta >= 0 ? '#F0B429' : '#F85149';
+            document.getElementById('kassa-bar-label').textContent = kassaPct + '% av mål';
+            document.getElementById('kassa-bar-target').textContent = `Mål: ${budgetKassa.toFixed(0)} tkr`;
         }
 
         function updateKMACards(data) {
@@ -956,7 +999,7 @@
             const ekPct = totalEKPlan > 0 ? (totalEKGenomford / totalEKPlan * 100) : 0;
             
             document.getElementById('ekValue').textContent = ekPct.toFixed(0);
-            document.getElementById('ek-count').textContent = `${totalEKGenomford} / ${totalEKPlan} genomförda`;
+            document.getElementById('ek-count').textContent = `${totalEKGenomford} / ${totalEKPlan} egenkontroller`;
             
             const ekLight = document.getElementById('ek-light');
             ekLight.className = 'traffic-light ' + (ekPct >= 95 ? 'traffic-green' : ekPct >= 80 ? 'traffic-yellow' : 'traffic-red');
