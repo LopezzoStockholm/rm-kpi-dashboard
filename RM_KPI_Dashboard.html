@@ -133,6 +133,35 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
 .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
 .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;}
 
+@media (max-width:768px){
+  body{padding:12px 8px;}
+  .header{flex-direction:column;align-items:flex-start;gap:12px;}
+  .header-left{gap:8px;}
+  .header-left img{height:56px!important;}
+  .header-left p{font-size:10px!important;}
+  .header-right{width:100%;flex-wrap:wrap!important;gap:6px;justify-content:flex-start;}
+  .header-right select,.header-right button{font-size:11px;padding:6px 10px;}
+  .header-right label{display:none;}
+  .kpi-row{grid-template-columns:repeat(2,1fr)!important;gap:10px;}
+  .kpi-row-kma{grid-template-columns:1fr!important;gap:10px;}
+  .kpi-card{padding:14px 16px;}
+  .kpi-value{font-size:24px;}
+  .kpi-label{font-size:9px;}
+  .chart-row{grid-template-columns:1fr!important;}
+  .chart-card{padding:14px 16px;}
+  .table-card{padding:12px;font-size:12px;}
+  .table-card table{font-size:11px;}
+  .table-card th,.table-card td{padding:6px 8px;}
+  .modal{padding:20px 16px;width:95vw;}
+  .form-grid{grid-template-columns:1fr!important;}
+  .side-panel{padding:14px 16px;}
+  .period-row{grid-template-columns:1fr 1fr!important;gap:6px;}
+  .bulk-grid{grid-template-columns:1fr 1fr!important;gap:8px;}
+}
+@media (max-width:480px){
+  .kpi-row{grid-template-columns:1fr!important;}
+  .header-right{gap:4px;}
+}
 @media print {
   body{background:#fff;color:#000;}
   .header-right,.side-panel,.alert-bar,.backup-menu,.modal-overlay{display:none!important;}
@@ -365,12 +394,12 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
   <div class="kpi-card" style="--accent:#4D9FFF">
     <div class="kpi-label">Egenkontroll <span class="kma-badge leading">Ledande</span></div>
     <div class="kpi-value empty" id="kpi-ek">–</div>
-    <div class="kpi-sub" id="kpi-ek-sub">Inga data — klicka Uppdatera KMA</div>
+    <div class="kpi-sub" id="kpi-ek-sub">Mata in via + En vecka</div>
     <div class="kpi-meta">
       <span class="kpi-budget">Mål: 100%</span>
       <span class="kpi-rag rag-gray" id="rag-ek">–</span>
     </div>
-    <button class="kma-update-btn" onclick="openKMAModal()">Uppdatera KMA</button>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Uppdateras via + En vecka</div>
   </div>
   <div class="kpi-card" style="--accent:#3FB950">
     <div class="kpi-label">Besiktningsutfall <span class="kma-badge lagging">Utfall</span></div>
@@ -380,7 +409,7 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
       <span class="kpi-budget">Mål: 100%</span>
       <span class="kpi-rag rag-gray" id="rag-bes">–</span>
     </div>
-    <button class="kma-update-btn" onclick="openKMAModal()">Uppdatera KMA</button>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Uppdateras via + En vecka</div>
   </div>
 </div>
 
@@ -411,7 +440,7 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
         <th>Omsättning</th><th>vs Budget</th>
         <th>TB1</th><th>vs Budget</th>
         <th>Kassaflöde</th><th>vs Budget</th>
-        <th style="text-align:left">Kvalitet</th>
+        <th>Egenkontroll</th><th>Besiktning</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -448,9 +477,28 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
         <label>Kassaflöde (tkr/mån)</label>
         <input type="number" id="inp-kassa" placeholder="t.ex. 480">
       </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;color:#4D9FFF;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">KMA — Egenkontroll (denna vecka)</div>
+      </div>
       <div class="form-row">
-        <label>Kvalitet</label>
-        <input type="text" id="inp-kval" placeholder="t.ex. Inga avvikelser">
+        <label>Nya planerade checkpunkter</label>
+        <input type="number" id="inp-ek-plan" min="0" placeholder="Nya projekt → deras checkpunkter">
+        <span class="hint">Lägg till när nya projekt startar</span>
+      </div>
+      <div class="form-row">
+        <label>Genomförda checkpunkter</label>
+        <input type="number" id="inp-ek-genomf" min="0" placeholder="Utförda denna vecka">
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;color:#3FB950;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">KMA — Besiktning (denna vecka)</div>
+      </div>
+      <div class="form-row">
+        <label>Nya slutbesiktningar</label>
+        <input type="number" id="inp-bes-tot" min="0" placeholder="Antal projekt besiktigade">
+      </div>
+      <div class="form-row">
+        <label>Godkända utan anmärkning</label>
+        <input type="number" id="inp-bes-ok" min="0" placeholder="Antal godkända">
       </div>
     </div>
     <div class="modal-actions">
@@ -460,48 +508,6 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
   </div>
 </div>
 
-<!-- KMA MODAL -->
-<div class="modal-overlay" id="kmaModal" onclick="if(event.target===this)closeKMAModal()" style="display:none">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div>
-        <div style="font-size:16px;font-weight:700;">KMA – Uppdatera</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Egenkontroll och besiktningsutfall</div>
-      </div>
-      <button class="btn-icon" onclick="closeKMAModal()">✕</button>
-    </div>
-    <div style="margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:700;color:#4D9FFF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Egenkontroll</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Genomförda checkpunkter</label>
-          <input type="number" id="inp-ek-genomf" min="0" placeholder="t.ex. 28">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Planerade checkpunkter</label>
-          <input type="number" id="inp-ek-plan" min="0" placeholder="t.ex. 32">
-        </div>
-      </div>
-    </div>
-    <div style="margin-bottom:20px;">
-      <div style="font-size:11px;font-weight:700;color:#3FB950;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Besiktningsutfall</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Godkända projekt</label>
-          <input type="number" id="inp-bes-ok" min="0" placeholder="t.ex. 7">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Totalt antal projekt</label>
-          <input type="number" id="inp-bes-tot" min="0" placeholder="t.ex. 8">
-        </div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeKMAModal()">Avbryt</button>
-      <button class="btn-primary" onclick="saveKMA()">Spara</button>
-    </div>
-  </div>
-</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
@@ -510,7 +516,6 @@ tbody tr:hover td{background:rgba(31,111,235,.05);}
 const FY_START   = new Date('2025-11-03');
 const KEY_DATA   = 'rm_kpi_v3_data';
 const KEY_BUDGET = 'rm_kpi_v3_budget';
-const KEY_KMA    = 'rm_kpi_v3_kma';
 
 const store = (() => {
   let mem={}, ok=false;
@@ -524,8 +529,6 @@ const store = (() => {
 // ═══════════════════════════════════════════════════════════════════
 // KMA — egenkontroll & besiktningsutfall
 // ═══════════════════════════════════════════════════════════════════
-let KMA = JSON.parse(store.get(KEY_KMA) || 'null') || {ekGenomd:0,ekPlan:0,besOk:0,besTot:0};
-
 function ragKMA(pct) {
   if(pct === null) return 'rag-gray';
   if(pct >= 95) return 'rag-green';
@@ -539,21 +542,33 @@ function ragLabelKMA(pct) {
   return 'Åtgärd!';
 }
 
+function sumKMA() {
+  let ekPlan=0, ekGenomd=0, besTot=0, besOk=0;
+  DATA.forEach(d => {
+    ekPlan   += (d.ekPlan||0);
+    ekGenomd += (d.ekGenomd||0);
+    besTot   += (d.besTot||0);
+    besOk    += (d.besOk||0);
+  });
+  return {ekPlan, ekGenomd, besTot, besOk};
+}
+
 function renderKMA() {
-  const ekPct  = KMA.ekPlan  > 0 ? Math.round(KMA.ekGenomd / KMA.ekPlan  * 100) : null;
-  const besPct = KMA.besTot  > 0 ? Math.round(KMA.besOk    / KMA.besTot  * 100) : null;
+  const kma = sumKMA();
+  const ekPct  = kma.ekPlan  > 0 ? Math.round(kma.ekGenomd / kma.ekPlan  * 100) : null;
+  const besPct = kma.besTot  > 0 ? Math.round(kma.besOk    / kma.besTot  * 100) : null;
 
   const ekEl   = document.getElementById('kpi-ek');
   const ekRag  = document.getElementById('rag-ek');
   const ekSub  = document.getElementById('kpi-ek-sub');
   if(ekPct !== null) {
     ekEl.textContent  = ekPct + '%'; ekEl.className = 'kpi-value';
-    ekSub.textContent = KMA.ekGenomd + '/' + KMA.ekPlan + ' checkpunkter genomförda';
+    ekSub.textContent = kma.ekGenomd + ' av ' + kma.ekPlan + ' checkpunkter';
     ekRag.className   = 'kpi-rag ' + ragKMA(ekPct);
     ekRag.textContent = ragLabelKMA(ekPct);
   } else {
     ekEl.textContent  = '–'; ekEl.className = 'kpi-value empty';
-    ekSub.textContent = 'Inga data — klicka Uppdatera KMA';
+    ekSub.textContent = 'Mata in via + En vecka';
     ekRag.className   = 'kpi-rag rag-gray'; ekRag.textContent = '–';
   }
 
@@ -562,7 +577,7 @@ function renderKMA() {
   const besSub = document.getElementById('kpi-bes-sub');
   if(besPct !== null) {
     besEl.textContent  = besPct + '%'; besEl.className = 'kpi-value';
-    besSub.textContent = KMA.besOk + '/' + KMA.besTot + ' projekt godkända vid besiktning';
+    besSub.textContent = kma.besOk + ' av ' + kma.besTot + ' projekt';
     besRag.className   = 'kpi-rag ' + ragKMA(besPct);
     besRag.textContent = ragLabelKMA(besPct);
   } else {
@@ -570,26 +585,6 @@ function renderKMA() {
     besSub.textContent = 'Inga besiktningar ännu';
     besRag.className   = 'kpi-rag rag-gray'; besRag.textContent = '–';
   }
-}
-
-function openKMAModal() {
-  document.getElementById('inp-ek-genomf').value = KMA.ekGenomd || '';
-  document.getElementById('inp-ek-plan').value   = KMA.ekPlan   || '';
-  document.getElementById('inp-bes-ok').value    = KMA.besOk    || '';
-  document.getElementById('inp-bes-tot').value   = KMA.besTot   || '';
-  document.getElementById('kmaModal').style.display = 'flex';
-}
-function closeKMAModal() {
-  document.getElementById('kmaModal').style.display = 'none';
-}
-function saveKMA() {
-  KMA.ekGenomd = parseInt(document.getElementById('inp-ek-genomf').value) || 0;
-  KMA.ekPlan   = parseInt(document.getElementById('inp-ek-plan').value)   || 0;
-  KMA.besOk    = parseInt(document.getElementById('inp-bes-ok').value)    || 0;
-  KMA.besTot   = parseInt(document.getElementById('inp-bes-tot').value)   || 0;
-  store.set(KEY_KMA, JSON.stringify(KMA));
-  closeKMAModal();
-  renderKMA();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -828,7 +823,7 @@ function render() {
 function renderTable(rows) {
   const body=document.getElementById('tableBody');
   if(!rows.length){
-    body.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:28px">Inga veckor i valt fönster</td></tr>';
+    body.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:28px">Inga veckor i valt fönster</td></tr>';
     return;
   }
   const sorted=[...rows].sort((a,b)=>b.vecka-a.vecka);
@@ -848,7 +843,8 @@ function renderTable(rows) {
       <td class="${cls(dT)}">${fmt(dT)}${dT!=null?' %':''}</td>
       <td>${d.kassa!=null&&d.kassa!==''?d.kassa+' tkr':'–'}</td>
       <td class="${cls(dK)}">${fmt(dK)}${dK!=null?' tkr':''}</td>
-      <td style="text-align:left;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.kval||'–'}</td>
+      <td>${d.ekGenomd||d.ekPlan ? (d.ekGenomd||0)+'/'+(d.ekPlan||0) : '–'}</td>
+      <td>${d.besTot ? (d.besOk||0)+'/'+(d.besTot||0) : '–'}</td>
     </tr>`;
   }).join('');
 }
@@ -1072,7 +1068,7 @@ function openSingleModal() {
   const sug=Math.min(52,Math.max(last+1,fyW));
   document.getElementById('inp-vecka').value=sug;
   document.getElementById('inp-datum').value=weekDate(sug);
-  ['inp-oms','inp-tb1','inp-kassa','inp-kval'].forEach(id=>document.getElementById(id).value='');
+  ['inp-oms','inp-tb1','inp-kassa','inp-ek-plan','inp-ek-genomf','inp-bes-tot','inp-bes-ok'].forEach(id=>document.getElementById(id).value='');
   updateVeckaHint();
   document.getElementById('modalOverlay').classList.add('open');
   setTimeout(()=>document.getElementById('inp-oms').focus(),100);
@@ -1098,10 +1094,21 @@ function saveSingleWeek() {
     oms:  document.getElementById('inp-oms').value   !==''?parseFloat(document.getElementById('inp-oms').value)  :'',
     tb1:  document.getElementById('inp-tb1').value   !==''?parseFloat(document.getElementById('inp-tb1').value)  :'',
     kassa:document.getElementById('inp-kassa').value !==''?parseFloat(document.getElementById('inp-kassa').value):'',
-    kval: document.getElementById('inp-kval').value.trim()
+    ekPlan:  parseInt(document.getElementById('inp-ek-plan').value)||0,
+    ekGenomd:parseInt(document.getElementById('inp-ek-genomf').value)||0,
+    besTot:  parseInt(document.getElementById('inp-bes-tot').value)||0,
+    besOk:   parseInt(document.getElementById('inp-bes-ok').value)||0
   };
   const idx=DATA.findIndex(d=>d.vecka===v);
-  if(idx>=0) DATA[idx]=row; else DATA.push(row);
+  if(idx>=0) {
+    // Behåll gamla KMA-värden om inget nytt matats in
+    const old=DATA[idx];
+    if(!document.getElementById('inp-ek-plan').value && old.ekPlan) row.ekPlan=old.ekPlan;
+    if(!document.getElementById('inp-ek-genomf').value && old.ekGenomd) row.ekGenomd=old.ekGenomd;
+    if(!document.getElementById('inp-bes-tot').value && old.besTot) row.besTot=old.besTot;
+    if(!document.getElementById('inp-bes-ok').value && old.besOk) row.besOk=old.besOk;
+    DATA[idx]=row;
+  } else DATA.push(row);
   saveData(DATA);
   closeModal();
   render();
@@ -1124,7 +1131,7 @@ function exportCSV() {
   const rows = [['Vecka','Datum','Omsättning ack. (Mkr)','TB1 (%)','Kassaflöde (tkr)','Budget oms (Mkr)','Budget TB1 (%)','Budget kassa (tkr)','Kvalitet']];
   sorted.forEach(d=>{
     const b = getBudgetForWeek(d.vecka);
-    rows.push([d.vecka, d.datum, d.oms, d.tb1, d.kassa, b.oms, b.tb1, b.kassa, d.kval||'']);
+    rows.push([d.vecka, d.datum, d.oms, d.tb1, d.kassa, b.oms, b.tb1, b.kassa, d.ekGenomd||0, d.ekPlan||0, d.besOk||0, d.besTot||0]);
   });
   const csv = rows.map(r=>r.map(v=>'"'+(v!=null?v:'')+'"').join(';')).join('\r\n');
   const bom  = '\uFEFF'; // BOM för Excel-kompatibilitet (svenska tecken)
@@ -1185,4 +1192,5 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 render();
 </script>
 </body>
-<!-- build:1773932232 --></html>
+<!-- build:1773932232 --><!-- build:1773991716 -->
+</html>
