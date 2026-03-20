@@ -905,42 +905,44 @@
                 return;
             }
 
-            // Omsättning
-            const totalOms = data.reduce((sum, d) => sum + d.oms, 0);
-            const maxWeek = Math.max(...data.map(d => d.week));
-            const budgetOms = data.reduce((sum, d) => sum + getBudgetValue(d.week, 'oms'), 0);
-            
-            document.getElementById('omsValue').textContent = totalOms.toFixed(1);
-            document.getElementById('oms-week-info').textContent = `V${startWeek}-V${maxWeek}`;
-            document.getElementById('oms-sub').textContent = `Budget: ${budgetOms.toFixed(1)} Mkr`;
-            
-            const omsDelta = totalOms - budgetOms;
-            document.getElementById('oms-delta').textContent = (omsDelta >= 0 ? '+' : '') + omsDelta.toFixed(1);
+            // Omsättning — senaste veckans ackumulerade värde (oms är redan kumulativ)
+            const sorted = [...data].sort((a, b) => a.week - b.week);
+            const latest = sorted[sorted.length - 1];
+            const maxWeek = latest.week;
+            const latOms = latest.oms;
+            const budgetOms = getBudgetValue(maxWeek, 'oms');
+
+            document.getElementById('omsValue').textContent = latOms.toFixed(2);
+            document.getElementById('oms-week-info').textContent = `V${maxWeek}`;
+            document.getElementById('oms-sub').textContent = `Budget: ${budgetOms.toFixed(2)} Mkr`;
+
+            const omsDelta = latOms - budgetOms;
+            document.getElementById('oms-delta').textContent = (omsDelta >= 0 ? '+' : '') + omsDelta.toFixed(2);
             const omsRag = document.getElementById('oms-rag').querySelector('.traffic-light');
             omsRag.className = 'traffic-light ' + (omsDelta >= 0 ? 'traffic-green' : 'traffic-red');
 
-            // TB1
-            const avgTB1 = data.length > 0 ? data.reduce((sum, d) => sum + d.tb1, 0) / data.length : 0;
-            const budgetTB1 = data.length > 0 ? data.reduce((sum, d) => sum + getBudgetValue(d.week, 'tb1'), 0) / data.length : 0;
-            
-            document.getElementById('tb1Value').textContent = avgTB1.toFixed(1);
-            document.getElementById('tb1-week-info').textContent = `V${startWeek}-V${maxWeek}`;
+            // TB1 — senaste veckans värde
+            const latTB1 = latest.tb1;
+            const budgetTB1 = getBudgetValue(maxWeek, 'tb1');
+
+            document.getElementById('tb1Value').textContent = latTB1.toFixed(1);
+            document.getElementById('tb1-week-info').textContent = `V${maxWeek}`;
             document.getElementById('tb1-sub').textContent = `Budget: ${budgetTB1.toFixed(1)}%`;
-            
-            const tb1Delta = avgTB1 - budgetTB1;
+
+            const tb1Delta = latTB1 - budgetTB1;
             document.getElementById('tb1-delta').textContent = (tb1Delta >= 0 ? '+' : '') + tb1Delta.toFixed(1);
             const tb1Rag = document.getElementById('tb1-rag').querySelector('.traffic-light');
             tb1Rag.className = 'traffic-light ' + (tb1Delta >= 0 ? 'traffic-green' : 'traffic-red');
 
-            // Kassaflöde
-            const avgKassa = data.length > 0 ? data.reduce((sum, d) => sum + d.kassa, 0) / data.length : 0;
-            const budgetKassa = data.length > 0 ? data.reduce((sum, d) => sum + getBudgetValue(d.week, 'kassa'), 0) / data.length : 0;
-            
-            document.getElementById('kassaValue').textContent = avgKassa.toFixed(0);
-            document.getElementById('kassa-week-info').textContent = `V${startWeek}-V${maxWeek}`;
+            // Kassaflöde — senaste veckans värde
+            const latKassa = latest.kassa;
+            const budgetKassa = getBudgetValue(maxWeek, 'kassa');
+
+            document.getElementById('kassaValue').textContent = latKassa.toFixed(0);
+            document.getElementById('kassa-week-info').textContent = `V${maxWeek}`;
             document.getElementById('kassa-sub').textContent = `Budget: ${budgetKassa.toFixed(0)} tkr/mån`;
-            
-            const kassaDelta = avgKassa - budgetKassa;
+
+            const kassaDelta = latKassa - budgetKassa;
             document.getElementById('kassa-delta').textContent = (kassaDelta >= 0 ? '+' : '') + kassaDelta.toFixed(0);
             const kassaRag = document.getElementById('kassa-rag').querySelector('.traffic-light');
             kassaRag.className = 'traffic-light ' + (kassaDelta >= 0 ? 'traffic-green' : 'traffic-red');
