@@ -1,1196 +1,1180 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RM KPI Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
-<style>
-:root {
-  --bg:#0D1117; --panel:#161B22; --border:#30363D;
-  --blue:#1F6FEB; --gold:#F0B429; --green:#3FB950; --red:#F85149;
-  --white:#F0F6FC; --muted:#8B949E; --radius:10px; --gap:16px;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--white);min-height:100vh;padding:24px;}
-
-/* HEADER */
-.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--blue);}
-.header-left h1{font-size:22px;font-weight:700;letter-spacing:.5px;}
-.header-left p{font-size:12px;color:var(--muted);margin-top:3px;}
-.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.week-filter,.btn-secondary{background:var(--panel);border:1px solid var(--border);color:var(--white);padding:7px 14px;border-radius:6px;font-size:13px;cursor:pointer;outline:none;}
-.week-filter:focus,.btn-secondary:hover{border-color:var(--blue);}
-.btn-primary{background:var(--blue);color:white;border:none;padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
-.btn-primary-soft{background:rgba(31,111,235,.15);border:1px solid var(--blue);color:var(--blue);padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
-.btn-primary-soft:hover{background:var(--blue);color:#fff;}
-.btn-icon{background:var(--panel);border:1px solid var(--border);color:var(--muted);padding:7px 10px;border-radius:6px;font-size:14px;cursor:pointer;}
-.btn-icon:hover{border-color:var(--border);color:var(--white);}
-.backup-menu{display:none;position:absolute;right:0;top:38px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px;z-index:50;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
-.backup-menu.open{display:block;}
-.backup-menu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--white);padding:8px 12px;font-size:13px;cursor:pointer;border-radius:6px;}
-.backup-menu button:hover{background:rgba(255,255,255,.07);}
-.backup-menu .menu-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 12px 2px;}
-.header-right{position:relative;}
-.btn-primary:hover{opacity:.85;}
-.btn-active{border-color:var(--blue) !important;color:var(--blue) !important;}
-
-/* KPI KORT */
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);margin-bottom:var(--gap);}
-.kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;}
-.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--blue));}
-.kpi-label{font-size:10px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
-.kpi-value{font-size:30px;font-weight:700;color:var(--white);line-height:1;margin-bottom:4px;}
-.kpi-value.empty{color:var(--muted);font-size:22px;}
-.kpi-sub{font-size:11px;color:var(--muted);margin-bottom:8px;}
-.kpi-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
-.kpi-budget{font-size:11px;color:var(--gold);}
-.kpi-rag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;}
-.rag-yellow{background:rgba(240,180,41,.15);color:#F0B429;}
-.kpi-row-kma{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap);margin-bottom:var(--gap);}
-.kma-section-label{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.kma-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:8px;letter-spacing:.4px;text-transform:uppercase;margin-left:8px;vertical-align:middle;}
-.kma-badge.leading{background:rgba(31,111,235,.15);color:#4D9FFF;}
-.kma-badge.lagging{background:rgba(63,185,80,.15);color:#3FB950;}
-.kma-update-btn{font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;background:none;border:none;padding:0;margin-top:2px;}
-.kma-update-btn:hover{color:var(--white);}
-.rag-green{background:rgba(63,185,80,.15);color:var(--green);}
-.rag-red{background:rgba(248,81,73,.15);color:var(--red);}
-.rag-gray{background:rgba(139,148,158,.15);color:var(--muted);}
-
-/* GRAFER */
-.chart-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);margin-bottom:var(--gap);}
-.chart-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;}
-.chart-title{font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-bottom:16px;}
-.chart-wrap{position:relative;height:200px;}
-
-/* TABELL */
-.table-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin-bottom:var(--gap);}
-.table-title{font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-bottom:16px;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-thead th{text-align:right;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;}
-thead th:first-child,thead th:nth-child(2){text-align:left;}
-tbody td{padding:9px 12px;border-bottom:1px solid rgba(48,54,61,.5);text-align:right;color:var(--white);}
-tbody td:first-child,tbody td:nth-child(2){text-align:left;color:var(--muted);font-size:12px;}
-tbody tr:last-child td{border-bottom:none;}
-tbody tr:hover td{background:rgba(31,111,235,.05);}
-.val-pos{color:var(--green);font-weight:600;}
-.val-neg{color:var(--red);font-weight:600;}
-.val-neutral{color:var(--border);}
-
-.footer{text-align:center;font-size:11px;color:var(--muted);padding-top:8px;}
-
-/* VARNINGSBANNER */
-.alert-bar{display:none;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.35);border-radius:8px;padding:11px 16px;margin-bottom:var(--gap);gap:10px;flex-wrap:wrap;}
-.alert-bar.show{display:flex;}
-.alert-chip{background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--white);white-space:nowrap;}
-.alert-chip strong{color:var(--red);}
-
-/* PANEL (budget + bulk utfall) */
-.side-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:var(--gap);display:none;}
-.side-panel.show{display:block;}
-.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
-.panel-title{font-size:13px;font-weight:700;color:var(--white);}
-.panel-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-
-/* Perioder-grid */
-.periods-grid{display:grid;gap:10px;}
-.period-row{display:grid;grid-template-columns:70px 70px 1fr 100px 100px 75px 80px 36px;gap:8px;align-items:center;}
-.period-row.header-row{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:1px solid var(--border);}
-.period-row input,.period-row select{background:var(--bg);border:1px solid var(--border);color:var(--white);padding:7px 10px;border-radius:6px;font-size:13px;font-weight:500;outline:none;width:100%;}
-.period-row input:focus{border-color:var(--blue);}
-.period-row .del-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
-.period-row .del-btn:hover{border-color:var(--red);color:var(--red);}
-.oms-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
-.field-wrap label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
-.field-wrap input{background:var(--bg);border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:6px;font-size:14px;font-weight:600;outline:none;width:100%;}
-.field-wrap input:focus{border-color:var(--blue);}
-.field-wrap .fhint{font-size:10px;color:var(--muted);margin-top:3px;}
-.panel-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;align-items:center;}
-.saved-msg{font-size:12px;color:var(--green);display:none;}
-.saved-msg.show{display:inline;}
-.add-period-btn{background:transparent;border:1px dashed var(--border);color:var(--muted);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:6px;}
-.add-period-btn:hover{border-color:var(--blue);color:var(--blue);}
-
-/* Bulk utfall */
-.bulk-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
-.bulk-grid .field-wrap{grid-column:span 1;}
-.bulk-grid .field-wrap.wide{grid-column:span 2;}
-.interp-preview{font-size:11px;color:var(--muted);margin-top:8px;padding:8px 12px;background:rgba(31,111,235,.06);border-radius:6px;border:1px solid rgba(31,111,235,.15);}
-
-/* MODAL (enstaka vecka) */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;}
-.modal h2{font-size:16px;font-weight:700;margin-bottom:6px;}
-.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.form-row{display:flex;flex-direction:column;gap:5px;}
-.form-row label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.form-row input,.form-row select{background:var(--bg);border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:6px;font-size:14px;outline:none;width:100%;}
-.form-row input:focus{border-color:var(--blue);}
-.form-row .hint{font-size:10px;color:var(--muted);}
-.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
-.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;}
-
-@media (max-width:768px){
-  body{padding:12px 8px;}
-  .header{flex-direction:column;align-items:flex-start;gap:12px;}
-  .header-left{gap:8px;}
-  .header-left img{height:56px!important;}
-  .header-left p{font-size:10px!important;}
-  .header-right{width:100%;flex-wrap:wrap!important;gap:6px;justify-content:flex-start;}
-  .header-right select,.header-right button{font-size:11px;padding:6px 10px;}
-  .header-right label{display:none;}
-  .kpi-row{grid-template-columns:repeat(2,1fr)!important;gap:10px;}
-  .kpi-row-kma{grid-template-columns:1fr!important;gap:10px;}
-  .kpi-card{padding:14px 16px;}
-  .kpi-value{font-size:24px;}
-  .kpi-label{font-size:9px;}
-  .chart-row{grid-template-columns:1fr!important;}
-  .chart-card{padding:14px 16px;}
-  .table-card{padding:12px;font-size:12px;}
-  .table-card table{font-size:11px;}
-  .table-card th,.table-card td{padding:6px 8px;}
-  .modal{padding:20px 16px;width:95vw;}
-  .form-grid{grid-template-columns:1fr!important;}
-  .side-panel{padding:14px 16px;}
-  .period-row{grid-template-columns:1fr 1fr!important;gap:6px;}
-  .bulk-grid{grid-template-columns:1fr 1fr!important;gap:8px;}
-}
-@media (max-width:480px){
-  .kpi-row{grid-template-columns:1fr!important;}
-  .header-right{gap:4px;}
-}
-@media print {
-  body{background:#fff;color:#000;}
-  .header-right,.side-panel,.alert-bar,.backup-menu,.modal-overlay{display:none!important;}
-  .header{border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}
-  .header h1{color:#000;font-size:18px;}
-  .header p{color:#444;}
-  .kpi-card{background:#f8f8f8;border:1px solid #ddd;break-inside:avoid;}
-  .kpi-value{color:#000;}
-  .kpi-label,.kpi-sub,.kpi-budget{color:#444;}
-  .chart-card{background:#f8f8f8;border:1px solid #ddd;break-inside:avoid;}
-  .chart-title{color:#000;}
-  .charts-grid{grid-template-columns:1fr 1fr;}
-  table{page-break-before:always;}
-  th{background:#eee;color:#000;}
-  td{color:#222;}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM Entreprenad & Fasad - KPI Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            background-color: #0D1117;
+            color: #F0F6FC;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+        
+        .card {
+            background-color: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .card-top-border {
+            border-top: 3px solid;
+        }
+        
+        .btn-primary {
+            background-color: #1F6FEB;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1861c8;
+        }
+        
+        .btn-secondary {
+            background-color: #161B22;
+            color: #F0F6FC;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #30363D;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #262D35;
+            border-color: #8B949E;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .badge-green {
+            background-color: rgba(63, 185, 80, 0.2);
+            color: #3FB950;
+        }
+        
+        .badge-blue {
+            background-color: rgba(31, 111, 235, 0.2);
+            color: #1F6FEB;
+        }
+        
+        .traffic-light {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .traffic-green {
+            background-color: #3FB950;
+        }
+        
+        .traffic-yellow {
+            background-color: #F0B429;
+        }
+        
+        .traffic-red {
+            background-color: #F85149;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            color: #F0F6FC;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            background-color: #0D1117;
+            border: 1px solid #30363D;
+            color: #F0F6FC;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1F6FEB;
+            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #30363D;
+            margin: 24px 0;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        th {
+            background-color: #0D1117;
+            color: #8B949E;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid #30363D;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #30363D;
+        }
+        
+        tr:hover {
+            background-color: rgba(31, 111, 235, 0.05);
+        }
+        
+        .text-positive {
+            color: #3FB950;
+        }
+        
+        .text-negative {
+            color: #F85149;
+        }
+        
+        .text-muted {
+            color: #8B949E;
+        }
+        
+        .sidebar-panel {
+            background-color: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-toggle {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #F0F6FC;
+            user-select: none;
+        }
+        
+        .sidebar-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-top: 0;
+        }
+        
+        .sidebar-content.active {
+            max-height: 2000px;
+            margin-top: 16px;
+        }
+        
+        .toggle-arrow {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        
+        .toggle-arrow.active {
+            transform: rotate(180deg);
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 16px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Header -->
+    <header class="border-b border-[#30363D] bg-[#0D1117] sticky top-0 z-100">
+        <div class="px-4 md:px-8 py-6">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <!-- Logo Section -->
+                <div class="flex items-center gap-4">
+                    <svg viewBox="0 0 320 90" width="160" height="45" style="display:inline-block;">
+                        <g fill="none" stroke="#C8956A" stroke-width="1.4" stroke-linejoin="miter">
+                            <line x1="10" y1="58" x2="310" y2="58"/>
+                            <polyline points="10,58 10,38 26,38 26,30 36,30 36,38 48,38 48,58"/>
+                            <polyline points="50,58 50,20 58,20 58,14 74,14 74,20 82,20 82,58"/>
+                            <polyline points="84,58 84,10 88,10 88,4 100,4 100,10 104,10 104,58"/>
+                            <polyline points="106,58 106,22 116,22 116,16 128,16 128,22 138,22 138,58"/>
+                            <polyline points="140,58 140,28 148,28 148,18 158,18 158,12 168,12 168,18 178,18 178,28 186,28 186,58"/>
+                            <polyline points="188,58 188,20 198,20 198,14 210,14 210,20 220,20 220,58"/>
+                            <polyline points="222,58 222,8 226,8 226,2 238,2 238,8 242,8 242,58"/>
+                            <polyline points="244,58 244,24 254,24 254,18 264,18 264,24 274,24 274,58"/>
+                            <polyline points="276,58 276,32 284,32 284,26 294,26 294,32 302,32 302,58"/>
+                            <rect x="91" y="16" width="5" height="5"/>
+                            <rect x="98" y="16" width="5" height="5"/>
+                            <rect x="162" y="20" width="4" height="4"/>
+                            <rect x="229" y="14" width="5" height="5"/>
+                            <rect x="236" y="14" width="5" height="5"/>
+                        </g>
+                        <text x="160" y="78" font-family="'Segoe UI', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#CC5500" text-anchor="middle" letter-spacing="0.3">RM Entreprenad &amp; Fasad AB</text>
+                    </svg>
+                    <div>
+                        <h1 class="text-lg md:text-xl font-bold text-[#F0F6FC] hidden">RM Entreprenad & Fasad AB</h1>
+                        <p class="text-xs md:text-sm text-[#8B949E]">KPI Dashboard · Räkenskapsår 1 nov 2025 – 31 okt 2026 · Uppdateras varje måndag</p>
+                    </div>
+                </div>
+                
+                <!-- Right side controls -->
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <select id="weekFilter" class="form-input flex-1 md:flex-none md:w-32" onchange="handleWeekFilterChange()">
+                        <option value="8">8 veckor</option>
+                        <option value="13">13 veckor</option>
+                        <option value="26" selected>26 veckor</option>
+                        <option value="52">52 veckor</option>
+                    </select>
+                    <button class="btn-primary flex-1 md:flex-none" onclick="openWeekModal()">+ En vecka</button>
+                    <button class="btn-secondary flex-1 md:flex-none" onclick="toggleBudgetPanel()">Budget</button>
+                    <button class="btn-secondary flex-1 md:flex-none" onclick="toggleBulkPanel()">Bulk</button>
+                </div>
+            </div>
+        </div>
+    </header>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left" style="display:flex;align-items:center;gap:16px;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgOTAiIHdpZHRoPSIzMjAiIGhlaWdodD0iOTAiPgogIDwhLS0gQnVpbGRpbmcgc2t5bGluZSAtIHdhcm0gYmVpZ2UvY29wcGVyIGNvbG9yIC0tPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0M4OTU2QSIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiPgogICAgPCEtLSBHcm91bmQgbGluZSAtLT4KICAgIDxsaW5lIHgxPSIxMCIgeTE9IjU4IiB4Mj0iMzEwIiB5Mj0iNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgMSAobGVmdCwgbWVkaXVtKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjEwLDU4IDEwLDM4IDI2LDM4IDI2LDMwIDM2LDMwIDM2LDM4IDQ4LDM4IDQ4LDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDIgLS0+CiAgICA8cG9seWxpbmUgcG9pbnRzPSI1MCw1OCA1MCwyMCA1OCwyMCA1OCwxNCA3NCwxNCA3NCwyMCA4MiwyMCA4Miw1OCIvPgogICAgPCEtLSBCdWlsZGluZyAzICh0YWxsIGNlbnRlci1sZWZ0KSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9Ijg0LDU4IDg0LDEwIDg4LDEwIDg4LDQgMTAwLDQgMTAwLDEwIDEwNCwxMCAxMDQsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgNCAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjEwNiw1OCAxMDYsMjIgMTE2LDIyIDExNiwxNiAxMjgsMTYgMTI4LDIyIDEzOCwyMiAxMzgsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgNSAoY2VudGVyLCBzdGVwcGVkKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjE0MCw1OCAxNDAsMjggMTQ4LDI4IDE0OCwxOCAxNTgsMTggMTU4LDEyIDE2OCwxMiAxNjgsMTggMTc4LDE4IDE3OCwyOCAxODYsMjggMTg2LDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDYgLS0+CiAgICA8cG9seWxpbmUgcG9pbnRzPSIxODgsNTggMTg4LDIwIDE5OCwyMCAxOTgsMTQgMjEwLDE0IDIxMCwyMCAyMjAsMjAgMjIwLDU4Ii8+CiAgICA8IS0tIEJ1aWxkaW5nIDcgKHRhbGwgcmlnaHQtY2VudGVyKSAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjIyMiw1OCAyMjIsOCAyMjYsOCAyMjYsMiAyMzgsMiAyMzgsOCAyNDIsOCAyNDIsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgOCAtLT4KICAgIDxwb2x5bGluZSBwb2ludHM9IjI0NCw1OCAyNDQsMjQgMjU0LDI0IDI1NCwxOCAyNjQsMTggMjY0LDI0IDI3NCwyNCAyNzQsNTgiLz4KICAgIDwhLS0gQnVpbGRpbmcgOSAocmlnaHQpIC0tPgogICAgPHBvbHlsaW5lIHBvaW50cz0iMjc2LDU4IDI3NiwzMiAyODQsMzIgMjg0LDI2IDI5NCwyNiAyOTQsMzIgMzAyLDMyIDMwMiw1OCIvPgogICAgPCEtLSBTbWFsbCB3aW5kb3dzL2RldGFpbHMgLS0+CiAgICA8cmVjdCB4PSI5MSIgeT0iMTYiIHdpZHRoPSI1IiBoZWlnaHQ9IjUiLz4KICAgIDxyZWN0IHg9Ijk4IiB5PSIxNiIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogICAgPHJlY3QgeD0iMTYyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPgogICAgPHJlY3QgeD0iMjI5IiB5PSIxNCIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogICAgPHJlY3QgeD0iMjM2IiB5PSIxNCIgd2lkdGg9IjUiIGhlaWdodD0iNSIvPgogIDwvZz4KICA8IS0tIENvbXBhbnkgbmFtZSAtLT4KICA8dGV4dCB4PSIxNjAiIHk9Ijc4IiBmb250LWZhbWlseT0iJ1NlZ29lIFVJJywgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMuNSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI0NDNTUwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjAuMyI+Uk0gRW50cmVwcmVuYWQgJmFtcDsgRmFzYWQgQUI8L3RleHQ+Cjwvc3ZnPgo=" alt="RM Entreprenad och Fasad" style="height:84px;width:auto;">
-    <p>KPI DASHBOARD &nbsp;·&nbsp; Räkenskapsår 1 nov 2025 – 31 okt 2026 &nbsp;·&nbsp; Uppdateras varje måndag</p>
-  </div>
-  <div class="header-right">
-    <label style="font-size:12px;color:var(--muted)">Visa</label>
-    <select class="week-filter" id="weekRange" onchange="render()">
-      <option value="8">8 veckor</option>
-      <option value="13" selected>13 veckor</option>
-      <option value="26">26 veckor</option>
-      <option value="52">Hela året</option>
-    </select>
-    <button class="btn-secondary" onclick="exportCSV()">Exportera Excel</button>
-    <button class="btn-primary-soft" onclick="exportPDF()">Exportera PDF</button>
-    <button class="btn-icon" onclick="showBackupMenu()" title="Säkerhetskopia">⚙</button>
-    <button class="btn-secondary" id="btnBudget" onclick="togglePanel('budgetPanel','btnBudget')">Redigera budget</button>
-    <button class="btn-secondary" id="btnBulk"   onclick="togglePanel('bulkPanel','btnBulk')">Bulk-inmatning</button>
-    <button class="btn-primary"   onclick="openSingleModal()">+ En vecka</button>
-  </div>
-</div>
+    <!-- Main Content -->
+    <main class="px-4 md:px-8 py-8">
+        <!-- Financial KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Omsättning -->
+            <div class="card card-top-border" style="border-top-color: #1F6FEB;">
+                <div class="flex justify-between items-start mb-4">
+                    <label class="text-sm font-semibold text-[#8B949E]">Omsättning ack.</label>
+                    <span class="text-xs text-[#8B949E]" id="oms-week-info">V1-V26</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="omsValue">0</span>
+                    <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
+                </div>
+                <div class="text-xs text-[#8B949E] mb-4" id="oms-sub">Budget: 0 Mkr</div>
+                <div class="flex justify-between items-center pt-4 border-t border-[#30363D]">
+                    <span class="text-xs text-[#8B949E]">Differens mot budget</span>
+                    <span class="flex items-center" id="oms-rag">
+                        <span class="traffic-light traffic-green"></span>
+                        <span id="oms-delta">+0</span>
+                    </span>
+                </div>
+            </div>
 
-<!-- BACKUP-MENY -->
-<div class="backup-menu" id="backupMenu">
-  <div class="menu-label">Säkerhetskopia</div>
-  <button onclick="exportData()">Spara backup (JSON)</button>
-  <button onclick="importData()">Återställ från backup</button>
-</div>
+            <!-- TB1 % -->
+            <div class="card card-top-border" style="border-top-color: #3FB950;">
+                <div class="flex justify-between items-start mb-4">
+                    <label class="text-sm font-semibold text-[#8B949E]">TB1 %</label>
+                    <span class="text-xs text-[#8B949E]" id="tb1-week-info">V1-V26</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="tb1Value">0</span>
+                    <span class="text-lg text-[#8B949E] ml-1">%</span>
+                </div>
+                <div class="text-xs text-[#8B949E] mb-4" id="tb1-sub">Budget: 0%</div>
+                <div class="flex justify-between items-center pt-4 border-t border-[#30363D]">
+                    <span class="text-xs text-[#8B949E]">Differens mot budget</span>
+                    <span class="flex items-center" id="tb1-rag">
+                        <span class="traffic-light traffic-green"></span>
+                        <span id="tb1-delta">+0</span>
+                    </span>
+                </div>
+            </div>
 
-<!-- VARNINGSBANNER -->
-<div class="alert-bar" id="alertBar"></div>
+            <!-- Kassaflöde -->
+            <div class="card card-top-border" style="border-top-color: #F0B429;">
+                <div class="flex justify-between items-start mb-4">
+                    <label class="text-sm font-semibold text-[#8B949E]">Kassaflöde</label>
+                    <span class="text-xs text-[#8B949E]" id="kassa-week-info">V1-V26</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="kassaValue">0</span>
+                    <span class="text-lg text-[#8B949E] ml-1">tkr/mån</span>
+                </div>
+                <div class="text-xs text-[#8B949E] mb-4" id="kassa-sub">Budget: 0 tkr/mån</div>
+                <div class="flex justify-between items-center pt-4 border-t border-[#30363D]">
+                    <span class="text-xs text-[#8B949E]">Differens mot budget</span>
+                    <span class="flex items-center" id="kassa-rag">
+                        <span class="traffic-light traffic-green"></span>
+                        <span id="kassa-delta">+0</span>
+                    </span>
+                </div>
+            </div>
+        </div>
 
-<!-- BUDGET-PANEL -->
-<div class="side-panel" id="budgetPanel">
-  <div class="panel-header">
-    <div>
-      <div class="panel-title">Budgetmål per period</div>
-      <div class="panel-sub">Sätt TB1% och kassaflödesmål för varje period. Omsättning fördelas linjärt (start→mål) automatiskt.</div>
+        <!-- KMA Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Egenkontroll -->
+            <div class="card card-top-border" style="border-top-color: #4D9FFF;">
+                <div class="flex justify-between items-center mb-6">
+                    <label class="text-sm font-semibold text-[#8B949E]">Egenkontroll</label>
+                    <span class="badge badge-blue">LEDANDE</span>
+                </div>
+                <div class="mb-4">
+                    <div class="flex items-baseline gap-1 mb-2">
+                        <span class="traffic-light" id="ek-light"></span>
+                        <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="ekValue">0</span>
+                        <span class="text-lg text-[#8B949E]">%</span>
+                    </div>
+                    <div class="text-sm text-[#8B949E]" id="ek-count">0 / 0 genomförda</div>
+                </div>
+                <div class="text-xs text-[#8B949E]">Mata in via + En vecka</div>
+            </div>
+
+            <!-- Besiktningsutfall -->
+            <div class="card card-top-border" style="border-top-color: #3FB950;">
+                <div class="flex justify-between items-center mb-6">
+                    <label class="text-sm font-semibold text-[#8B949E]">Besiktningsutfall</label>
+                    <span class="badge badge-green">UTFALL</span>
+                </div>
+                <div class="mb-4">
+                    <div class="flex items-baseline gap-1 mb-2">
+                        <span class="traffic-light" id="be-light"></span>
+                        <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="beValue">0</span>
+                        <span class="text-lg text-[#8B949E]">%</span>
+                    </div>
+                    <div class="text-sm text-[#8B949E]" id="be-count">0 / 0 godkända</div>
+                </div>
+                <div class="text-xs text-[#8B949E]">Mata in via + En vecka</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">Omsättning ack. (Mkr)</h3>
+                <div class="chart-container">
+                    <canvas id="omsChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">TB1 (%)</h3>
+                <div class="chart-container">
+                    <canvas id="tb1Chart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">Kassaflöde (tkr/mån)</h3>
+                <div class="chart-container">
+                    <canvas id="kassaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card mb-8">
+            <h2 class="text-lg font-semibold text-[#F0F6FC] mb-4">Veckadata</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vecka</th>
+                            <th>Datum</th>
+                            <th>Omsättning</th>
+                            <th>vs Budget</th>
+                            <th>TB1</th>
+                            <th>vs Budget</th>
+                            <th>Kassaflöde</th>
+                            <th>vs Budget</th>
+                            <th>Egen</th>
+                            <th>Besiktning</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-xs text-[#8B949E] py-4">
+            <p id="lastUpdateInfo">Ingen data inmatad ännu</p>
+        </footer>
+    </main>
+
+    <!-- Budget Panel -->
+    <div id="budgetPanel" class="fixed right-0 top-0 h-screen w-96 bg-[#0D1117] border-l border-[#30363D] transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-[#F0F6FC]">Budgetinställningar</h2>
+                <button onclick="toggleBudgetPanel()" class="text-[#8B949E] hover:text-[#F0F6FC]">✕</button>
+            </div>
+            
+            <div id="budgetPeriods">
+                <!-- Generated by JS -->
+            </div>
+            
+            <button class="btn-primary w-full mt-6" onclick="saveBudget()">Spara Budget</button>
+        </div>
     </div>
-  </div>
 
-  <div style="margin-top:4px;margin-bottom:8px;">
-    <div class="period-row header-row">
-      <span>Från v.</span><span>Till v.</span><span>Namn / period</span><span>Oms. start (Mkr)</span><span>Oms. slut (Mkr)</span><span>TB1 (%)</span><span>Kassa (tkr)</span><span></span>
-    </div>
-    <div id="periodsContainer"></div>
-    <button class="add-period-btn" onclick="addPeriodRow()">+ Lägg till period</button>
-  </div>
-
-  <div class="panel-actions">
-    <span class="saved-msg" id="budgetSavedMsg">Sparat</span>
-    <button class="btn-cancel" onclick="togglePanel('budgetPanel','btnBudget')">Stäng</button>
-    <button class="btn-primary" onclick="saveBudgetPanel()">Spara budget</button>
-  </div>
-</div>
-
-<!-- BULK UTFALL-PANEL -->
-<div class="side-panel" id="bulkPanel">
-  <div class="panel-header">
-    <div>
-      <div class="panel-title">Bulk-inmatning av utfall</div>
-      <div class="panel-sub">Ange ett veckoIntervall. Alla värden interpoleras linjärt från startvärde till slutvärde. Vill du konstant värde — ange samma siffra i start och slut.</div>
-    </div>
-  </div>
-  <div class="bulk-grid">
-
-    <!-- RAD 1: Intervall -->
-    <div class="field-wrap">
-      <label>Från vecka</label>
-      <input type="number" id="bk-from" min="1" max="52" placeholder="1" oninput="bulkPreview()">
-      <div class="fhint" id="bk-from-hint"></div>
-    </div>
-    <div class="field-wrap">
-      <label>Till vecka</label>
-      <input type="number" id="bk-to" min="1" max="52" placeholder="20" oninput="bulkPreview()">
-      <div class="fhint" id="bk-to-hint"></div>
-    </div>
-    <div class="field-wrap" style="grid-column:span 4;display:flex;align-items:flex-end;gap:8px;">
-      <div style="flex:1">
-        <label style="opacity:0">x</label>
-        <select id="bk-overwrite" style="background:var(--bg);border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:6px;font-size:13px;width:100%">
-          <option value="overwrite">Skriv över befintlig data</option>
-          <option value="skip">Hoppa över veckor med data</option>
-        </select>
-      </div>
+    <!-- Bulk Input Panel -->
+    <div id="bulkPanel" class="fixed right-0 top-0 h-screen w-96 bg-[#0D1117] border-l border-[#30363D] transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-[#F0F6FC]">Bulk-inmatning</h2>
+                <button onclick="toggleBulkPanel()" class="text-[#8B949E] hover:text-[#F0F6FC]">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Från vecka</label>
+                <input type="number" id="bulkFromWeek" class="form-input" min="1" max="52" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Till vecka</label>
+                <input type="number" id="bulkToWeek" class="form-input" min="1" max="52" value="26">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Startväarde Omsättning (Mkr)</label>
+                <input type="number" id="bulkOmsStart" class="form-input" step="0.1" value="0">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Slutväarde Omsättning (Mkr)</label>
+                <input type="number" id="bulkOmsEnd" class="form-input" step="0.1" value="10">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">TB1 (%)</label>
+                <input type="number" id="bulkTB1" class="form-input" step="0.1" value="20">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Kassaflöde (tkr/mån)</label>
+                <input type="number" id="bulkKassa" class="form-input" step="10" value="500">
+            </div>
+            
+            <button class="btn-primary w-full" onclick="applyBulkInput()">Applicera på veckor</button>
+        </div>
     </div>
 
-    <!-- RAD 2: Omsättning -->
-    <div class="field-wrap" style="grid-column:span 6;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
-      <label style="color:var(--blue);letter-spacing:.8px">Omsättning (ackumulerat)</label>
-    </div>
-    <div class="field-wrap">
-      <label>Start (Mkr)</label>
-      <input type="number" step="0.01" id="bk-oms-from" placeholder="0.50" oninput="bulkPreview()">
-      <div class="fhint">Ackumulerat vid startvekan</div>
-    </div>
-    <div class="field-wrap">
-      <label>Slut (Mkr)</label>
-      <input type="number" step="0.01" id="bk-oms-to" placeholder="7.50" oninput="bulkPreview()">
-      <div class="fhint">Ackumulerat vid slutveckan</div>
-    </div>
-    <div class="field-wrap" style="grid-column:span 4;display:flex;align-items:flex-end;">
-      <div class="fhint" style="padding-bottom:4px">Linjär interpolation mellan start och slut. Lämna tomt = hoppa över omsättning.</div>
-    </div>
-
-    <!-- RAD 3: TB1 -->
-    <div class="field-wrap" style="grid-column:span 6;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;display:flex;align-items:center;gap:16px;">
-      <label style="color:var(--green);letter-spacing:.8px;margin:0">TB1</label>
-      <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-        <button id="tb1-mode-pct" onclick="setTb1Mode('pct')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:var(--green);color:#000;font-weight:700">% täckningsgrad</button>
-        <button id="tb1-mode-mkr" onclick="setTb1Mode('mkr')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:var(--bg);color:var(--muted)">Mkr brutto</button>
-        <button id="tb1-mode-skip" onclick="setTb1Mode('skip')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;background:var(--bg);color:var(--muted)">Hoppa över</button>
-      </div>
-      <span id="tb1-mode-hint" style="font-size:11px;color:var(--muted)">Täckningsgrad i % — t.ex. 20 = 20%</span>
-    </div>
-    <div id="tb1-fields-pct" style="display:contents">
-      <div class="field-wrap">
-        <label>TB1% start</label>
-        <input type="number" step="0.1" id="bk-tb1-from" placeholder="20.0" oninput="bulkPreview()">
-        <div class="fhint">Täckningsgrad % vid startveckan</div>
-      </div>
-      <div class="field-wrap">
-        <label>TB1% slut</label>
-        <input type="number" step="0.1" id="bk-tb1-to" placeholder="20.0" oninput="bulkPreview()">
-        <div class="fhint">Täckningsgrad % vid slutveckan</div>
-      </div>
-      <div class="field-wrap" style="grid-column:span 4"></div>
-    </div>
-    <div id="tb1-fields-mkr" style="display:none">
-      <div class="field-wrap">
-        <label>Brutto start (Mkr)</label>
-        <input type="number" step="0.01" id="bk-brutto-from" placeholder="1.50" oninput="bulkPreview()">
-        <div class="fhint">TB1 i kronor vid startveckan</div>
-      </div>
-      <div class="field-wrap">
-        <label>Brutto slut (Mkr)</label>
-        <input type="number" step="0.01" id="bk-brutto-to" placeholder="1.80" oninput="bulkPreview()">
-        <div class="fhint">TB1 i kronor vid slutveckan</div>
-      </div>
-      <div class="field-wrap" style="grid-column:span 4;display:flex;align-items:flex-end;">
-        <div class="fhint" style="padding-bottom:4px">TB1% beräknas automatiskt från oms när du sparar.</div>
-      </div>
-    </div>
-
-    <!-- RAD 4: Kassaflöde -->
-    <div class="field-wrap" style="grid-column:span 6;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
-      <label style="color:var(--gold);letter-spacing:.8px">Kassaflöde (netto per månad)</label>
-    </div>
-    <div class="field-wrap">
-      <label>Start (tkr)</label>
-      <input type="number" id="bk-kassa-from" placeholder="500" oninput="bulkPreview()">
-      <div class="fhint">Vid startveckan</div>
-    </div>
-    <div class="field-wrap">
-      <label>Slut (tkr)</label>
-      <input type="number" id="bk-kassa-to" placeholder="500" oninput="bulkPreview()">
-      <div class="fhint">Vid slutveckan</div>
-    </div>
-    <div class="field-wrap" style="grid-column:span 4;display:flex;align-items:flex-end;">
-      <div class="fhint" style="padding-bottom:4px">Konstant = samma värde i start och slut. Lämna tomt = hoppa över kassaflöde.</div>
+    <!-- Add Week Modal -->
+    <div id="weekModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold text-[#F0F6FC] mb-6">Lägg till / Uppdatera vecka</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Vecka (1-52)</label>
+                    <input type="number" id="modalWeek" class="form-input" min="1" max="52" value="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Datum</label>
+                    <input type="date" id="modalDate" class="form-input">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Omsättning ack. (Mkr)</label>
+                    <input type="number" id="modalOms" class="form-input" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">TB1 (%)</label>
+                    <input type="number" id="modalTB1" class="form-input" step="0.1" value="20">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Kassaflöde (tkr/mån)</label>
+                <input type="number" id="modalKassa" class="form-input" step="10" value="500">
+            </div>
+            
+            <div class="divider"></div>
+            
+            <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">Kvalitetskontroll (KMA)</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nya planerade checkpunkter</label>
+                    <input type="number" id="modalEKPlan" class="form-input" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Genomförda checkpunkter</label>
+                    <input type="number" id="modalEKGenomford" class="form-input" min="0" value="0">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nya besiktningar</label>
+                    <input type="number" id="modalBENya" class="form-input" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Godkända utan anmärkning</label>
+                    <input type="number" id="modalBEGodkand" class="form-input" min="0" value="0">
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="flex gap-4">
+                <button class="btn-primary flex-1" onclick="saveWeekData()">Spara</button>
+                <button class="btn-secondary flex-1" onclick="closeWeekModal()">Avbryt</button>
+            </div>
+        </div>
     </div>
 
-    <!-- RAD 5: Kvalitet -->
-    <div class="field-wrap" style="grid-column:span 6;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
-      <label style="letter-spacing:.8px">Kvalitetskommentar (valfri — gäller alla veckor i intervallet)</label>
-      <input type="text" id="bk-kval" placeholder="t.ex. Normalt läge" style="margin-top:6px;background:var(--bg);border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:6px;font-size:14px;outline:none;width:100%;">
-    </div>
-  </div>
-  <div class="interp-preview" id="bulkPreviewTxt">Fyll i intervall för att se förhandsgranskning.</div>
-  <div class="panel-actions">
-    <span class="saved-msg" id="bulkSavedMsg"></span>
-    <button class="btn-cancel" onclick="togglePanel('bulkPanel','btnBulk')">Stäng</button>
-    <button class="btn-primary" onclick="saveBulk()">Spara utfall</button>
-  </div>
-</div>
+    <script>
+        // ========== STATE & INITIALIZATION ==========
+        let DATA = [];
+        let BUDGET = [];
+        let charts = {};
 
-<!-- KPI KORT -->
-<div class="kpi-row">
-  <div class="kpi-card" style="--accent:#1F6FEB">
-    <div class="kpi-label">Omsättning ack.</div>
-    <div class="kpi-value" id="kpi-oms">–</div>
-    <div class="kpi-sub" id="kpi-oms-sub"></div>
-    <div class="kpi-meta">
-      <span class="kpi-budget" id="bud-oms-lbl">Mål: –</span>
-      <span class="kpi-rag rag-gray" id="rag-oms">–</span>
-    </div>
-  </div>
-  <div class="kpi-card" style="--accent:#3FB950">
-    <div class="kpi-label">TB1</div>
-    <div class="kpi-value" id="kpi-tb1">–</div>
-    <div class="kpi-sub" id="kpi-tb1-sub"></div>
-    <div class="kpi-meta">
-      <span class="kpi-budget" id="bud-tb1-lbl">Budget: –</span>
-      <span class="kpi-rag rag-gray" id="rag-tb1">–</span>
-    </div>
-  </div>
-  <div class="kpi-card" style="--accent:#F0B429">
-    <div class="kpi-label">Kassaflöde</div>
-    <div class="kpi-value" id="kpi-kassa">–</div>
-    <div class="kpi-sub" id="kpi-kassa-sub"></div>
-    <div class="kpi-meta">
-      <span class="kpi-budget" id="bud-kassa-lbl">Budget: –</span>
-      <span class="kpi-rag rag-gray" id="rag-kassa">–</span>
-    </div>
-  </div>
-</div>
+        const WEEK_START_DATE = new Date(2025, 10, 3); // 3 nov 2025
 
-<!-- KMA KORT -->
-<div class="kpi-row-kma">
-  <div class="kpi-card" style="--accent:#4D9FFF">
-    <div class="kpi-label">Egenkontroll <span class="kma-badge leading">Ledande</span></div>
-    <div class="kpi-value empty" id="kpi-ek">–</div>
-    <div class="kpi-sub" id="kpi-ek-sub">Mata in via + En vecka</div>
-    <div class="kpi-meta">
-      <span class="kpi-budget">Mål: 100%</span>
-      <span class="kpi-rag rag-gray" id="rag-ek">–</span>
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Uppdateras via + En vecka</div>
-  </div>
-  <div class="kpi-card" style="--accent:#3FB950">
-    <div class="kpi-label">Besiktningsutfall <span class="kma-badge lagging">Utfall</span></div>
-    <div class="kpi-value empty" id="kpi-bes">–</div>
-    <div class="kpi-sub" id="kpi-bes-sub">Inga besiktningar ännu</div>
-    <div class="kpi-meta">
-      <span class="kpi-budget">Mål: 100%</span>
-      <span class="kpi-rag rag-gray" id="rag-bes">–</span>
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Uppdateras via + En vecka</div>
-  </div>
-</div>
-
-<!-- GRAFER -->
-<div class="chart-row">
-  <div class="chart-card">
-    <div class="chart-title" id="chartOmsTitle">Omsättning ackumulerat (Mkr)</div>
-    <div class="chart-wrap"><canvas id="chartOms"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">TB1 (%)</div>
-    <div class="chart-wrap"><canvas id="chartTB1"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Kassaflöde (tkr)</div>
-    <div class="chart-wrap"><canvas id="chartKassa"></canvas></div>
-  </div>
-</div>
-
-<!-- TABELL -->
-<div class="table-card">
-  <div class="table-title">Veckodata — utfall vs budget</div>
-  <table>
-    <thead>
-      <tr>
-        <th style="text-align:left">Vecka</th>
-        <th style="text-align:left">Datum</th>
-        <th>Omsättning</th><th>vs Budget</th>
-        <th>TB1</th><th>vs Budget</th>
-        <th>Kassaflöde</th><th>vs Budget</th>
-        <th>Egenkontroll</th><th>Besiktning</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-
-<div class="footer" id="footer">Ingen data inmatad ännu</div>
-
-<!-- ENSTAKA VECKA MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <h2>Lägg till / redigera vecka</h2>
-    <p class="modal-sub">Enstaka vecka. Lämna fält tomma för att hoppa över dem.</p>
-    <div class="form-grid">
-      <div class="form-row">
-        <label>Vecka (1–52 i räkenskapsåret)</label>
-        <input type="number" id="inp-vecka" min="1" max="52" placeholder="1–52" oninput="updateVeckaHint()">
-        <span class="hint" id="vecka-hint">V1 = 3 nov 2025 · V52 = 26 okt 2026</span>
-      </div>
-      <div class="form-row">
-        <label>Datum (auto-ifyllt)</label>
-        <input type="date" id="inp-datum">
-      </div>
-      <div class="form-row">
-        <label>Omsättning ack. (Mkr)</label>
-        <input type="number" step="0.01" id="inp-oms" placeholder="t.ex. 7.50">
-        <span class="hint">Ackumulerat sedan nov 2025</span>
-      </div>
-      <div class="form-row">
-        <label>TB1 (%)</label>
-        <input type="number" step="0.1" id="inp-tb1" placeholder="t.ex. 22.5">
-      </div>
-      <div class="form-row">
-        <label>Kassaflöde (tkr/mån)</label>
-        <input type="number" id="inp-kassa" placeholder="t.ex. 480">
-      </div>
-      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-        <div style="font-size:10px;font-weight:700;color:#4D9FFF;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">KMA — Egenkontroll (denna vecka)</div>
-      </div>
-      <div class="form-row">
-        <label>Nya planerade checkpunkter</label>
-        <input type="number" id="inp-ek-plan" min="0" placeholder="Nya projekt → deras checkpunkter">
-        <span class="hint">Lägg till när nya projekt startar</span>
-      </div>
-      <div class="form-row">
-        <label>Genomförda checkpunkter</label>
-        <input type="number" id="inp-ek-genomf" min="0" placeholder="Utförda denna vecka">
-      </div>
-      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-        <div style="font-size:10px;font-weight:700;color:#3FB950;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">KMA — Besiktning (denna vecka)</div>
-      </div>
-      <div class="form-row">
-        <label>Nya slutbesiktningar</label>
-        <input type="number" id="inp-bes-tot" min="0" placeholder="Antal projekt besiktigade">
-      </div>
-      <div class="form-row">
-        <label>Godkända utan anmärkning</label>
-        <input type="number" id="inp-bes-ok" min="0" placeholder="Antal godkända">
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Avbryt</button>
-      <button class="btn-primary" onclick="saveSingleWeek()">Spara</button>
-    </div>
-  </div>
-</div>
-
-
-<script>
-// ═══════════════════════════════════════════════════════════════════
-// KONSTANTER & STORE
-// ═══════════════════════════════════════════════════════════════════
-const FY_START   = new Date('2025-11-03');
-const KEY_DATA   = 'rm_kpi_v3_data';
-const KEY_BUDGET = 'rm_kpi_v3_budget';
-
-const store = (() => {
-  let mem={}, ok=false;
-  try{ localStorage.setItem('_t','1'); localStorage.removeItem('_t'); ok=true; }catch(e){}
-  return {
-    get: k => { try{ if(ok) return localStorage.getItem(k); }catch(e){} return mem[k]||null; },
-    set: (k,v) => { try{ if(ok){ localStorage.setItem(k,v); return; } }catch(e){} mem[k]=v; }
-  };
-})();
-
-// ═══════════════════════════════════════════════════════════════════
-// KMA — egenkontroll & besiktningsutfall
-// ═══════════════════════════════════════════════════════════════════
-function ragKMA(pct) {
-  if(pct === null) return 'rag-gray';
-  if(pct >= 95) return 'rag-green';
-  if(pct >= 80) return 'rag-yellow';
-  return 'rag-red';
-}
-function ragLabelKMA(pct) {
-  if(pct === null) return '–';
-  if(pct >= 95) return 'På plan';
-  if(pct >= 80) return 'Följ upp';
-  return 'Åtgärd!';
-}
-
-function sumKMA() {
-  let ekPlan=0, ekGenomd=0, besTot=0, besOk=0;
-  DATA.forEach(d => {
-    ekPlan   += (d.ekPlan||0);
-    ekGenomd += (d.ekGenomd||0);
-    besTot   += (d.besTot||0);
-    besOk    += (d.besOk||0);
-  });
-  return {ekPlan, ekGenomd, besTot, besOk};
-}
-
-function renderKMA() {
-  const kma = sumKMA();
-  const ekPct  = kma.ekPlan  > 0 ? Math.round(kma.ekGenomd / kma.ekPlan  * 100) : null;
-  const besPct = kma.besTot  > 0 ? Math.round(kma.besOk    / kma.besTot  * 100) : null;
-
-  const ekEl   = document.getElementById('kpi-ek');
-  const ekRag  = document.getElementById('rag-ek');
-  const ekSub  = document.getElementById('kpi-ek-sub');
-  if(ekPct !== null) {
-    ekEl.textContent  = ekPct + '%'; ekEl.className = 'kpi-value';
-    ekSub.textContent = kma.ekGenomd + ' av ' + kma.ekPlan + ' checkpunkter';
-    ekRag.className   = 'kpi-rag ' + ragKMA(ekPct);
-    ekRag.textContent = ragLabelKMA(ekPct);
-  } else {
-    ekEl.textContent  = '–'; ekEl.className = 'kpi-value empty';
-    ekSub.textContent = 'Mata in via + En vecka';
-    ekRag.className   = 'kpi-rag rag-gray'; ekRag.textContent = '–';
-  }
-
-  const besEl  = document.getElementById('kpi-bes');
-  const besRag = document.getElementById('rag-bes');
-  const besSub = document.getElementById('kpi-bes-sub');
-  if(besPct !== null) {
-    besEl.textContent  = besPct + '%'; besEl.className = 'kpi-value';
-    besSub.textContent = kma.besOk + ' av ' + kma.besTot + ' projekt';
-    besRag.className   = 'kpi-rag ' + ragKMA(besPct);
-    besRag.textContent = ragLabelKMA(besPct);
-  } else {
-    besEl.textContent  = '–'; besEl.className = 'kpi-value empty';
-    besSub.textContent = 'Inga besiktningar ännu';
-    besRag.className   = 'kpi-rag rag-gray'; besRag.textContent = '–';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BUDGET — period-baserad modell
-// ═══════════════════════════════════════════════════════════════════
-// BUDGET = {
-//   periods: [{fromWeek, toWeek, omsStart, omsEnd, tb1, kassa, label}]
-// }
-const DEFAULT_BUDGET = {
-  periods: [
-    {fromWeek:1,  toWeek:8,  omsStart:1.0,  omsEnd:7.7,  tb1:15.0, kassa:400, label:"Nov–Dec (uppstart)"},
-    {fromWeek:9,  toWeek:22, omsStart:7.7,  omsEnd:21.2, tb1:20.0, kassa:500, label:"Jan–Mar (normalt)"},
-    {fromWeek:23, toWeek:35, omsStart:21.2, omsEnd:34.6, tb1:18.0, kassa:450, label:"Apr–Jun (sommar)"},
-    {fromWeek:36, toWeek:44, omsStart:34.6, omsEnd:42.3, tb1:22.0, kassa:550, label:"Jul–Sep (högsäsong)"},
-    {fromWeek:45, toWeek:52, omsStart:42.3, omsEnd:50.0, tb1:20.0, kassa:500, label:"Okt (avslut)"}
-  ]
-};
-
-let BUDGET = JSON.parse(store.get(KEY_BUDGET) || 'null') || DEFAULT_BUDGET;
-
-function getBudgetForWeek(w) {
-  const p = BUDGET.periods.find(p => w >= p.fromWeek && w <= p.toWeek)
-         || BUDGET.periods[BUDGET.periods.length - 1]
-         || {omsStart:0, omsEnd:50, tb1:20, kassa:500};
-  const span = p.toWeek - p.fromWeek;
-  const frac = span === 0 ? 1 : (w - p.fromWeek) / span;
-  const oms = Math.round(((p.omsStart||0) + ((p.omsEnd||0) - (p.omsStart||0)) * frac) * 100) / 100;
-  return { oms, tb1: p.tb1, kassa: p.kassa };
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════════════════
-function loadData()    { try{ return JSON.parse(store.get(KEY_DATA)||'[]'); }catch(e){ return []; } }
-function saveData(d)   { store.set(KEY_DATA, JSON.stringify(d)); }
-
-// Förifylld testdata: v1–v20, oms 0.5 → 7.5 Mkr linjärt
-const SEED_DATA = [{"vecka":1,"datum":"2025-11-03","oms":0.5,"tb1":20.0,"kassa":500,"kval":""},{"vecka":2,"datum":"2025-11-10","oms":0.87,"tb1":20.0,"kassa":500,"kval":""},{"vecka":3,"datum":"2025-11-17","oms":1.24,"tb1":20.0,"kassa":500,"kval":""},{"vecka":4,"datum":"2025-11-24","oms":1.61,"tb1":20.0,"kassa":500,"kval":""},{"vecka":5,"datum":"2025-12-01","oms":1.97,"tb1":20.0,"kassa":500,"kval":""},{"vecka":6,"datum":"2025-12-08","oms":2.34,"tb1":20.0,"kassa":500,"kval":""},{"vecka":7,"datum":"2025-12-15","oms":2.71,"tb1":20.0,"kassa":500,"kval":""},{"vecka":8,"datum":"2025-12-22","oms":3.08,"tb1":20.0,"kassa":500,"kval":""},{"vecka":9,"datum":"2025-12-29","oms":3.45,"tb1":20.0,"kassa":500,"kval":""},{"vecka":10,"datum":"2026-01-05","oms":3.82,"tb1":20.0,"kassa":500,"kval":""},{"vecka":11,"datum":"2026-01-12","oms":4.18,"tb1":20.0,"kassa":500,"kval":""},{"vecka":12,"datum":"2026-01-19","oms":4.55,"tb1":20.0,"kassa":500,"kval":""},{"vecka":13,"datum":"2026-01-26","oms":4.92,"tb1":20.0,"kassa":500,"kval":""},{"vecka":14,"datum":"2026-02-02","oms":5.29,"tb1":20.0,"kassa":500,"kval":""},{"vecka":15,"datum":"2026-02-09","oms":5.66,"tb1":20.0,"kassa":500,"kval":""},{"vecka":16,"datum":"2026-02-16","oms":6.03,"tb1":20.0,"kassa":500,"kval":""},{"vecka":17,"datum":"2026-02-23","oms":6.39,"tb1":20.0,"kassa":500,"kval":""},{"vecka":18,"datum":"2026-03-02","oms":6.76,"tb1":20.0,"kassa":500,"kval":""},{"vecka":19,"datum":"2026-03-09","oms":7.13,"tb1":20.0,"kassa":500,"kval":""},{"vecka":20,"datum":"2026-03-16","oms":7.5,"tb1":20.0,"kassa":500,"kval":""}];
-
-let DATA = loadData();
-// Om ingen data finns ännu, ladda testdata
-if(DATA.length === 0) { DATA = SEED_DATA; saveData(DATA); }
-
-// ═══════════════════════════════════════════════════════════════════
-// HJÄLPFUNKTIONER
-// ═══════════════════════════════════════════════════════════════════
-function weekLabel(w) {
-  const d = new Date(FY_START);
-  d.setDate(d.getDate() + (w-1)*7);
-  return d.toLocaleDateString('sv-SE', {day:'numeric', month:'short'});
-}
-
-function weekDate(w) {
-  const d = new Date(FY_START);
-  d.setDate(d.getDate() + (w-1)*7);
-  return d.toISOString().slice(0,10);
-}
-
-function currentFYWeek() {
-  const diff = Math.floor((new Date() - FY_START) / (7*24*60*60*1000));
-  return Math.max(1, Math.min(52, diff+1));
-}
-
-function lastWeek() {
-  const s = [...DATA].sort((a,b)=>a.vecka-b.vecka);
-  return s.length ? s[s.length-1] : null;
-}
-
-function lastVal(f) {
-  const s = [...DATA].sort((a,b)=>a.vecka-b.vecka);
-  for(let i=s.length-1;i>=0;i--) if(s[i][f]!==''&&s[i][f]!=null) return s[i][f];
-  return null;
-}
-
-function lerp(a, b, t) { return Math.round((a + (b-a)*t)*100)/100; }
-
-// ═══════════════════════════════════════════════════════════════════
-// CHART SETUP
-// ═══════════════════════════════════════════════════════════════════
-let charts = {};
-
-function mkChart(id, type, labels, datasets, yFmt, ttFmt, yMin, yMax) {
-  if(charts[id]) charts[id].destroy();
-  const yAxis = {
-    grid:{color:'rgba(48,54,61,.5)',drawBorder:false},
-    ticks:{color:'#8B949E',font:{size:10},callback:yFmt},
-    beginAtZero:true
-  };
-  if(yMin !== undefined) yAxis.min = yMin;
-  if(yMax !== undefined) yAxis.max = yMax;
-  charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-    type, data:{labels,datasets},
-    options:{
-      responsive:true, maintainAspectRatio:false, animation:false,
-      interaction:{mode:'index',intersect:false},
-      plugins:{
-        legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10},usePointStyle:true,padding:10,boxWidth:6}},
-        tooltip:{backgroundColor:'#161B22',borderColor:'#30363D',borderWidth:1,titleColor:'#F0F6FC',bodyColor:'#8B949E',padding:10,
-          callbacks:{label:ctx=>{ const v=ctx.parsed.y; if(v==null)return null; return `${ctx.dataset.label}: ${ttFmt(v)}`; }}
+        function weekNumberToDate(weekNum) {
+            const d = new Date(WEEK_START_DATE);
+            d.setDate(d.getDate() + (weekNum - 1) * 7);
+            return d;
         }
-      },
-      scales:{
-        x:{grid:{color:'rgba(48,54,61,.3)',drawBorder:false},ticks:{color:'#8B949E',font:{size:10},maxRotation:45,minRotation:0}},
-        y:yAxis
-      }
-    }
-  });
-}
 
-// ═══════════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════════
-function getN() { return parseInt(document.getElementById('weekRange').value); }
+        function dateToString(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
 
-function getWindowWeeks() {
-  const n = getN();
-  const lw = lastWeek();
-  const lastW = lw ? lw.vecka : currentFYWeek();
-  // Placera senaste datavecka ca 40% från vänster → mer framtid syns till höger
-  const pastWeeks = Math.round(n * 0.4);
-  let startW = Math.max(1, lastW - pastWeeks);
-  let endW   = startW + n - 1;
-  // Klipp mot v52
-  if(endW > 52) { endW = 52; startW = Math.max(1, endW - n + 1); }
-  const res=[];
-  for(let w=startW;w<=endW;w++) res.push(w);
-  return res;
-}
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem('rm_kpi_v3_data');
+                const savedBudget = localStorage.getItem('rm_kpi_v3_budget');
+                
+                if (savedData) {
+                    DATA = JSON.parse(savedData);
+                } else {
+                    DATA = generateSeedData();
+                }
+                
+                if (savedBudget) {
+                    BUDGET = JSON.parse(savedBudget);
+                } else {
+                    BUDGET = generateDefaultBudget();
+                }
+            } catch (e) {
+                console.error('Load error:', e);
+                DATA = generateSeedData();
+                BUDGET = generateDefaultBudget();
+            }
+        }
 
-function setKPI(id, val, empty) {
-  const el=document.getElementById(id);
-  el.textContent=val; el.className=empty?'kpi-value empty':'kpi-value';
-}
+        function generateSeedData() {
+            const data = [];
+            for (let w = 1; w <= 20; w++) {
+                const ratio = (w - 1) / 19;
+                data.push({
+                    week: w,
+                    date: dateToString(weekNumberToDate(w)),
+                    oms: 0.5 + ratio * 7,
+                    tb1: 20,
+                    kassa: 500,
+                    ekPlan: 5,
+                    ekGenomford: Math.floor(5 * ratio),
+                    beNya: 3,
+                    beGodkand: Math.floor(3 * ratio)
+                });
+            }
+            return data;
+        }
 
-function setRAG(id, val, bud) {
-  const el=document.getElementById(id);
-  if(val===null){el.className='kpi-rag rag-gray';el.textContent='–';return;}
-  const d=val-bud;
-  el.className='kpi-rag '+(d>=0?'rag-green':'rag-red');
-  el.textContent=(d>=0?'+':'')+d.toFixed(Math.abs(d)<10?1:0);
-}
+        function generateDefaultBudget() {
+            return [
+                { fromWeek: 1, toWeek: 9, omsStart: 0.5, omsEnd: 3.5, tb1: 20, kassa: 500, label: 'Nov-Dec (uppstart)' },
+                { fromWeek: 10, toWeek: 22, omsStart: 3.5, omsEnd: 8, tb1: 22, kassa: 600, label: 'Jan-Mar' },
+                { fromWeek: 23, toWeek: 35, omsStart: 8, omsEnd: 10, tb1: 24, kassa: 700, label: 'Apr-Jun' },
+                { fromWeek: 36, toWeek: 44, omsStart: 10, omsEnd: 11, tb1: 25, kassa: 650, label: 'Jul-Sep' },
+                { fromWeek: 45, toWeek: 52, omsStart: 11, omsEnd: 9, tb1: 23, kassa: 500, label: 'Okt (avslut)' }
+            ];
+        }
 
-function render() {
-  const winWeeks = getWindowWeeks();
-  const labels   = winWeeks.map(w=>`${weekLabel(w)}`);
-  const dataMap  = {};
-  DATA.forEach(d=>{ dataMap[d.vecka]=d; });
+        function saveData() {
+            localStorage.setItem('rm_kpi_v3_data', JSON.stringify(DATA));
+        }
 
-  const lw       = lastWeek();
-  const latOms   = lastVal('oms');
-  const latTB1   = lastVal('tb1');
-  const latKassa = lastVal('kassa');
-  const wb       = lw ? getBudgetForWeek(lw.vecka) : {oms:null,tb1:null,kassa:null};
+        function saveBudgetToStorage() {
+            localStorage.setItem('rm_kpi_v3_budget', JSON.stringify(BUDGET));
+        }
 
-  // KPI-kort
-  setKPI('kpi-oms',   latOms   !=null ? latOms.toFixed(2)+' Mkr' : '–', latOms==null);
-  setKPI('kpi-tb1',   latTB1   !=null ? latTB1.toFixed(1)+' %'   : '–', latTB1==null);
-  setKPI('kpi-kassa', latKassa !=null ? latKassa+' tkr'           : '–', latKassa==null);
+        // ========== BUDGET PANEL ==========
+        function renderBudgetPanel() {
+            const container = document.getElementById('budgetPeriods');
+            container.innerHTML = '';
+            
+            BUDGET.forEach((period, idx) => {
+                const div = document.createElement('div');
+                div.className = 'sidebar-panel';
+                div.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Period</label>
+                        <input type="text" class="form-input" value="${period.label}" onchange="BUDGET[${idx}].label = this.value">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Från vecka</label>
+                            <input type="number" class="form-input" value="${period.fromWeek}" min="1" max="52" onchange="BUDGET[${idx}].fromWeek = parseInt(this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Till vecka</label>
+                            <input type="number" class="form-input" value="${period.toWeek}" min="1" max="52" onchange="BUDGET[${idx}].toWeek = parseInt(this.value)">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Oms start (Mkr)</label>
+                            <input type="number" class="form-input" step="0.1" value="${period.omsStart}" onchange="BUDGET[${idx}].omsStart = parseFloat(this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Oms slut (Mkr)</label>
+                            <input type="number" class="form-input" step="0.1" value="${period.omsEnd}" onchange="BUDGET[${idx}].omsEnd = parseFloat(this.value)">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">TB1 (%)</label>
+                            <input type="number" class="form-input" step="0.1" value="${period.tb1}" onchange="BUDGET[${idx}].tb1 = parseFloat(this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kassa (tkr/mån)</label>
+                            <input type="number" class="form-input" step="10" value="${period.kassa}" onchange="BUDGET[${idx}].kassa = parseFloat(this.value)">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
 
-  document.getElementById('kpi-oms-sub').textContent   = lw ? `V${lw.vecka} · ${weekLabel(lw.vecka)} · Budget ${wb.oms.toFixed(2)} Mkr` : '';
-  document.getElementById('kpi-tb1-sub').textContent   = lw ? `V${lw.vecka} · Budget ${wb.tb1.toFixed(1)}%` : '';
-  document.getElementById('kpi-kassa-sub').textContent = lw ? `V${lw.vecka} · Budget ${wb.kassa} tkr` : '';
-  const omsYearTarget = BUDGET.periods.length ? BUDGET.periods[BUDGET.periods.length-1].omsEnd||50 : 50;
-  document.getElementById('bud-oms-lbl').textContent   = `Mål ${omsYearTarget} Mkr/år`;
-  document.getElementById('bud-tb1-lbl').textContent   = wb.tb1!=null ? `Budget: ${wb.tb1}%` : 'Budget: –';
-  document.getElementById('bud-kassa-lbl').textContent = wb.kassa!=null ? `Budget: ${wb.kassa} tkr` : 'Budget: –';
+        function toggleBudgetPanel() {
+            const panel = document.getElementById('budgetPanel');
+            panel.style.transform = panel.style.transform === 'translateX(0px)' ? 'translateX(100%)' : 'translateX(0px)';
+            if (panel.style.transform === 'translateX(0px)') {
+                renderBudgetPanel();
+            }
+        }
 
-  setRAG('rag-oms',   latOms,   wb.oms);
-  setRAG('rag-tb1',   latTB1,   wb.tb1);
-  setRAG('rag-kassa', latKassa, wb.kassa);
-  renderKMA();
+        function saveBudget() {
+            saveBudgetToStorage();
+            toggleBudgetPanel();
+            renderDashboard();
+        }
 
-  // Varningsbanner
-  const bar = document.getElementById('alertBar');
-  const alerts = [];
-  if(lw&&latOms!=null&&latOms<wb.oms)
-    alerts.push(`<span class="alert-chip"><strong>OMS UNDER</strong> Utfall ${latOms.toFixed(2)} Mkr · Budget ${wb.oms.toFixed(2)} Mkr · Gap ${(wb.oms-latOms).toFixed(2)} Mkr</span>`);
-  if(lw&&latTB1!=null&&latTB1<wb.tb1)
-    alerts.push(`<span class="alert-chip"><strong>TB1 UNDER</strong> Utfall ${latTB1.toFixed(1)}% · Budget ${wb.tb1.toFixed(1)}% · Gap ${(wb.tb1-latTB1).toFixed(1)} pp</span>`);
-  if(lw&&latKassa!=null&&latKassa<wb.kassa)
-    alerts.push(`<span class="alert-chip"><strong>KASSA UNDER</strong> Utfall ${latKassa} tkr · Budget ${wb.kassa} tkr · Gap ${wb.kassa-latKassa} tkr</span>`);
-  if(alerts.length&&lw){ bar.innerHTML=alerts.join(''); bar.classList.add('show'); }
-  else bar.classList.remove('show');
+        // ========== BULK INPUT ==========
+        function toggleBulkPanel() {
+            const panel = document.getElementById('bulkPanel');
+            panel.style.transform = panel.style.transform === 'translateX(0px)' ? 'translateX(100%)' : 'translateX(0px)';
+        }
 
-  // Serier
-  const bOms   = winWeeks.map(w=>getBudgetForWeek(w).oms);
-  const bTB1   = winWeeks.map(w=>getBudgetForWeek(w).tb1);
-  const bKassa = winWeeks.map(w=>getBudgetForWeek(w).kassa);
-  const uOms   = winWeeks.map(w=>{ const d=dataMap[w]; return d&&d.oms  !=null&&d.oms  !==''?Number(d.oms)  :null; });
-  const uTB1   = winWeeks.map(w=>{ const d=dataMap[w]; return d&&d.tb1  !=null&&d.tb1  !==''?Number(d.tb1)  :null; });
-  const uKassa = winWeeks.map(w=>{ const d=dataMap[w]; return d&&d.kassa!=null&&d.kassa!==''?Number(d.kassa):null; });
+        function applyBulkInput() {
+            const fromWeek = parseInt(document.getElementById('bulkFromWeek').value);
+            const toWeek = parseInt(document.getElementById('bulkToWeek').value);
+            const omsStart = parseFloat(document.getElementById('bulkOmsStart').value);
+            const omsEnd = parseFloat(document.getElementById('bulkOmsEnd').value);
+            const tb1 = parseFloat(document.getElementById('bulkTB1').value);
+            const kassa = parseFloat(document.getElementById('bulkKassa').value);
 
-  const budLine = (data,lbl)=>({
-    label:lbl, data, type:'line',
-    borderColor:'#F0B429', borderWidth:2, borderDash:[6,4],
-    pointRadius:0, fill:false, tension:0, order:1
-  });
+            for (let w = fromWeek; w <= toWeek; w++) {
+                const ratio = (w - fromWeek) / (toWeek - fromWeek);
+                const oms = omsStart + (omsEnd - omsStart) * ratio;
+                
+                let existing = DATA.find(d => d.week === w);
+                if (!existing) {
+                    existing = { week: w, date: dateToString(weekNumberToDate(w)), ekPlan: 0, ekGenomford: 0, beNya: 0, beGodkand: 0 };
+                    DATA.push(existing);
+                }
+                
+                existing.oms = Math.round(oms * 100) / 100;
+                existing.tb1 = tb1;
+                existing.kassa = kassa;
+            }
 
-  // Y-max: alltid ≥ max av budgetlinjen (så 50 Mkr syns när hela året visas)
-  const omsMax = Math.ceil(Math.max(...bOms)*1.06);
-  const tb1All = [...uTB1.filter(v=>v!=null),...bTB1];
-  const tb1Max = Math.ceil(Math.max(...tb1All)*1.15);
-  const tb1Min = Math.max(0,Math.floor(Math.min(...tb1All)*0.85));
-  const kassaAll = [...uKassa.filter(v=>v!=null),...bKassa];
-  const kassaMax = Math.ceil(Math.max(...kassaAll)*1.2);
+            DATA.sort((a, b) => a.week - b.week);
+            saveData();
+            toggleBulkPanel();
+            renderDashboard();
+        }
 
-  document.getElementById('chartOmsTitle').textContent =
-    `Omsättning ackumulerat (Mkr) · Mål: ${omsYearTarget} Mkr`;
+        // ========== WEEK MODAL ==========
+        function openWeekModal() {
+            document.getElementById('weekModal').classList.add('active');
+            document.getElementById('modalWeek').value = '1';
+            updateModalDate();
+        }
 
-  mkChart('chartOms','line',labels,[
-    {label:'Utfall',data:uOms,borderColor:'#1F6FEB',backgroundColor:'rgba(31,111,235,.1)',borderWidth:2.5,tension:.2,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#1F6FEB',fill:true,spanGaps:false,order:2},
-    budLine(bOms,`Budget →${omsYearTarget} Mkr`)
-  ],v=>v.toFixed(0)+' Mkr',v=>v.toFixed(2)+' Mkr',0,omsMax);
+        function closeWeekModal() {
+            document.getElementById('weekModal').classList.remove('active');
+        }
 
-  mkChart('chartTB1','line',labels,[
-    {label:'Utfall',data:uTB1,borderColor:'#3FB950',backgroundColor:'rgba(63,185,80,.1)',borderWidth:2.5,tension:.2,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#3FB950',fill:true,spanGaps:false,order:2},
-    budLine(bTB1,'Budget per period')
-  ],v=>v.toFixed(0)+'%',v=>v.toFixed(1)+'%',tb1Min,tb1Max);
+        function updateModalDate() {
+            const week = parseInt(document.getElementById('modalWeek').value);
+            const date = weekNumberToDate(week);
+            document.getElementById('modalDate').value = dateToString(date);
+        }
 
-  mkChart('chartKassa','bar',labels,[
-    {label:'Utfall',data:uKassa,
-      backgroundColor:winWeeks.map(w=>{ const d=dataMap[w]; if(!d||d.kassa==null) return 'rgba(31,111,235,.3)'; return Number(d.kassa)<getBudgetForWeek(w).kassa?'rgba(248,81,73,.75)':'rgba(63,185,80,.75)'; }),
-      borderColor:    winWeeks.map(w=>{ const d=dataMap[w]; if(!d||d.kassa==null) return '#1F6FEB'; return Number(d.kassa)<getBudgetForWeek(w).kassa?'#F85149':'#3FB950'; }),
-      borderWidth:1, borderRadius:4, order:2
-    },
-    {...budLine(bKassa,'Budget per period'),backgroundColor:'transparent'}
-  ],v=>v+' tkr',v=>v+' tkr',0,kassaMax);
+        function saveWeekData() {
+            const week = parseInt(document.getElementById('modalWeek').value);
+            const date = document.getElementById('modalDate').value;
+            const oms = parseFloat(document.getElementById('modalOms').value);
+            const tb1 = parseFloat(document.getElementById('modalTB1').value);
+            const kassa = parseFloat(document.getElementById('modalKassa').value);
+            const ekPlan = parseInt(document.getElementById('modalEKPlan').value);
+            const ekGenomford = parseInt(document.getElementById('modalEKGenomford').value);
+            const beNya = parseInt(document.getElementById('modalBENya').value);
+            const beGodkand = parseInt(document.getElementById('modalBEGodkand').value);
 
-  renderTable(winWeeks.map(w=>dataMap[w]).filter(Boolean));
+            let existing = DATA.find(d => d.week === week);
+            if (existing) {
+                existing.date = date;
+                existing.oms = oms;
+                existing.tb1 = tb1;
+                existing.kassa = kassa;
+                existing.ekPlan = ekPlan;
+                existing.ekGenomford = ekGenomford;
+                existing.beNya = beNya;
+                existing.beGodkand = beGodkand;
+            } else {
+                DATA.push({
+                    week, date, oms, tb1, kassa,
+                    ekPlan, ekGenomford, beNya, beGodkand
+                });
+            }
 
-  document.getElementById('footer').textContent = lw
-    ? `Senast uppdaterad: V${lw.vecka} · ${weekLabel(lw.vecka)} · ${DATA.length} veckor inmatade`
-    : 'Testdata v1–v20 laddad · Klicka "+ En vecka" eller "Bulk-inmatning" för att uppdatera';
-}
+            DATA.sort((a, b) => a.week - b.week);
+            saveData();
+            closeWeekModal();
+            renderDashboard();
+        }
 
-function renderTable(rows) {
-  const body=document.getElementById('tableBody');
-  if(!rows.length){
-    body.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:28px">Inga veckor i valt fönster</td></tr>';
-    return;
-  }
-  const sorted=[...rows].sort((a,b)=>b.vecka-a.vecka);
-  body.innerHTML=sorted.map(d=>{
-    const b=getBudgetForWeek(d.vecka);
-    const dO=d.oms!=null&&d.oms!==''?+(d.oms-b.oms).toFixed(2):null;
-    const dT=d.tb1!=null&&d.tb1!==''?+(d.tb1-b.tb1).toFixed(1):null;
-    const dK=d.kassa!=null&&d.kassa!==''?+(d.kassa-b.kassa):null;
-    const cls=v=>v==null?'val-neutral':v>=0?'val-pos':'val-neg';
-    const fmt=v=>v==null?'–':(v>=0?'+':'')+v;
-    return `<tr>
-      <td>V${d.vecka} · ${weekLabel(d.vecka)}</td>
-      <td>${d.datum||'–'}</td>
-      <td>${d.oms!=null&&d.oms!==''?Number(d.oms).toFixed(2)+' Mkr':'–'}</td>
-      <td class="${cls(dO)}">${fmt(dO)}${dO!=null?' Mkr':''}</td>
-      <td>${d.tb1!=null&&d.tb1!==''?Number(d.tb1).toFixed(1)+' %':'–'}</td>
-      <td class="${cls(dT)}">${fmt(dT)}${dT!=null?' %':''}</td>
-      <td>${d.kassa!=null&&d.kassa!==''?d.kassa+' tkr':'–'}</td>
-      <td class="${cls(dK)}">${fmt(dK)}${dK!=null?' tkr':''}</td>
-      <td>${d.ekGenomd||d.ekPlan ? (d.ekGenomd||0)+'/'+(d.ekPlan||0) : '–'}</td>
-      <td>${d.besTot ? (d.besOk||0)+'/'+(d.besTot||0) : '–'}</td>
-    </tr>`;
-  }).join('');
-}
+        // ========== BUDGET INTERPOLATION ==========
+        function getBudgetValue(week, field) {
+            for (let period of BUDGET) {
+                if (week >= period.fromWeek && week <= period.toWeek) {
+                    if (field === 'oms') {
+                        const ratio = (week - period.fromWeek) / (period.toWeek - period.fromWeek);
+                        return period.omsStart + (period.omsEnd - period.omsStart) * ratio;
+                    }
+                    return period[field];
+                }
+            }
+            return 0;
+        }
 
-// ═══════════════════════════════════════════════════════════════════
-// PANEL TOGGLE
-// ═══════════════════════════════════════════════════════════════════
-function togglePanel(panelId, btnId) {
-  const panel=document.getElementById(panelId);
-  const btn=document.getElementById(btnId);
-  const open=panel.classList.contains('show');
-  // Stäng alla paneler
-  ['budgetPanel','bulkPanel'].forEach(id=>{
-    document.getElementById(id).classList.remove('show');
-  });
-  ['btnBudget','btnBulk'].forEach(id=>{
-    document.getElementById(id).classList.remove('btn-active');
-  });
-  if(!open){
-    panel.classList.add('show');
-    btn.classList.add('btn-active');
-    if(panelId==='budgetPanel') fillBudgetPanel();
-    if(panelId==='bulkPanel')   fillBulkPanel();
-  }
-}
+        // ========== DASHBOARD RENDERING ==========
+        function handleWeekFilterChange() {
+            renderDashboard();
+        }
 
-function fillBulkPanel() {
-  // Auto-fyll veckointervall: från = nästa vecka efter senaste data, till = nuvarande FY-vecka
-  const lw = lastWeek();
-  const fromW = lw ? Math.min(52, lw.vecka + 1) : 1;
-  const toW   = Math.min(52, Math.max(fromW, currentFYWeek()));
-  const fromEl = document.getElementById('bk-from');
-  const toEl   = document.getElementById('bk-to');
-  if(!fromEl.value) { fromEl.value = fromW; document.getElementById('bk-from-hint').textContent = weekLabel(fromW); }
-  if(!toEl.value)   { toEl.value   = toW;   document.getElementById('bk-to-hint').textContent   = weekLabel(toW); }
-  bulkPreview();
-}
+        function renderDashboard() {
+            const weeks = parseInt(document.getElementById('weekFilter').value);
+            const maxWeek = Math.max(...DATA.map(d => d.week), 0);
+            const startWeek = Math.max(1, maxWeek - weeks + 1);
+            const visibleData = DATA.filter(d => d.week >= startWeek);
 
-// ═══════════════════════════════════════════════════════════════════
-// BUDGET-PANEL
-// ═══════════════════════════════════════════════════════════════════
-function fillBudgetPanel() {
-  renderPeriodRows();
-}
+            updateKPICards(visibleData, startWeek);
+            updateKMACards(visibleData);
+            updateCharts(visibleData, startWeek);
+            updateDataTable(visibleData);
+        }
 
-function renderPeriodRows() {
-  const c=document.getElementById('periodsContainer');
-  c.innerHTML='';
-  BUDGET.periods.forEach((p,i)=>{
-    const row=document.createElement('div');
-    row.className='period-row';
-    row.dataset.idx=i;
-    row.innerHTML=`
-      <input type="number" min="1" max="52" value="${p.fromWeek}" placeholder="1" onchange="updatePeriod(${i},'fromWeek',this.value)">
-      <input type="number" min="1" max="52" value="${p.toWeek}"   placeholder="52" onchange="updatePeriod(${i},'toWeek',this.value)">
-      <input type="text"   value="${p.label||''}"                 placeholder="Namn på perioden" onchange="updatePeriod(${i},'label',this.value)">
-      <input type="number" step="0.1" value="${p.omsStart!=null?p.omsStart:''}" placeholder="0.0" onchange="updatePeriod(${i},'omsStart',this.value)">
-      <input type="number" step="0.1" value="${p.omsEnd!=null?p.omsEnd:''}"     placeholder="50.0" onchange="updatePeriod(${i},'omsEnd',this.value)">
-      <input type="number" step="0.1" value="${p.tb1}"            placeholder="20.0" onchange="updatePeriod(${i},'tb1',this.value)">
-      <input type="number" value="${p.kassa}"                     placeholder="500"  onchange="updatePeriod(${i},'kassa',this.value)">
-      <button class="del-btn" onclick="deletePeriod(${i})" title="Ta bort">✕</button>`;
-    c.appendChild(row);
-  });
-}
+        function updateKPICards(data, startWeek) {
+            if (data.length === 0) {
+                document.getElementById('omsValue').textContent = '0';
+                document.getElementById('tb1Value').textContent = '0';
+                document.getElementById('kassaValue').textContent = '0';
+                return;
+            }
 
-function updatePeriod(i, field, val) {
-  BUDGET.periods[i][field] = (field==='label') ? val : parseFloat(val)||0;
-}
+            // Omsättning
+            const totalOms = data.reduce((sum, d) => sum + d.oms, 0);
+            const maxWeek = Math.max(...data.map(d => d.week));
+            const budgetOms = data.reduce((sum, d) => sum + getBudgetValue(d.week, 'oms'), 0);
+            
+            document.getElementById('omsValue').textContent = totalOms.toFixed(1);
+            document.getElementById('oms-week-info').textContent = `V${startWeek}-V${maxWeek}`;
+            document.getElementById('oms-sub').textContent = `Budget: ${budgetOms.toFixed(1)} Mkr`;
+            
+            const omsDelta = totalOms - budgetOms;
+            document.getElementById('oms-delta').textContent = (omsDelta >= 0 ? '+' : '') + omsDelta.toFixed(1);
+            const omsRag = document.getElementById('oms-rag').querySelector('.traffic-light');
+            omsRag.className = 'traffic-light ' + (omsDelta >= 0 ? 'traffic-green' : 'traffic-red');
 
-function deletePeriod(i) {
-  BUDGET.periods.splice(i,1);
-  renderPeriodRows();
-}
+            // TB1
+            const avgTB1 = data.length > 0 ? data.reduce((sum, d) => sum + d.tb1, 0) / data.length : 0;
+            const budgetTB1 = data.length > 0 ? data.reduce((sum, d) => sum + getBudgetValue(d.week, 'tb1'), 0) / data.length : 0;
+            
+            document.getElementById('tb1Value').textContent = avgTB1.toFixed(1);
+            document.getElementById('tb1-week-info').textContent = `V${startWeek}-V${maxWeek}`;
+            document.getElementById('tb1-sub').textContent = `Budget: ${budgetTB1.toFixed(1)}%`;
+            
+            const tb1Delta = avgTB1 - budgetTB1;
+            document.getElementById('tb1-delta').textContent = (tb1Delta >= 0 ? '+' : '') + tb1Delta.toFixed(1);
+            const tb1Rag = document.getElementById('tb1-rag').querySelector('.traffic-light');
+            tb1Rag.className = 'traffic-light ' + (tb1Delta >= 0 ? 'traffic-green' : 'traffic-red');
 
-function addPeriodRow() {
-  const last=BUDGET.periods[BUDGET.periods.length-1]||{toWeek:0, omsEnd:0};
-  BUDGET.periods.push({fromWeek:last.toWeek+1, toWeek:52, omsStart:last.omsEnd||0, omsEnd:50, tb1:20.0, kassa:500, label:'Ny period'});
-  renderPeriodRows();
-}
+            // Kassaflöde
+            const avgKassa = data.length > 0 ? data.reduce((sum, d) => sum + d.kassa, 0) / data.length : 0;
+            const budgetKassa = data.length > 0 ? data.reduce((sum, d) => sum + getBudgetValue(d.week, 'kassa'), 0) / data.length : 0;
+            
+            document.getElementById('kassaValue').textContent = avgKassa.toFixed(0);
+            document.getElementById('kassa-week-info').textContent = `V${startWeek}-V${maxWeek}`;
+            document.getElementById('kassa-sub').textContent = `Budget: ${budgetKassa.toFixed(0)} tkr/mån`;
+            
+            const kassaDelta = avgKassa - budgetKassa;
+            document.getElementById('kassa-delta').textContent = (kassaDelta >= 0 ? '+' : '') + kassaDelta.toFixed(0);
+            const kassaRag = document.getElementById('kassa-rag').querySelector('.traffic-light');
+            kassaRag.className = 'traffic-light ' + (kassaDelta >= 0 ? 'traffic-green' : 'traffic-red');
+        }
 
-function saveBudgetPanel() {
-  store.set(KEY_BUDGET, JSON.stringify(BUDGET));
-  const msg=document.getElementById('budgetSavedMsg');
-  msg.classList.add('show');
-  setTimeout(()=>msg.classList.remove('show'),2500);
-  render();
-}
+        function updateKMACards(data) {
+            // Egenkontroll
+            const totalEKPlan = data.reduce((sum, d) => sum + (d.ekPlan || 0), 0);
+            const totalEKGenomford = data.reduce((sum, d) => sum + (d.ekGenomford || 0), 0);
+            const ekPct = totalEKPlan > 0 ? (totalEKGenomford / totalEKPlan * 100) : 0;
+            
+            document.getElementById('ekValue').textContent = ekPct.toFixed(0);
+            document.getElementById('ek-count').textContent = `${totalEKGenomford} / ${totalEKPlan} genomförda`;
+            
+            const ekLight = document.getElementById('ek-light');
+            ekLight.className = 'traffic-light ' + (ekPct >= 95 ? 'traffic-green' : ekPct >= 80 ? 'traffic-yellow' : 'traffic-red');
 
-// ═══════════════════════════════════════════════════════════════════
-// BULK-INMATNING
-// ═══════════════════════════════════════════════════════════════════
-let tb1Mode = 'pct'; // 'pct' | 'mkr' | 'skip'
+            // Besiktning
+            const totalBENya = data.reduce((sum, d) => sum + (d.beNya || 0), 0);
+            const totalBEGodkand = data.reduce((sum, d) => sum + (d.beGodkand || 0), 0);
+            const bePct = totalBENya > 0 ? (totalBEGodkand / totalBENya * 100) : 0;
+            
+            document.getElementById('beValue').textContent = bePct.toFixed(0);
+            document.getElementById('be-count').textContent = `${totalBEGodkand} / ${totalBENya} godkända`;
+            
+            const beLight = document.getElementById('be-light');
+            beLight.className = 'traffic-light ' + (bePct >= 95 ? 'traffic-green' : bePct >= 80 ? 'traffic-yellow' : 'traffic-red');
+        }
 
-function setTb1Mode(mode) {
-  tb1Mode = mode;
-  const pctFields = document.getElementById('tb1-fields-pct');
-  const mkrFields = document.getElementById('tb1-fields-mkr');
-  const hint      = document.getElementById('tb1-mode-hint');
-  const btnPct    = document.getElementById('tb1-mode-pct');
-  const btnMkr    = document.getElementById('tb1-mode-mkr');
-  const btnSkip   = document.getElementById('tb1-mode-skip');
-  // Återställ knappar
-  [btnPct, btnMkr, btnSkip].forEach(b => { b.style.background=b.style.background='var(--bg)'; b.style.color='var(--muted)'; b.style.fontWeight='400'; });
-  if(mode==='pct')  {
-    pctFields.style.display='contents'; mkrFields.style.display='none';
-    // Rensa mkr-fält så gamla värden inte läcker in i beräkningen
-    ['bk-brutto-from','bk-brutto-to'].forEach(id=>document.getElementById(id).value='');
-    btnPct.style.background='var(--green)'; btnPct.style.color='#000'; btnPct.style.fontWeight='700';
-    hint.textContent='Täckningsgrad i % — t.ex. 20 = 20%';
-  }
-  if(mode==='mkr')  {
-    pctFields.style.display='none'; mkrFields.style.display='contents';
-    // Rensa pct-fält
-    ['bk-tb1-from','bk-tb1-to'].forEach(id=>document.getElementById(id).value='');
-    btnMkr.style.background='var(--green)'; btnMkr.style.color='#000'; btnMkr.style.fontWeight='700';
-    hint.textContent='TB1 i kronor (Mkr) — TB1% beräknas från oms';
-  }
-  if(mode==='skip') {
-    pctFields.style.display='none'; mkrFields.style.display='none';
-    ['bk-tb1-from','bk-tb1-to','bk-brutto-from','bk-brutto-to'].forEach(id=>document.getElementById(id).value='');
-    btnSkip.style.background='var(--border)'; btnSkip.style.color='var(--white)'; btnSkip.style.fontWeight='700';
-    hint.textContent='TB1 sparas inte för dessa veckor';
-  }
-  bulkPreview();
-}
+        function updateCharts(data, startWeek) {
+            const chartData = {
+                labels: data.map(d => `V${d.week}`),
+                oms: data.map(d => d.oms),
+                omsBudget: data.map(d => getBudgetValue(d.week, 'oms')),
+                tb1: data.map(d => d.tb1),
+                tb1Budget: data.map(d => getBudgetValue(d.week, 'tb1')),
+                kassa: data.map(d => d.kassa),
+                kassaBudget: data.map(d => getBudgetValue(d.week, 'kassa'))
+            };
 
-// Läs bulk-fält och returnera interpolerade värden per vecka
-function bulkCalcRow(w, f, t) {
-  const n = t - f + 1;
-  const frac = n === 1 ? 0 : (w - f) / (n - 1);
+            // Omsättning Chart
+            if (charts.omsChart) charts.omsChart.destroy();
+            const omsCtx = document.getElementById('omsChart').getContext('2d');
+            charts.omsChart = new Chart(omsCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Faktisk',
+                            data: chartData.oms,
+                            borderColor: '#1F6FEB',
+                            backgroundColor: 'rgba(31, 111, 235, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#1F6FEB'
+                        },
+                        {
+                            label: 'Budget',
+                            data: chartData.omsBudget,
+                            borderColor: '#30363D',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8B949E', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#30363D', drawBorder: false },
+                            ticks: { color: '#8B949E' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8B949E' }
+                        }
+                    }
+                }
+            });
 
-  const of_ = parseFloat(document.getElementById('bk-oms-from').value);
-  const ot  = parseFloat(document.getElementById('bk-oms-to').value);
-  const tf_ = parseFloat(document.getElementById('bk-tb1-from').value);
-  const tt  = parseFloat(document.getElementById('bk-tb1-to').value);
-  const bf_ = parseFloat(document.getElementById('bk-brutto-from').value);
-  const bt  = parseFloat(document.getElementById('bk-brutto-to').value);
-  const kf  = parseFloat(document.getElementById('bk-kassa-from').value);
-  const kt  = parseFloat(document.getElementById('bk-kassa-to').value);
+            // TB1 Chart
+            if (charts.tb1Chart) charts.tb1Chart.destroy();
+            const tb1Ctx = document.getElementById('tb1Chart').getContext('2d');
+            charts.tb1Chart = new Chart(tb1Ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Faktisk',
+                            data: chartData.tb1,
+                            borderColor: '#3FB950',
+                            backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3FB950'
+                        },
+                        {
+                            label: 'Budget',
+                            data: chartData.tb1Budget,
+                            borderColor: '#30363D',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8B949E', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#30363D', drawBorder: false },
+                            ticks: { color: '#8B949E' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8B949E' }
+                        }
+                    }
+                }
+            });
 
-  const oms   = (!isNaN(of_)&&!isNaN(ot)) ? lerp(of_,ot,frac) : null;
-  const kassa = (!isNaN(kf)&&!isNaN(kt))  ? Math.round(kf+(kt-kf)*frac) : null;
+            // Kassaflöde Chart
+            if (charts.kassaChart) charts.kassaChart.destroy();
+            const kassaCtx = document.getElementById('kassaChart').getContext('2d');
+            charts.kassaChart = new Chart(kassaCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Faktisk',
+                            data: chartData.kassa,
+                            backgroundColor: '#F0B429',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Budget',
+                            data: chartData.kassaBudget,
+                            type: 'line',
+                            borderColor: '#30363D',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8B949E', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#30363D', drawBorder: false },
+                            ticks: { color: '#8B949E' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8B949E' }
+                        }
+                    }
+                }
+            });
+        }
 
-  // TB1: styrs av valt läge (pct / mkr / skip)
-  let tb1 = null;
-  if(tb1Mode === 'pct' && !isNaN(tf_) && !isNaN(tt)) {
-    tb1 = Math.round(lerp(tf_,tt,frac)*10)/10;
-  } else if(tb1Mode === 'mkr' && !isNaN(bf_) && !isNaN(bt)) {
-    const brutto = lerp(bf_,bt,frac);
-    tb1 = (oms && oms > 0) ? Math.round((brutto / oms) * 1000) / 10 : null;
-  }
-  // tb1Mode === 'skip' → tb1 förblir null
+        function updateDataTable(data) {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
 
-  return { oms, tb1, kassa };
-}
+            data.forEach(row => {
+                const budgetOms = getBudgetValue(row.week, 'oms');
+                const budgetTB1 = getBudgetValue(row.week, 'tb1');
+                const budgetKassa = getBudgetValue(row.week, 'kassa');
 
-function bulkPreview() {
-  const f = parseInt(document.getElementById('bk-from').value)||0;
-  const t = parseInt(document.getElementById('bk-to').value)||0;
+                const omsDelta = row.oms - budgetOms;
+                const tb1Delta = row.tb1 - budgetTB1;
+                const kassaDelta = row.kassa - budgetKassa;
 
-  if(f>=1&&f<=52) document.getElementById('bk-from-hint').textContent = weekLabel(f);
-  if(t>=1&&t<=52) document.getElementById('bk-to-hint').textContent   = weekLabel(t);
+                const ekPct = (row.ekPlan > 0) ? (row.ekGenomford / row.ekPlan * 100).toFixed(0) : '-';
+                const bePct = (row.beNya > 0) ? (row.beGodkand / row.beNya * 100).toFixed(0) : '-';
 
-  const prev = document.getElementById('bulkPreviewTxt');
-  if(!f||!t||f>t||f<1||t>52){ prev.textContent='Fyll i "Från vecka" och "Till vecka" ovan (1–52, från måste vara ≤ till).'; return; }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>V${row.week}</td>
+                    <td>${row.date}</td>
+                    <td>${row.oms.toFixed(2)}</td>
+                    <td class="${omsDelta >= 0 ? 'text-positive' : 'text-negative'}">${(omsDelta >= 0 ? '+' : '') + omsDelta.toFixed(2)}</td>
+                    <td>${row.tb1.toFixed(1)}%</td>
+                    <td class="${tb1Delta >= 0 ? 'text-positive' : 'text-negative'}">${(tb1Delta >= 0 ? '+' : '') + tb1Delta.toFixed(1)}</td>
+                    <td>${row.kassa}</td>
+                    <td class="${kassaDelta >= 0 ? 'text-positive' : 'text-negative'}">${(kassaDelta >= 0 ? '+' : '') + kassaDelta.toFixed(0)}</td>
+                    <td>${ekPct}%</td>
+                    <td>${bePct}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
 
-  const n = t-f+1;
-  const lines = [];
-  const showWeeks = n<=6 ? Array.from({length:n},(_,i)=>f+i) : [f, f+1, '…', t-1, t];
+            // Update footer
+            if (data.length > 0) {
+                const lastEntry = data[data.length - 1];
+                document.getElementById('lastUpdateInfo').textContent = `Senaste datainmatning: Vecka ${lastEntry.week} (${lastEntry.date})`;
+            }
+        }
 
-  for(const w of showWeeks) {
-    if(w==='…'){ lines.push('<em style="color:var(--muted)">…</em>'); continue; }
-    const r = bulkCalcRow(w,f,t);
-    const omsTxt   = r.oms   != null ? r.oms.toFixed(2)+' Mkr'   : '–';
-    const tb1Txt   = r.tb1   != null ? r.tb1.toFixed(1)+'%'      : '–';
-    const kassaTxt = r.kassa != null ? r.kassa+' tkr'             : '–';
-    lines.push(`<strong>V${w}</strong> ${weekLabel(w)}: oms <b>${omsTxt}</b> · TB1 <b>${tb1Txt}</b> · kassa <b>${kassaTxt}</b>`);
-  }
-  prev.innerHTML = `<span style="color:var(--blue);font-weight:700">${n} veckor</span> &nbsp;·&nbsp; ${lines.join(' &nbsp;|&nbsp; ')}`;
-}
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderDashboard();
+            document.getElementById('modalWeek').addEventListener('change', updateModalDate);
+        });
 
-function saveBulk() {
-  const f   = parseInt(document.getElementById('bk-from').value);
-  const t   = parseInt(document.getElementById('bk-to').value);
-  const kval= document.getElementById('bk-kval').value.trim();
-  const ow  = document.getElementById('bk-overwrite').value === 'overwrite';
+        // ========== EXPORT FUNCTIONS ==========
+        function exportCSV() {
+            let csv = 'Vecka,Datum,Omsättning,TB1,Kassaflöde,Egen,Besiktning\n';
+            DATA.forEach(row => {
+                csv += `${row.week},${row.date},${row.oms},${row.tb1},${row.kassa},"${row.ekGenomford}/${row.ekPlan}","${row.beGodkand}/${row.beNya}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rm_kpi_export.csv';
+            a.click();
+        }
 
-  if(!f||!t||f>t||f<1||t>52){ alert('Fyll i "Från vecka" och "Till vecka" (1–52, från ≤ till).'); return; }
-
-  let added=0, skipped=0;
-  for(let w=f;w<=t;w++){
-    const existing=DATA.findIndex(d=>d.vecka===w);
-    if(existing>=0&&!ow){ skipped++; continue; }
-    const r = bulkCalcRow(w,f,t);
-    const row = {
-      vecka: w,
-      datum: weekDate(w),
-      oms:   r.oms   != null ? r.oms   : '',
-      tb1:   r.tb1   != null ? r.tb1   : '',
-      kassa: r.kassa != null ? r.kassa : '',
-      kval
-    };
-    if(existing>=0) DATA[existing]=row; else DATA.push(row);
-    added++;
-  }
-  saveData(DATA);
-  const msg=document.getElementById('bulkSavedMsg');
-  msg.textContent=`${added} veckor sparade${skipped?', '+skipped+' hoppades över':''}`;
-  msg.classList.add('show');
-  setTimeout(()=>msg.classList.remove('show'),3000);
-  render();
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// ENSTAKA VECKA
-// ═══════════════════════════════════════════════════════════════════
-function openSingleModal() {
-  const sorted=[...DATA].sort((a,b)=>a.vecka-b.vecka);
-  const last=sorted.length?sorted[sorted.length-1].vecka:0;
-  const fyW=currentFYWeek();
-  const sug=Math.min(52,Math.max(last+1,fyW));
-  document.getElementById('inp-vecka').value=sug;
-  document.getElementById('inp-datum').value=weekDate(sug);
-  ['inp-oms','inp-tb1','inp-kassa','inp-ek-plan','inp-ek-genomf','inp-bes-tot','inp-bes-ok'].forEach(id=>document.getElementById(id).value='');
-  updateVeckaHint();
-  document.getElementById('modalOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('inp-oms').focus(),100);
-}
-
-function updateVeckaHint() {
-  const v=parseInt(document.getElementById('inp-vecka').value);
-  const el=document.getElementById('vecka-hint');
-  if(v>=1&&v<=52){
-    el.textContent=`V${v} = ${weekLabel(v)}`;
-    document.getElementById('inp-datum').value=weekDate(v);
-  } else {
-    el.textContent='V1 = 3 nov 2025 · V52 = 26 okt 2026';
-  }
-}
-
-function saveSingleWeek() {
-  const v=parseInt(document.getElementById('inp-vecka').value);
-  if(!v||v<1||v>52){ alert('Ange vecka 1–52.'); return; }
-  const row={
-    vecka:v,
-    datum:document.getElementById('inp-datum').value,
-    oms:  document.getElementById('inp-oms').value   !==''?parseFloat(document.getElementById('inp-oms').value)  :'',
-    tb1:  document.getElementById('inp-tb1').value   !==''?parseFloat(document.getElementById('inp-tb1').value)  :'',
-    kassa:document.getElementById('inp-kassa').value !==''?parseFloat(document.getElementById('inp-kassa').value):'',
-    ekPlan:  parseInt(document.getElementById('inp-ek-plan').value)||0,
-    ekGenomd:parseInt(document.getElementById('inp-ek-genomf').value)||0,
-    besTot:  parseInt(document.getElementById('inp-bes-tot').value)||0,
-    besOk:   parseInt(document.getElementById('inp-bes-ok').value)||0
-  };
-  const idx=DATA.findIndex(d=>d.vecka===v);
-  if(idx>=0) {
-    // Behåll gamla KMA-värden om inget nytt matats in
-    const old=DATA[idx];
-    if(!document.getElementById('inp-ek-plan').value && old.ekPlan) row.ekPlan=old.ekPlan;
-    if(!document.getElementById('inp-ek-genomf').value && old.ekGenomd) row.ekGenomd=old.ekGenomd;
-    if(!document.getElementById('inp-bes-tot').value && old.besTot) row.besTot=old.besTot;
-    if(!document.getElementById('inp-bes-ok').value && old.besOk) row.besOk=old.besOk;
-    DATA[idx]=row;
-  } else DATA.push(row);
-  saveData(DATA);
-  closeModal();
-  render();
-}
-
-function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
-
-// ═══════════════════════════════════════════════════════════════════
-// EXPORT / IMPORT
-// ═══════════════════════════════════════════════════════════════════
-
-// PDF — utskriftsvänlig rapport
-function exportPDF() {
-  window.print();
-}
-
-// CSV — öppnas direkt i Excel
-function exportCSV() {
-  const sorted = [...DATA].sort((a,b)=>a.vecka-b.vecka);
-  const rows = [['Vecka','Datum','Omsättning ack. (Mkr)','TB1 (%)','Kassaflöde (tkr)','Budget oms (Mkr)','Budget TB1 (%)','Budget kassa (tkr)','Kvalitet']];
-  sorted.forEach(d=>{
-    const b = getBudgetForWeek(d.vecka);
-    rows.push([d.vecka, d.datum, d.oms, d.tb1, d.kassa, b.oms, b.tb1, b.kassa, d.ekGenomd||0, d.ekPlan||0, d.besOk||0, d.besTot||0]);
-  });
-  const csv = rows.map(r=>r.map(v=>'"'+(v!=null?v:'')+'"').join(';')).join('\r\n');
-  const bom  = '\uFEFF'; // BOM för Excel-kompatibilitet (svenska tecken)
-  const blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='RM_KPI_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
-
-// Backup-meny (JSON)
-function showBackupMenu() {
-  const m=document.getElementById('backupMenu');
-  m.classList.toggle('open');
-  // Stäng vid klick utanför
-  const close=e=>{ if(!m.contains(e.target)&&e.target.getAttribute('onclick')!=='showBackupMenu()'){ m.classList.remove('open'); document.removeEventListener('click',close); }};
-  setTimeout(()=>document.addEventListener('click',close),0);
-}
-
-function exportData() {
-  const blob=new Blob([JSON.stringify({budget:BUDGET,data:DATA,exported:new Date().toISOString()},null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='RM_KPI_backup_'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
-  document.getElementById('backupMenu').classList.remove('open');
-}
-
-function importData() {
-  const inp=document.createElement('input');
-  inp.type='file'; inp.accept='.json';
-  inp.onchange=e=>{
-    const f=e.target.files[0]; if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      try{
-        const p=JSON.parse(ev.target.result);
-        if(p.data)  { DATA=p.data; saveData(DATA); }
-        if(p.budget){ BUDGET=p.budget; store.set(KEY_BUDGET,JSON.stringify(BUDGET)); }
-        render();
-        alert('Återställd — '+DATA.length+' veckor inlästa.');
-      }catch(err){ alert('Kunde inte läsa filen.'); }
-    };
-    r.readAsText(f);
-  };
-  inp.click();
-  document.getElementById('backupMenu').classList.remove('open');
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════════
-document.getElementById('modalOverlay').addEventListener('click',e=>{
-  if(e.target===document.getElementById('modalOverlay')) closeModal();
-});
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
-
-render();
-</script>
+        function exportJSON() {
+            const obj = { data: DATA, budget: BUDGET };
+            const json = JSON.stringify(obj, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rm_kpi_backup.json';
+            a.click();
+        }
+    </script>
 </body>
-<!-- build:1773932232 --><!-- build:1773991716 -->
 </html>
