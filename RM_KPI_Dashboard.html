@@ -508,7 +508,14 @@
         <div class="card mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold text-[#F0F6FC]">Kassaflödesprognos 8 veckor</h2>
-                <button class="btn-primary text-xs" onclick="openCashflowModal()">Uppdatera prognos</button>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold px-3 py-1 rounded-full" id="cfAlertBadge" style="display:none;"></span>
+                    <button class="btn-primary text-xs" onclick="openCashflowModal()">Uppdatera prognos</button>
+                </div>
+            </div>
+            <!-- Kassaflödesprognos GRAF -->
+            <div style="height:220px;position:relative;" class="mb-6">
+                <canvas id="cashflowForecastChart"></canvas>
             </div>
             <div class="table-wrapper">
                 <table>
@@ -1535,12 +1542,33 @@
 
         function updateCashflowTable() {
             const tbody = document.getElementById('cashflowTableBody');
-            if (CASHFLOW.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-[#484F58]">Ingen prognos inmatad</td></tr>'; return; }
+            const badge = document.getElementById('cfAlertBadge');
+            if (CASHFLOW.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-[#484F58]">Ingen prognos inmatad</td></tr>';
+                badge.style.display = 'none';
+                if (charts.cfChart) { charts.cfChart.destroy(); charts.cfChart = null; }
+                return;
+            }
+
+            // Beräkna kassaserien
             let kassa = CF_START_KASSA;
+            const labels = [];
+            const kassaUBSeries = [];
+            const inSeries = [];
+            const outSeries = [];
+            let minKassa = CF_START_KASSA;
+            let minKassaWeek = '';
+
             tbody.innerHTML = '';
             CASHFLOW.forEach(r => {
                 const netto = (r.inPayment || 0) - (r.uePayment || 0) - (r.otherOut || 0);
                 const kassaUB = kassa + netto;
+                labels.push(`V${r.week}`);
+                kassaUBSeries.push(kassaUB);
+                inSeries.push(r.inPayment || 0);
+                outSeries.push(-((r.uePayment || 0) + (r.otherOut || 0)));
+                if (kassaUB < minKassa) { minKassa = kassaUB; minKassaWeek = `V${r.week}`; }
+
                 const nettoClass = netto >= 0 ? 'text-positive' : 'text-negative';
                 const ubClass = kassaUB >= 0 ? '' : 'text-negative font-bold';
                 tbody.innerHTML += `<tr>
@@ -1553,6 +1581,117 @@
                     <td class="${ubClass}">${kassaUB}</td>
                 </tr>`;
                 kassa = kassaUB;
+            });
+
+            // Varningsbadge
+            if (minKassa < 0) {
+                badge.style.display = 'inline-block';
+                badge.style.background = '#F85149';
+                badge.style.color = '#FFF';
+                badge.textContent = `VARNING: Botten ${minKassa} tkr (${minKassaWeek})`;
+            } else if (minKassa < 200) {
+                badge.style.display = 'inline-block';
+                badge.style.background = '#F0B429';
+                badge.style.color = '#000';
+                badge.textContent = `Låg kassa: ${minKassa} tkr (${minKassaWeek})`;
+            } else {
+                badge.style.display = 'none';
+            }
+
+            // Kassaflödesprognos GRAF
+            if (charts.cfChart) charts.cfChart.destroy();
+            const ctx = document.getElementById('cashflowForecastChart').getContext('2d');
+
+            // Gradient för kassa UB — grön ovanför noll, röd under
+            const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+            if (minKassa < 0) {
+                gradient.addColorStop(0, 'rgba(63, 185, 80, 0.3)');
+                gradient.addColorStop(0.5, 'rgba(63, 185, 80, 0.05)');
+                gradient.addColorStop(0.7, 'rgba(248, 81, 73, 0.05)');
+                gradient.addColorStop(1, 'rgba(248, 81, 73, 0.4)');
+            } else {
+                gradient.addColorStop(0, 'rgba(63, 185, 80, 0.3)');
+                gradient.addColorStop(1, 'rgba(63, 185, 80, 0.02)');
+            }
+
+            charts.cfChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Kassa UB (tkr)',
+                            data: kassaUBSeries,
+                            borderColor: kassaUBSeries.some(v => v < 0) ? '#F85149' : '#3FB950',
+                            borderWidth: 3,
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 6,
+                            pointBackgroundColor: kassaUBSeries.map(v => v < 0 ? '#F85149' : '#3FB950'),
+                            pointBorderColor: '#0D1117',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Inbetalningar',
+                            data: inSeries,
+                            type: 'bar',
+                            backgroundColor: 'rgba(63, 185, 80, 0.4)',
+                            borderRadius: 3
+                        },
+                        {
+                            label: 'Utbetalningar',
+                            data: outSeries,
+                            type: 'bar',
+                            backgroundColor: 'rgba(248, 81, 73, 0.4)',
+                            borderRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#C9D1D9', font: { size: 11 }, usePointStyle: true }
+                        },
+                        annotation: undefined
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#21262D', drawBorder: false },
+                            ticks: { color: '#8B949E', callback: v => v + ' tkr' },
+                            beginAtZero: false
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8B949E' }
+                        }
+                    }
+                },
+                plugins: [{
+                    // Rita nollinjen tydligt
+                    id: 'zeroLine',
+                    afterDraw(chart) {
+                        const yScale = chart.scales.y;
+                        const zeroY = yScale.getPixelForValue(0);
+                        if (zeroY >= yScale.top && zeroY <= yScale.bottom) {
+                            const ctx = chart.ctx;
+                            ctx.save();
+                            ctx.strokeStyle = '#8B949E';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([6, 3]);
+                            ctx.beginPath();
+                            ctx.moveTo(chart.chartArea.left, zeroY);
+                            ctx.lineTo(chart.chartArea.right, zeroY);
+                            ctx.stroke();
+                            ctx.fillStyle = '#8B949E';
+                            ctx.font = '11px system-ui';
+                            ctx.fillText('0-linje', chart.chartArea.right - 45, zeroY - 5);
+                            ctx.restore();
+                        }
+                    }
+                }]
             });
         }
 
