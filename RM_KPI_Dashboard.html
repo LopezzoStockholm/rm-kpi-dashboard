@@ -634,19 +634,43 @@
             return `${y}-${m}-${day}`;
         }
 
+        function migrateV3Data(v3) {
+            // Konvertera gammal v3-data (vecka→week, kval→borta, lägg till KMA-fält)
+            return v3.map(d => ({
+                week: d.vecka || d.week,
+                date: d.datum || d.date || dateToString(weekNumberToDate(d.vecka || d.week)),
+                oms: typeof d.oms === 'number' ? d.oms : 0,
+                tb1: typeof d.tb1 === 'number' ? d.tb1 : 0,
+                kassa: typeof d.kassa === 'number' ? d.kassa : 0,
+                ekPlan: d.ekPlan || 0,
+                ekGenomford: d.ekGenomd || d.ekGenomford || 0,
+                beNya: d.besTot || d.beNya || 0,
+                beGodkand: d.besOk || d.beGodkand || 0
+            }));
+        }
+
         function loadData() {
             try {
-                const savedData = localStorage.getItem('rm_kpi_v3_data');
-                const savedBudget = localStorage.getItem('rm_kpi_v3_budget');
-                
-                if (savedData) {
-                    DATA = JSON.parse(savedData);
+                // Försök v4 först, migrera v3 om den finns
+                const v4Data = localStorage.getItem('rm_kpi_v4_data');
+                const v4Budget = localStorage.getItem('rm_kpi_v4_budget');
+                const v3Data = localStorage.getItem('rm_kpi_v3_data');
+                const v3Budget = localStorage.getItem('rm_kpi_v3_budget');
+
+                if (v4Data) {
+                    DATA = JSON.parse(v4Data);
+                } else if (v3Data) {
+                    DATA = migrateV3Data(JSON.parse(v3Data));
+                    localStorage.setItem('rm_kpi_v4_data', JSON.stringify(DATA));
                 } else {
                     DATA = generateSeedData();
                 }
-                
-                if (savedBudget) {
-                    BUDGET = JSON.parse(savedBudget);
+
+                if (v4Budget) {
+                    BUDGET = JSON.parse(v4Budget);
+                } else if (v3Budget) {
+                    BUDGET = JSON.parse(v3Budget);
+                    localStorage.setItem('rm_kpi_v4_budget', JSON.stringify(BUDGET));
                 } else {
                     BUDGET = generateDefaultBudget();
                 }
@@ -687,11 +711,11 @@
         }
 
         function saveData() {
-            localStorage.setItem('rm_kpi_v3_data', JSON.stringify(DATA));
+            localStorage.setItem('rm_kpi_v4_data', JSON.stringify(DATA));
         }
 
         function saveBudgetToStorage() {
-            localStorage.setItem('rm_kpi_v3_budget', JSON.stringify(BUDGET));
+            localStorage.setItem('rm_kpi_v4_budget', JSON.stringify(BUDGET));
         }
 
         // ========== BUDGET PANEL ==========
