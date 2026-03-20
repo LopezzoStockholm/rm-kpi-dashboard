@@ -416,6 +416,10 @@
                     <span id="kassa-bar-label" class="font-bold">0%</span>
                     <span id="kassa-bar-target">Mål: 0</span>
                 </div>
+                <div class="mt-3 pt-3" style="border-top:1px solid #30363D;" id="kassaPrognos">
+                    <div class="text-xs text-[#8B949E] mb-1">Prognos 8v framåt</div>
+                    <div class="text-sm font-bold" id="kassaPrognosText">Ingen prognos</div>
+                </div>
             </div>
         </div>
 
@@ -805,13 +809,41 @@
 
     <script>
         // ========== STATE & INITIALIZATION ==========
-        // API-READY: Datastrukturerna mappar 1:1 till Next Project API + Fortnox API
-        // PIPELINE  → Next: GET /project/ (type=order) + GET /workorder/ (offers)
-        // CASHFLOW  → Fortnox: GET /invoices (kundfakturor) + GET /supplierpayments
-        // PARKED    → Fortnox: GET /supplierinvoices (status=unpaid, koppla mot kundfaktura)
-        // DATA      → Fortnox: GET /accounts (ack. omsättning) + Next: GET /forecast/
-        // BUDGET    → Next: GET /budget/ + /budget_revision/
-        // Vid API-integration: ersätt localStorage-anrop med fetch() mot serverless backend
+        // ============================================================
+        // API-READY ARKITEKTUR — Dataflödeskedja
+        // ============================================================
+        // Hela dashboarden följer en logisk kedja som mappar 1:1 till API:er:
+        //
+        // STEG 1: ORDERSTOCK & PIPELINE
+        //   Next: GET /project/ → aktiva projekt med status, kontraktsvärde
+        //   Next: GET /project/{id}/overview → kvar att leverera
+        //   Next: GET /workorder/ → arbetsorder per projekt
+        //   → Fyller PIPELINE[] (type=order för kontrakterat, type=offer för offerter)
+        //
+        // STEG 2: PROGNOSER & BUDGET
+        //   Next: GET /forecast/ + /forecast/{id}/rows/ → prognos per projekt/period
+        //   Next: GET /budget/ + /budget_revision/ → budgetdata
+        //   → Fyller BUDGET[] + förväntad fakturering per vecka
+        //
+        // STEG 3: FAKTURERING & INBETALNINGAR
+        //   Fortnox: GET /invoices (scope: invoice-r) → kundfakturor (skickade, betalda)
+        //   Fortnox: GET /supplierinvoices (scope: supplierinvoice-r) → UE-fakturor
+        //   → Fyller CASHFLOW[] inbetalningssidan + PARKED[] (UE-fakturor som väntar)
+        //
+        // STEG 4: KASSAFLÖDE
+        //   Fortnox: GET /accounts (scope: account-r) → kontobalans = faktisk kassa
+        //   Kassaflödesregeln: UE betalas ej förrän kund betalt
+        //   → PARKED.status ändras från 'parkerad' till 'frislappt' vid kundinbetalning
+        //   → CASHFLOW beräknas: inbetalningar - frisläppta UE - övrigt = netto
+        //
+        // STEG 5: KPI-BERÄKNING
+        //   Omsättning ack. = Fortnox: summa fakturerade kundfakturor YTD
+        //   TB1 % = (Omsättning - UE-kostnader - material) / Omsättning
+        //   Kassaflöde = faktisk kontobalans från Fortnox
+        //   KMA = Next: GET /project/{id}/workorders/ → egenkontroller via Next Field
+        //
+        // Vid API-integration: ersätt localStorage med fetch() mot Vercel serverless
+        // ============================================================
 
         let DATA = [];
         let BUDGET = [];
@@ -1131,8 +1163,9 @@
             const omsRag = document.getElementById('oms-rag').querySelector('.traffic-light');
             omsRag.className = 'traffic-light ' + (omsDelta >= 0 ? 'traffic-green' : 'traffic-red');
 
-            // Omsättning progressbar — % av årsmål
-            const omsYearTarget = BUDGET.length ? BUDGET[BUDGET.length - 1].omsEnd || 50 : 50;
+            // Omsättning progressbar — % av årsmål (20.4 Mkr budgeterat, fallback: högsta ack. budgetvärde)
+            const omsYearTarget = 20.4; // Budgeterad årsomsättning nov 2025–okt 2026
+            // API-READY: Fortnox GET /settings/company eller Next GET /budget/ → total budgeterad oms
             const omsPct = Math.min(100, Math.round(latOms / omsYearTarget * 100));
             document.getElementById('oms-bar').style.width = omsPct + '%';
             document.getElementById('oms-bar').style.background = omsDelta >= 0 ? '#1F6FEB' : '#F85149';
@@ -1178,6 +1211,38 @@
             document.getElementById('kassa-bar').style.background = kassaDelta >= 0 ? '#F0B429' : '#F85149';
             document.getElementById('kassa-bar-label').textContent = kassaPct + '% av mål';
             document.getElementById('kassa-bar-target').textContent = `Mål: ${budgetKassa.toFixed(0)} tkr`;
+
+            // Koppla kassaflöde-kortet till prognosen
+            // API-READY: Fortnox GET /invoices (förväntade inbetalningar) + GET /supplierinvoices (UE-utbetalningar)
+            // → generera prognos automatiskt istället för manuell inmatning
+            updateKassaPrognosLink();
+        }
+
+        function updateKassaPrognosLink() {
+            const el = document.getElementById('kassaPrognosText');
+            if (CASHFLOW.length === 0) {
+                el.textContent = 'Ingen prognos';
+                el.className = 'text-sm font-bold text-[#484F58]';
+                return;
+            }
+            let kassa = CF_START_KASSA;
+            let minKassa = CF_START_KASSA;
+            let minWeek = '';
+            let lastKassa = CF_START_KASSA;
+            CASHFLOW.forEach(r => {
+                const netto = (r.inPayment || 0) - (r.uePayment || 0) - (r.otherOut || 0);
+                kassa += netto;
+                if (kassa < minKassa) { minKassa = kassa; minWeek = `V${r.week}`; }
+                lastKassa = kassa;
+            });
+
+            if (minKassa < 0) {
+                el.innerHTML = `<span style="color:#F85149;">Botten ${minKassa} tkr (${minWeek})</span>`;
+            } else if (minKassa < 200) {
+                el.innerHTML = `<span style="color:#F0B429;">Låg: ${minKassa} tkr (${minWeek})</span>`;
+            } else {
+                el.innerHTML = `<span style="color:#3FB950;">OK: min ${minKassa} tkr</span>`;
+            }
         }
 
         function updateKMACards(data) {
