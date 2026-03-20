@@ -1017,14 +1017,21 @@
         }
 
         function updateCharts(data, startWeek) {
+            // Bygg fullständig veckoaxel: från startWeek till V52 (hela räkenskapsåret)
+            const dataMap = {};
+            data.forEach(d => { dataMap[d.week] = d; });
+            const endWeek = 52;
+            const allWeeks = [];
+            for (let w = startWeek; w <= endWeek; w++) allWeeks.push(w);
+
             const chartData = {
-                labels: data.map(d => `V${d.week}`),
-                oms: data.map(d => d.oms),
-                omsBudget: data.map(d => getBudgetValue(d.week, 'oms')),
-                tb1: data.map(d => d.tb1),
-                tb1Budget: data.map(d => getBudgetValue(d.week, 'tb1')),
-                kassa: data.map(d => d.kassa),
-                kassaBudget: data.map(d => getBudgetValue(d.week, 'kassa'))
+                labels: allWeeks.map(w => `V${w}`),
+                oms: allWeeks.map(w => dataMap[w] ? dataMap[w].oms : null),
+                omsBudget: allWeeks.map(w => getBudgetValue(w, 'oms')),
+                tb1: allWeeks.map(w => dataMap[w] ? dataMap[w].tb1 : null),
+                tb1Budget: allWeeks.map(w => getBudgetValue(w, 'tb1')),
+                kassa: allWeeks.map(w => dataMap[w] ? dataMap[w].kassa : null),
+                kassaBudget: allWeeks.map(w => getBudgetValue(w, 'kassa'))
             };
 
             // === Dynamisk Y-axel beräkning för alla charts ===
@@ -1057,7 +1064,8 @@
                             tension: 0.4,
                             pointRadius: 5,
                             pointBackgroundColor: '#1F6FEB',
-                            fill: true
+                            fill: true,
+                            spanGaps: false
                         },
                         {
                             label: 'Budget',
@@ -1111,7 +1119,8 @@
                             tension: 0.4,
                             pointRadius: 5,
                             pointBackgroundColor: '#3FB950',
-                            fill: true
+                            fill: true,
+                            spanGaps: false
                         },
                         {
                             label: 'Budget',
