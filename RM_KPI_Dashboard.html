@@ -1,1849 +1,372 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RM Entreprenad & Fasad - KPI Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html, body {
-            background-color: #0D1117;
-            color: #F0F6FC;
-            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-            line-height: 1.6;
-        }
-        
-        .card {
-            background-color: #161B22;
-            border: 1px solid #30363D;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-        
-        .card-top-border {
-            border-top: 3px solid;
-        }
-        
-        .btn-primary {
-            background-color: #1F6FEB;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        
-        .btn-primary:hover {
-            background-color: #1861c8;
-        }
-        
-        .btn-secondary {
-            background-color: #161B22;
-            color: #F0F6FC;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 1px solid #30363D;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #262D35;
-            border-color: #8B949E;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        
-        .badge-green {
-            background-color: rgba(63, 185, 80, 0.2);
-            color: #3FB950;
-        }
-        
-        .badge-blue {
-            background-color: rgba(31, 111, 235, 0.2);
-            color: #1F6FEB;
-        }
-        
-        .traffic-light {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 6px;
-        }
-        
-        .traffic-green {
-            background-color: #3FB950;
-        }
-        
-        .traffic-yellow {
-            background-color: #F0B429;
-        }
-        
-        .traffic-red {
-            background-color: #F85149;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
-        }
-        
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background-color: #161B22;
-            border: 1px solid #30363D;
-            border-radius: 12px;
-            padding: 32px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            color: #F0F6FC;
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .form-input {
-            width: 100%;
-            background-color: #0D1117;
-            border: 1px solid #30363D;
-            color: #F0F6FC;
-            padding: 10px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #1F6FEB;
-            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1);
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        
-        .divider {
-            height: 1px;
-            background-color: #30363D;
-            margin: 24px 0;
-        }
-        
-        .table-wrapper {
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        
-        th {
-            background-color: #0D1117;
-            color: #8B949E;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 1px solid #30363D;
-            white-space: nowrap;
-        }
-        
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #30363D;
-        }
-        
-        tr:hover {
-            background-color: rgba(31, 111, 235, 0.05);
-        }
-        
-        .text-positive {
-            color: #3FB950;
-        }
-        
-        .text-negative {
-            color: #F85149;
-        }
-        
-        .text-muted {
-            color: #8B949E;
-        }
-        
-        .sidebar-panel {
-            background-color: #161B22;
-            border: 1px solid #30363D;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .sidebar-toggle {
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-            color: #F0F6FC;
-            user-select: none;
-        }
-        
-        .sidebar-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            margin-top: 0;
-        }
-        
-        .sidebar-content.active {
-            max-height: 2000px;
-            margin-top: 16px;
-        }
-        
-        .toggle-arrow {
-            display: inline-block;
-            transition: transform 0.3s;
-        }
-        
-        .toggle-arrow.active {
-            transform: rotate(180deg);
-        }
-        
-        @media (max-width: 768px) {
-            .card {
-                padding: 16px;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .modal-content {
-                padding: 20px;
-            }
-            
-            table {
-                font-size: 12px;
-            }
-            
-            th, td {
-                padding: 8px;
-            }
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-bottom: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RM Fasad — KPI Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0D1117;color:#C9D1D9;min-height:100vh}
+.dashboard{max-width:1400px;margin:0 auto;padding:24px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid #21262D;padding-bottom:16px}
+header h1{font-size:22px;font-weight:600;color:#F0F6FC}
+header .meta{font-size:13px;color:#8B949E}
+header .meta span{color:#58A6FF}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:20px}
+.kpi-card .label{font-size:12px;color:#8B949E;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.kpi-card .value{font-size:28px;font-weight:700;color:#F0F6FC}
+.kpi-card .sub{font-size:12px;color:#8B949E;margin-top:4px}
+.kpi-card .sub.warn{color:#F85149}
+.kpi-card .sub.ok{color:#3FB950}
+.kpi-card .progress-bar{height:6px;background:#21262D;border-radius:3px;margin-top:12px;overflow:hidden}
+.kpi-card .progress-bar .fill{height:100%;border-radius:3px;transition:width 0.5s}
+
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-full{grid-column:1/-1}
+.chart-box{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:20px}
+.chart-box h3{font-size:14px;font-weight:600;color:#C9D1D9;margin-bottom:16px}
+.chart-box .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:500}
+.badge.red{background:rgba(248,81,73,0.15);color:#F85149}
+.badge.green{background:rgba(63,185,80,0.15);color:#3FB950}
+.badge.blue{background:rgba(88,166,255,0.15);color:#58A6FF}
+
+.table-box{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:20px;margin-bottom:24px}
+.table-box h3{font-size:14px;font-weight:600;color:#C9D1D9;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#8B949E;font-weight:500;padding:8px 12px;border-bottom:1px solid #21262D}
+td{padding:8px 12px;border-bottom:1px solid #21262D;color:#C9D1D9}
+tr:hover td{background:#1C2128}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.tag.parkerad{background:rgba(248,81,73,0.15);color:#F85149}
+.tag.frislappt{background:rgba(63,185,80,0.15);color:#3FB950}
+
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}.chart-row{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="border-b border-[#30363D] bg-[#0D1117] sticky top-0 z-100">
-        <div class="px-4 md:px-8 py-6">
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <!-- Logo Section -->
-                <div class="flex items-center gap-4">
-                    <svg viewBox="0 0 320 90" width="160" height="45" style="display:inline-block;">
-                        <g fill="none" stroke="#C8956A" stroke-width="1.4" stroke-linejoin="miter">
-                            <line x1="10" y1="58" x2="310" y2="58"/>
-                            <polyline points="10,58 10,38 26,38 26,30 36,30 36,38 48,38 48,58"/>
-                            <polyline points="50,58 50,20 58,20 58,14 74,14 74,20 82,20 82,58"/>
-                            <polyline points="84,58 84,10 88,10 88,4 100,4 100,10 104,10 104,58"/>
-                            <polyline points="106,58 106,22 116,22 116,16 128,16 128,22 138,22 138,58"/>
-                            <polyline points="140,58 140,28 148,28 148,18 158,18 158,12 168,12 168,18 178,18 178,28 186,28 186,58"/>
-                            <polyline points="188,58 188,20 198,20 198,14 210,14 210,20 220,20 220,58"/>
-                            <polyline points="222,58 222,8 226,8 226,2 238,2 238,8 242,8 242,58"/>
-                            <polyline points="244,58 244,24 254,24 254,18 264,18 264,24 274,24 274,58"/>
-                            <polyline points="276,58 276,32 284,32 284,26 294,26 294,32 302,32 302,58"/>
-                            <rect x="91" y="16" width="5" height="5"/>
-                            <rect x="98" y="16" width="5" height="5"/>
-                            <rect x="162" y="20" width="4" height="4"/>
-                            <rect x="229" y="14" width="5" height="5"/>
-                            <rect x="236" y="14" width="5" height="5"/>
-                        </g>
-                        <text x="160" y="78" font-family="'Segoe UI', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#CC5500" text-anchor="middle" letter-spacing="0.3">RM Entreprenad &amp; Fasad AB</text>
-                    </svg>
-                    <div>
-                        <h1 class="text-lg md:text-xl font-bold text-[#F0F6FC] hidden">RM Entreprenad & Fasad AB</h1>
-                        <p class="text-xs md:text-sm text-[#8B949E]">KPI Dashboard · Räkenskapsår 1 nov 2025 – 31 okt 2026 · Uppdateras varje måndag</p>
-                    </div>
-                </div>
-                
-                <!-- Right side controls -->
-                <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                    <select id="weekFilter" class="form-input flex-1 md:flex-none md:w-32" onchange="handleWeekFilterChange()">
-                        <option value="8">8 veckor</option>
-                        <option value="13">13 veckor</option>
-                        <option value="26" selected>26 veckor</option>
-                        <option value="52">52 veckor</option>
-                    </select>
-                    <button class="btn-primary flex-1 md:flex-none" onclick="openWeekModal()">+ En vecka</button>
-                    <button class="btn-secondary flex-1 md:flex-none" onclick="toggleBudgetPanel()">Budget</button>
-                    <button class="btn-secondary flex-1 md:flex-none" onclick="toggleBulkPanel()">Bulk</button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="px-4 md:px-8 py-8">
-        <!-- Financial KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Omsättning -->
-            <div class="card card-top-border" style="border-top-color: #1F6FEB;">
-                <div class="flex justify-between items-start mb-4">
-                    <label class="text-sm font-semibold text-[#8B949E]">Omsättning ack.</label>
-                    <span class="text-xs text-[#8B949E]" id="oms-week-info">V1-V26</span>
-                </div>
-                <div class="mb-1">
-                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="omsValue">0</span>
-                    <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
-                </div>
-                <div class="flex justify-between items-center text-sm mb-2">
-                    <span class="text-[#F0B429] font-semibold" id="oms-sub">Budget: 0 Mkr</span>
-                    <span class="flex items-center gap-1" id="oms-rag">
-                        <span class="traffic-light traffic-green"></span>
-                        <span class="font-bold" id="oms-delta">+0</span>
-                    </span>
-                </div>
-                <div class="w-full h-4 bg-[#30363D] rounded-full overflow-hidden mb-1">
-                    <div class="h-full rounded-full transition-all duration-500" id="oms-bar" style="width:0%;background:#1F6FEB;"></div>
-                </div>
-                <div class="flex justify-between text-xs text-[#C9D1D9] font-medium mt-1">
-                    <span>0</span>
-                    <span id="oms-bar-label" class="font-bold">0%</span>
-                    <span id="oms-bar-target">Mål: 0</span>
-                </div>
-            </div>
-
-            <!-- TB1 % -->
-            <div class="card card-top-border" style="border-top-color: #3FB950;">
-                <div class="flex justify-between items-start mb-4">
-                    <label class="text-sm font-semibold text-[#8B949E]">TB1 %</label>
-                    <span class="text-xs text-[#8B949E]" id="tb1-week-info">V1-V26</span>
-                </div>
-                <div class="mb-1">
-                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="tb1Value">0</span>
-                    <span class="text-lg text-[#8B949E] ml-1">%</span>
-                </div>
-                <div class="flex justify-between items-center text-sm mb-2">
-                    <span class="text-[#F0B429] font-semibold" id="tb1-sub">Budget: 0%</span>
-                    <span class="flex items-center gap-1" id="tb1-rag">
-                        <span class="traffic-light traffic-green"></span>
-                        <span class="font-bold" id="tb1-delta">+0</span>
-                    </span>
-                </div>
-                <div class="w-full h-4 bg-[#30363D] rounded-full overflow-hidden mb-1">
-                    <div class="h-full rounded-full transition-all duration-500" id="tb1-bar" style="width:0%;background:#3FB950;"></div>
-                </div>
-                <div class="flex justify-between text-xs text-[#C9D1D9] font-medium mt-1">
-                    <span>0%</span>
-                    <span id="tb1-bar-label" class="font-bold">0%</span>
-                    <span id="tb1-bar-target">Mål: 0%</span>
-                </div>
-            </div>
-
-            <!-- Kassaflöde -->
-            <div class="card card-top-border" style="border-top-color: #F0B429;">
-                <div class="flex justify-between items-start mb-4">
-                    <label class="text-sm font-semibold text-[#8B949E]">Kassaflöde</label>
-                    <span class="text-xs text-[#8B949E]" id="kassa-week-info">V1-V26</span>
-                </div>
-                <div class="mb-1">
-                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="kassaValue">0</span>
-                    <span class="text-lg text-[#8B949E] ml-1">tkr/mån</span>
-                </div>
-                <div class="flex justify-between items-center text-sm mb-2">
-                    <span class="text-[#F0B429] font-semibold" id="kassa-sub">Budget: 0 tkr/mån</span>
-                    <span class="flex items-center gap-1" id="kassa-rag">
-                        <span class="traffic-light traffic-green"></span>
-                        <span class="font-bold" id="kassa-delta">+0</span>
-                    </span>
-                </div>
-                <div class="w-full h-4 bg-[#30363D] rounded-full overflow-hidden mb-1">
-                    <div class="h-full rounded-full transition-all duration-500" id="kassa-bar" style="width:0%;background:#F0B429;"></div>
-                </div>
-                <div class="flex justify-between text-xs text-[#C9D1D9] font-medium mt-1">
-                    <span>0</span>
-                    <span id="kassa-bar-label" class="font-bold">0%</span>
-                    <span id="kassa-bar-target">Mål: 0</span>
-                </div>
-                <div class="mt-3 pt-3" style="border-top:1px solid #30363D;" id="kassaPrognos">
-                    <div class="text-xs text-[#8B949E] mb-1">Prognos 8v framåt</div>
-                    <div class="text-sm font-bold" id="kassaPrognosText">Ingen prognos</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KMA Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- Egenkontroll -->
-            <div class="card card-top-border" style="border-top-color: #4D9FFF;">
-                <div class="flex justify-between items-center mb-6">
-                    <label class="text-sm font-semibold text-[#8B949E]">Egenkontroll</label>
-                    <span class="badge badge-blue">LEDANDE</span>
-                </div>
-                <div class="mb-4">
-                    <div class="flex items-baseline gap-1 mb-2">
-                        <span class="traffic-light" id="ek-light"></span>
-                        <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="ekValue">0</span>
-                        <span class="text-lg text-[#8B949E]">%</span>
-                    </div>
-                    <div class="text-sm text-[#8B949E]" id="ek-count">0 / 0 egenkontroller</div>
-                </div>
-                <div class="text-xs text-[#8B949E]">Mata in via + En vecka</div>
-            </div>
-
-            <!-- Besiktningsutfall -->
-            <div class="card card-top-border" style="border-top-color: #3FB950;">
-                <div class="flex justify-between items-center mb-6">
-                    <label class="text-sm font-semibold text-[#8B949E]">Besiktningsutfall</label>
-                    <span class="badge badge-green">UTFALL</span>
-                </div>
-                <div class="mb-4">
-                    <div class="flex items-baseline gap-1 mb-2">
-                        <span class="traffic-light" id="be-light"></span>
-                        <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="beValue">0</span>
-                        <span class="text-lg text-[#8B949E]">%</span>
-                    </div>
-                    <div class="text-sm text-[#8B949E]" id="be-count">0 / 0 godkända</div>
-                </div>
-                <div class="text-xs text-[#8B949E]">Mata in via + En vecka</div>
-            </div>
-        </div>
-
-        <!-- Orderstock & Pipeline -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Orderstock -->
-            <div class="card card-top-border" style="border-top-color: #A371F7;">
-                <div class="flex justify-between items-center mb-4">
-                    <label class="text-sm font-semibold text-[#8B949E]">Orderstock</label>
-                    <button class="text-xs text-[#1F6FEB] hover:underline" onclick="openPipelineModal()">Hantera</button>
-                </div>
-                <div class="mb-1">
-                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="orderstockValue">0</span>
-                    <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
-                </div>
-                <div class="text-sm text-[#8B949E]" id="orderstockMonths">0 månaders täckning</div>
-                <div class="text-xs text-[#484F58] mt-2">Kontrakterat arbete kvar att leverera</div>
-            </div>
-
-            <!-- Offerter ute -->
-            <div class="card card-top-border" style="border-top-color: #D2A8FF;">
-                <div class="flex justify-between items-center mb-4">
-                    <label class="text-sm font-semibold text-[#8B949E]">Offerter ute</label>
-                    <span class="text-xs text-[#8B949E]" id="pipelineCount">0 st</span>
-                </div>
-                <div class="mb-1">
-                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="pipelineValue">0</span>
-                    <span class="text-lg text-[#8B949E] ml-1">Mkr</span>
-                </div>
-                <div class="text-sm text-[#8B949E]" id="pipelineHitrate">Hit rate: 0%</div>
-                <div class="text-xs text-[#484F58] mt-2">Vägt värde: <span id="pipelineWeighted">0</span> Mkr</div>
-            </div>
-
-            <!-- Fakturerat vs inbetalt -->
-            <div class="card card-top-border" style="border-top-color: #F85149;">
-                <div class="flex justify-between items-center mb-4">
-                    <label class="text-sm font-semibold text-[#8B949E]">Utestående fordringar</label>
-                </div>
-                <div class="mb-1">
-                    <span class="text-3xl md:text-4xl font-bold text-[#F0F6FC]" id="receivablesValue">0</span>
-                    <span class="text-lg text-[#8B949E] ml-1">tkr</span>
-                </div>
-                <div class="text-sm" id="receivablesAge">
-                    <span class="text-[#3FB950]" id="recv0to30">0 tkr 0-30d</span>
-                    <span class="text-[#F0B429] ml-2" id="recv30to60">0 tkr 30-60d</span>
-                    <span class="text-[#F85149] ml-2" id="recv60plus">0 tkr >60d</span>
-                </div>
-                <div class="text-xs text-[#484F58] mt-2">Fakturerat ej inbetalt</div>
-            </div>
-        </div>
-
-        <!-- Kassaflödesprognos 8 veckor - cache 1774000447 -->
-        <div class="card mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-[#F0F6FC]">Kassaflödesprognos 8 veckor</h2>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-bold px-3 py-1 rounded-full" id="cfAlertBadge" style="display:none;"></span>
-                    <button class="btn-primary text-xs" onclick="openCashflowModal()">Uppdatera prognos</button>
-                </div>
-            </div>
-            <!-- Kassaflödesprognos GRAF -->
-            <div style="height:220px;position:relative;" class="mb-6">
-                <canvas id="cashflowForecastChart"></canvas>
-            </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Vecka</th>
-                            <th>Kassa IB</th>
-                            <th>Förväntad inbetalning</th>
-                            <th>Frisläppta UE-betalningar</th>
-                            <th>Övrigt ut</th>
-                            <th>Netto</th>
-                            <th>Kassa UB</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cashflowTableBody">
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-3 text-xs text-[#484F58]">Regel: UE betalas inte förrän kund har betalat. Parkerade fakturor visas nedan.</div>
-        </div>
-
-        <!-- Parkerade leverantörsfakturor -->
-        <div class="card mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-[#F0F6FC]">Parkerade leverantörsfakturor</h2>
-                <button class="btn-primary text-xs" onclick="openParkedModal()">Lägg till</button>
-            </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Leverantör</th>
-                            <th>Fakturanr</th>
-                            <th>Belopp</th>
-                            <th>Kopplar till kund</th>
-                            <th>Förfaller</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="parkedTableBody">
-                        <tr><td colspan="6" class="text-center text-[#484F58]">Inga parkerade fakturor</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">Omsättning ack. (Mkr)</h3>
-                <div class="chart-container">
-                    <canvas id="omsChart"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">TB1 (%)</h3>
-                <div class="chart-container">
-                    <canvas id="tb1Chart"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">Kassaflöde (tkr/mån)</h3>
-                <div class="chart-container">
-                    <canvas id="kassaChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Data Table -->
-        <div class="card mb-8">
-            <h2 class="text-lg font-semibold text-[#F0F6FC] mb-4">Veckadata</h2>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Vecka</th>
-                            <th>Datum</th>
-                            <th>Omsättning</th>
-                            <th>vs Budget</th>
-                            <th>TB1</th>
-                            <th>vs Budget</th>
-                            <th>Kassaflöde</th>
-                            <th>vs Budget</th>
-                            <th>Egen</th>
-                            <th>Besiktning</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer class="text-center text-xs text-[#8B949E] py-4">
-            <p id="lastUpdateInfo">Ingen data inmatad ännu</p>
-        </footer>
-    </main>
-
-    <!-- Budget Panel -->
-    <div id="budgetPanel" class="fixed right-0 top-0 h-screen w-96 bg-[#0D1117] border-l border-[#30363D] transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-bold text-[#F0F6FC]">Budgetinställningar</h2>
-                <button onclick="toggleBudgetPanel()" class="text-[#8B949E] hover:text-[#F0F6FC]">✕</button>
-            </div>
-            
-            <div id="budgetPeriods">
-                <!-- Generated by JS -->
-            </div>
-            
-            <button class="btn-primary w-full mt-6" onclick="saveBudget()">Spara Budget</button>
-        </div>
-    </div>
-
-    <!-- Bulk Input Panel -->
-    <div id="bulkPanel" class="fixed right-0 top-0 h-screen w-96 bg-[#0D1117] border-l border-[#30363D] transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-bold text-[#F0F6FC]">Bulk-inmatning</h2>
-                <button onclick="toggleBulkPanel()" class="text-[#8B949E] hover:text-[#F0F6FC]">✕</button>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Från vecka</label>
-                <input type="number" id="bulkFromWeek" class="form-input" min="1" max="52" value="1">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Till vecka</label>
-                <input type="number" id="bulkToWeek" class="form-input" min="1" max="52" value="26">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Startväarde Omsättning (Mkr)</label>
-                <input type="number" id="bulkOmsStart" class="form-input" step="0.1" value="0">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Slutväarde Omsättning (Mkr)</label>
-                <input type="number" id="bulkOmsEnd" class="form-input" step="0.1" value="10">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">TB1 (%)</label>
-                <input type="number" id="bulkTB1" class="form-input" step="0.1" value="20">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Kassaflöde (tkr/mån)</label>
-                <input type="number" id="bulkKassa" class="form-input" step="10" value="500">
-            </div>
-            
-            <button class="btn-primary w-full" onclick="applyBulkInput()">Applicera på veckor</button>
-        </div>
-    </div>
-
-    <!-- Add Week Modal -->
-    <div id="weekModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold text-[#F0F6FC] mb-6">Lägg till / Uppdatera vecka</h2>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Vecka (1-52)</label>
-                    <input type="number" id="modalWeek" class="form-input" min="1" max="52" value="1">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Datum</label>
-                    <input type="date" id="modalDate" class="form-input">
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Omsättning ack. (Mkr)</label>
-                    <input type="number" id="modalOms" class="form-input" step="0.01" value="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">TB1 (%)</label>
-                    <input type="number" id="modalTB1" class="form-input" step="0.1" value="20">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Kassaflöde (tkr/mån)</label>
-                <input type="number" id="modalKassa" class="form-input" step="10" value="500">
-            </div>
-            
-            <div class="divider"></div>
-            
-            <h3 class="text-sm font-semibold text-[#F0F6FC] mb-4">Kvalitetskontroll (KMA)</h3>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Nya planerade egenkontroller</label>
-                    <input type="number" id="modalEKPlan" class="form-input" min="0" value="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Genomförda egenkontroller</label>
-                    <input type="number" id="modalEKGenomford" class="form-input" min="0" value="0">
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Nya besiktningar</label>
-                    <input type="number" id="modalBENya" class="form-input" min="0" value="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Godkända utan anmärkning</label>
-                    <input type="number" id="modalBEGodkand" class="form-input" min="0" value="0">
-                </div>
-            </div>
-            
-            <div class="divider"></div>
-            
-            <div class="flex gap-4">
-                <button class="btn-primary flex-1" onclick="saveWeekData()">Spara</button>
-                <button class="btn-secondary flex-1" onclick="closeWeekModal()">Avbryt</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pipeline Modal -->
-    <div id="pipelineModal" class="modal">
-        <div class="modal-content">
-            <h3 class="text-lg font-bold text-[#F0F6FC] mb-4">Orderstock & Pipeline</h3>
-            <div id="pipelineItems"></div>
-            <button class="btn-secondary text-xs mt-2 mb-4" onclick="addPipelineRow()">+ Lägg till rad</button>
-            <div class="divider"></div>
-            <div class="flex gap-4">
-                <button class="btn-primary flex-1" onclick="savePipeline()">Spara</button>
-                <button class="btn-secondary flex-1" onclick="closePipelineModal()">Avbryt</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cashflow Forecast Modal -->
-    <div id="cashflowModal" class="modal">
-        <div class="modal-content">
-            <h3 class="text-lg font-bold text-[#F0F6FC] mb-4">Kassaflödesprognos</h3>
-            <div class="form-group">
-                <label class="form-label">Kassa idag (tkr)</label>
-                <input type="number" id="cfStartKassa" class="form-input" step="10" value="147">
-            </div>
-            <div id="cashflowRows"></div>
-            <div class="divider"></div>
-            <div class="flex gap-4">
-                <button class="btn-primary flex-1" onclick="saveCashflow()">Spara</button>
-                <button class="btn-secondary flex-1" onclick="closeCashflowModal()">Avbryt</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Parked Invoices Modal -->
-    <div id="parkedModal" class="modal">
-        <div class="modal-content">
-            <h3 class="text-lg font-bold text-[#F0F6FC] mb-4">Parkerad leverantörsfaktura</h3>
-            <div class="form-group">
-                <label class="form-label">Leverantör</label>
-                <input type="text" id="parkedSupplier" class="form-input">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Fakturanr</label>
-                <input type="text" id="parkedInvNo" class="form-input">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Belopp (tkr)</label>
-                <input type="number" id="parkedAmount" class="form-input" step="1">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Kopplar till kund/projekt</label>
-                <input type="text" id="parkedCustomer" class="form-input">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Förfallodatum</label>
-                <input type="date" id="parkedDue" class="form-input">
-            </div>
-            <div class="divider"></div>
-            <div class="flex gap-4">
-                <button class="btn-primary flex-1" onclick="saveParked()">Spara</button>
-                <button class="btn-secondary flex-1" onclick="closeParkedModal()">Avbryt</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ========== STATE & INITIALIZATION ==========
-        // ============================================================
-        // API-READY ARKITEKTUR — Dataflödeskedja
-        // ============================================================
-        // Hela dashboarden följer en logisk kedja som mappar 1:1 till API:er:
-        //
-        // STEG 1: ORDERSTOCK & PIPELINE
-        //   Next: GET /project/ → aktiva projekt med status, kontraktsvärde
-        //   Next: GET /project/{id}/overview → kvar att leverera
-        //   Next: GET /workorder/ → arbetsorder per projekt
-        //   → Fyller PIPELINE[] (type=order för kontrakterat, type=offer för offerter)
-        //
-        // STEG 2: PROGNOSER & BUDGET
-        //   Next: GET /forecast/ + /forecast/{id}/rows/ → prognos per projekt/period
-        //   Next: GET /budget/ + /budget_revision/ → budgetdata
-        //   → Fyller BUDGET[] + förväntad fakturering per vecka
-        //
-        // STEG 3: FAKTURERING & INBETALNINGAR
-        //   Fortnox: GET /invoices (scope: invoice-r) → kundfakturor (skickade, betalda)
-        //   Fortnox: GET /supplierinvoices (scope: supplierinvoice-r) → UE-fakturor
-        //   → Fyller CASHFLOW[] inbetalningssidan + PARKED[] (UE-fakturor som väntar)
-        //
-        // STEG 4: KASSAFLÖDE
-        //   Fortnox: GET /accounts (scope: account-r) → kontobalans = faktisk kassa
-        //   Kassaflödesregeln: UE betalas ej förrän kund betalt
-        //   → PARKED.status ändras från 'parkerad' till 'frislappt' vid kundinbetalning
-        //   → CASHFLOW beräknas: inbetalningar - frisläppta UE - övrigt = netto
-        //
-        // STEG 5: KPI-BERÄKNING
-        //   Omsättning ack. = Fortnox: summa fakturerade kundfakturor YTD
-        //   TB1 % = (Omsättning - UE-kostnader - material) / Omsättning
-        //   Kassaflöde = faktisk kontobalans från Fortnox
-        //   KMA = Next: GET /project/{id}/workorders/ → egenkontroller via Next Field
-        //
-        // Vid API-integration: ersätt localStorage med fetch() mot Vercel serverless
-        // ============================================================
-
-        let DATA = [];
-        let BUDGET = [];
-        let PIPELINE = []; // {name, customer, value, type:'order'|'offer', hitrate, status}
-        let CASHFLOW = []; // {week, inPayment, uePayment, otherOut}
-        let PARKED = [];   // {supplier, invNo, amount, customer, due, status:'parkerad'|'frislappt'}
-        let CF_START_KASSA = 147;
-        let charts = {};
-
-        const WEEK_START_DATE = new Date(2025, 10, 3); // 3 nov 2025
-
-        function weekNumberToDate(weekNum) {
-            const d = new Date(WEEK_START_DATE);
-            d.setDate(d.getDate() + (weekNum - 1) * 7);
-            return d;
-        }
-
-        function dateToString(d) {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-        }
-
-        function migrateV3Data(v3) {
-            // Konvertera gammal v3-data (vecka→week, kval→borta, lägg till KMA-fält)
-            return v3.map(d => ({
-                week: d.vecka || d.week,
-                date: d.datum || d.date || dateToString(weekNumberToDate(d.vecka || d.week)),
-                oms: typeof d.oms === 'number' ? d.oms : 0,
-                tb1: typeof d.tb1 === 'number' ? d.tb1 : 0,
-                kassa: typeof d.kassa === 'number' ? d.kassa : 0,
-                ekPlan: d.ekPlan || 0,
-                ekGenomford: d.ekGenomd || d.ekGenomford || 0,
-                beNya: d.besTot || d.beNya || 0,
-                beGodkand: d.besOk || d.beGodkand || 0
-            }));
-        }
-
-        function loadData() {
-            try {
-                // Försök v4 först, migrera v3 om den finns
-                const v4Data = localStorage.getItem('rm_kpi_v4_data');
-                const v4Budget = localStorage.getItem('rm_kpi_v4_budget');
-                const v3Data = localStorage.getItem('rm_kpi_v3_data');
-                const v3Budget = localStorage.getItem('rm_kpi_v3_budget');
-
-                if (v4Data) {
-                    DATA = JSON.parse(v4Data);
-                } else if (v3Data) {
-                    DATA = migrateV3Data(JSON.parse(v3Data));
-                    localStorage.setItem('rm_kpi_v4_data', JSON.stringify(DATA));
-                } else {
-                    DATA = generateSeedData();
-                }
-
-                if (v4Budget) {
-                    BUDGET = JSON.parse(v4Budget);
-                } else if (v3Budget) {
-                    BUDGET = JSON.parse(v3Budget);
-                    localStorage.setItem('rm_kpi_v4_budget', JSON.stringify(BUDGET));
-                } else {
-                    BUDGET = generateDefaultBudget();
-                }
-                // Ladda nya datakällor
-                const pipeStr = localStorage.getItem('rm_kpi_v4_pipeline');
-                if (pipeStr) PIPELINE = JSON.parse(pipeStr);
-                const cfStr = localStorage.getItem('rm_kpi_v4_cashflow');
-                if (cfStr) { CASHFLOW = JSON.parse(cfStr).rows || []; CF_START_KASSA = JSON.parse(cfStr).startKassa || 147; }
-                const parkedStr = localStorage.getItem('rm_kpi_v4_parked');
-                if (parkedStr) PARKED = JSON.parse(parkedStr);
-            } catch (e) {
-                console.error('Load error:', e);
-                DATA = generateSeedData();
-                BUDGET = generateDefaultBudget();
-            }
-        }
-
-        function generateSeedData() {
-            const data = [];
-            for (let w = 1; w <= 20; w++) {
-                const ratio = (w - 1) / 19;
-                data.push({
-                    week: w,
-                    date: dateToString(weekNumberToDate(w)),
-                    oms: 0.5 + ratio * 7,
-                    tb1: 20,
-                    kassa: 500,
-                    ekPlan: 5,
-                    ekGenomford: Math.floor(5 * ratio),
-                    beNya: 3,
-                    beGodkand: Math.floor(3 * ratio)
-                });
-            }
-            return data;
-        }
-
-        function generateDefaultBudget() {
-            return [
-                { fromWeek: 1, toWeek: 9, omsStart: 0.5, omsEnd: 3.5, tb1: 20, kassa: 500, label: 'Nov-Dec (uppstart)' },
-                { fromWeek: 10, toWeek: 22, omsStart: 3.5, omsEnd: 8, tb1: 22, kassa: 600, label: 'Jan-Mar' },
-                { fromWeek: 23, toWeek: 35, omsStart: 8, omsEnd: 10, tb1: 24, kassa: 700, label: 'Apr-Jun' },
-                { fromWeek: 36, toWeek: 44, omsStart: 10, omsEnd: 11, tb1: 25, kassa: 650, label: 'Jul-Sep' },
-                { fromWeek: 45, toWeek: 52, omsStart: 11, omsEnd: 9, tb1: 23, kassa: 500, label: 'Okt (avslut)' }
-            ];
-        }
-
-        function saveData() {
-            localStorage.setItem('rm_kpi_v4_data', JSON.stringify(DATA));
-        }
-
-        function saveBudgetToStorage() {
-            localStorage.setItem('rm_kpi_v4_budget', JSON.stringify(BUDGET));
-        }
-
-        // ========== BUDGET PANEL ==========
-        function renderBudgetPanel() {
-            const container = document.getElementById('budgetPeriods');
-            container.innerHTML = '';
-            
-            BUDGET.forEach((period, idx) => {
-                const div = document.createElement('div');
-                div.className = 'sidebar-panel';
-                div.innerHTML = `
-                    <div class="form-group">
-                        <label class="form-label">Period</label>
-                        <input type="text" class="form-input" value="${period.label}" onchange="BUDGET[${idx}].label = this.value">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Från vecka</label>
-                            <input type="number" class="form-input" value="${period.fromWeek}" min="1" max="52" onchange="BUDGET[${idx}].fromWeek = parseInt(this.value)">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Till vecka</label>
-                            <input type="number" class="form-input" value="${period.toWeek}" min="1" max="52" onchange="BUDGET[${idx}].toWeek = parseInt(this.value)">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Oms start (Mkr)</label>
-                            <input type="number" class="form-input" step="0.1" value="${period.omsStart}" onchange="BUDGET[${idx}].omsStart = parseFloat(this.value)">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Oms slut (Mkr)</label>
-                            <input type="number" class="form-input" step="0.1" value="${period.omsEnd}" onchange="BUDGET[${idx}].omsEnd = parseFloat(this.value)">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">TB1 (%)</label>
-                            <input type="number" class="form-input" step="0.1" value="${period.tb1}" onchange="BUDGET[${idx}].tb1 = parseFloat(this.value)">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Kassa (tkr/mån)</label>
-                            <input type="number" class="form-input" step="10" value="${period.kassa}" onchange="BUDGET[${idx}].kassa = parseFloat(this.value)">
-                        </div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function toggleBudgetPanel() {
-            const panel = document.getElementById('budgetPanel');
-            panel.style.transform = panel.style.transform === 'translateX(0px)' ? 'translateX(100%)' : 'translateX(0px)';
-            if (panel.style.transform === 'translateX(0px)') {
-                renderBudgetPanel();
-            }
-        }
-
-        function saveBudget() {
-            saveBudgetToStorage();
-            toggleBudgetPanel();
-            renderDashboard();
-        }
-
-        // ========== BULK INPUT ==========
-        function toggleBulkPanel() {
-            const panel = document.getElementById('bulkPanel');
-            panel.style.transform = panel.style.transform === 'translateX(0px)' ? 'translateX(100%)' : 'translateX(0px)';
-        }
-
-        function applyBulkInput() {
-            const fromWeek = parseInt(document.getElementById('bulkFromWeek').value);
-            const toWeek = parseInt(document.getElementById('bulkToWeek').value);
-            const omsStart = parseFloat(document.getElementById('bulkOmsStart').value);
-            const omsEnd = parseFloat(document.getElementById('bulkOmsEnd').value);
-            const tb1 = parseFloat(document.getElementById('bulkTB1').value);
-            const kassa = parseFloat(document.getElementById('bulkKassa').value);
-
-            for (let w = fromWeek; w <= toWeek; w++) {
-                const ratio = (w - fromWeek) / (toWeek - fromWeek);
-                const oms = omsStart + (omsEnd - omsStart) * ratio;
-                
-                let existing = DATA.find(d => d.week === w);
-                if (!existing) {
-                    existing = { week: w, date: dateToString(weekNumberToDate(w)), ekPlan: 0, ekGenomford: 0, beNya: 0, beGodkand: 0 };
-                    DATA.push(existing);
-                }
-                
-                existing.oms = Math.round(oms * 100) / 100;
-                existing.tb1 = tb1;
-                existing.kassa = kassa;
-            }
-
-            DATA.sort((a, b) => a.week - b.week);
-            saveData();
-            toggleBulkPanel();
-            renderDashboard();
-        }
-
-        // ========== WEEK MODAL ==========
-        function openWeekModal() {
-            document.getElementById('weekModal').classList.add('active');
-            document.getElementById('modalWeek').value = '1';
-            updateModalDate();
-        }
-
-        function closeWeekModal() {
-            document.getElementById('weekModal').classList.remove('active');
-        }
-
-        function updateModalDate() {
-            const week = parseInt(document.getElementById('modalWeek').value);
-            const date = weekNumberToDate(week);
-            document.getElementById('modalDate').value = dateToString(date);
-        }
-
-        function saveWeekData() {
-            const week = parseInt(document.getElementById('modalWeek').value);
-            const date = document.getElementById('modalDate').value;
-            const oms = parseFloat(document.getElementById('modalOms').value);
-            const tb1 = parseFloat(document.getElementById('modalTB1').value);
-            const kassa = parseFloat(document.getElementById('modalKassa').value);
-            const ekPlan = parseInt(document.getElementById('modalEKPlan').value);
-            const ekGenomford = parseInt(document.getElementById('modalEKGenomford').value);
-            const beNya = parseInt(document.getElementById('modalBENya').value);
-            const beGodkand = parseInt(document.getElementById('modalBEGodkand').value);
-
-            let existing = DATA.find(d => d.week === week);
-            if (existing) {
-                existing.date = date;
-                existing.oms = oms;
-                existing.tb1 = tb1;
-                existing.kassa = kassa;
-                existing.ekPlan = ekPlan;
-                existing.ekGenomford = ekGenomford;
-                existing.beNya = beNya;
-                existing.beGodkand = beGodkand;
-            } else {
-                DATA.push({
-                    week, date, oms, tb1, kassa,
-                    ekPlan, ekGenomford, beNya, beGodkand
-                });
-            }
-
-            DATA.sort((a, b) => a.week - b.week);
-            saveData();
-            closeWeekModal();
-            renderDashboard();
-        }
-
-        // ========== BUDGET INTERPOLATION ==========
-        function getBudgetValue(week, field) {
-            for (let period of BUDGET) {
-                if (week >= period.fromWeek && week <= period.toWeek) {
-                    if (field === 'oms') {
-                        const ratio = (week - period.fromWeek) / (period.toWeek - period.fromWeek);
-                        return period.omsStart + (period.omsEnd - period.omsStart) * ratio;
-                    }
-                    return period[field];
-                }
-            }
-            return 0;
-        }
-
-        // ========== DASHBOARD RENDERING ==========
-        function handleWeekFilterChange() {
-            renderDashboard();
-        }
-
-        function renderDashboard() {
-            const weeks = parseInt(document.getElementById('weekFilter').value);
-            const maxWeek = Math.max(...DATA.map(d => d.week), 0);
-            const startWeek = Math.max(1, maxWeek - weeks + 1);
-            const visibleData = DATA.filter(d => d.week >= startWeek);
-
-            updateKPICards(visibleData, startWeek);
-            updateKMACards(visibleData);
-            updateCharts(visibleData, startWeek);
-            updateDataTable(visibleData);
-        }
-
-        function updateKPICards(data, startWeek) {
-            if (data.length === 0) {
-                document.getElementById('omsValue').textContent = '0';
-                document.getElementById('tb1Value').textContent = '0';
-                document.getElementById('kassaValue').textContent = '0';
-                return;
-            }
-
-            // Omsättning — senaste veckans ackumulerade värde (oms är redan kumulativ)
-            const sorted = [...data].sort((a, b) => a.week - b.week);
-            // Hitta senaste vecka med faktisk data (oms > 0)
-            const latest = sorted.slice().reverse().find(d => d.oms > 0) || sorted[sorted.length - 1];
-            const maxWeek = latest.week;
-            const latOms = latest.oms;
-            const budgetOms = getBudgetValue(maxWeek, 'oms');
-
-            document.getElementById('omsValue').textContent = latOms.toFixed(2);
-            document.getElementById('oms-week-info').textContent = `V${maxWeek}`;
-            document.getElementById('oms-sub').textContent = `Budget: ${budgetOms.toFixed(2)} Mkr`;
-
-            const omsDelta = latOms - budgetOms;
-            document.getElementById('oms-delta').textContent = (omsDelta >= 0 ? '+' : '') + omsDelta.toFixed(2);
-            const omsRag = document.getElementById('oms-rag').querySelector('.traffic-light');
-            omsRag.className = 'traffic-light ' + (omsDelta >= 0 ? 'traffic-green' : 'traffic-red');
-
-            // Omsättning progressbar — % av årsmål (20.4 Mkr budgeterat, fallback: högsta ack. budgetvärde)
-            const omsYearTarget = 20.4; // Budgeterad årsomsättning nov 2025–okt 2026
-            // API-READY: Fortnox GET /settings/company eller Next GET /budget/ → total budgeterad oms
-            const omsPct = Math.min(100, Math.round(latOms / omsYearTarget * 100));
-            document.getElementById('oms-bar').style.width = omsPct + '%';
-            document.getElementById('oms-bar').style.background = omsDelta >= 0 ? '#1F6FEB' : '#F85149';
-            document.getElementById('oms-bar-label').textContent = omsPct + '% av årsmål';
-            document.getElementById('oms-bar-target').textContent = `Mål: ${omsYearTarget} Mkr`;
-
-            // TB1 — senaste veckans värde
-            const latTB1 = latest.tb1;
-            const budgetTB1 = getBudgetValue(maxWeek, 'tb1');
-
-            document.getElementById('tb1Value').textContent = latTB1.toFixed(1);
-            document.getElementById('tb1-week-info').textContent = `V${maxWeek}`;
-            document.getElementById('tb1-sub').textContent = `Budget: ${budgetTB1.toFixed(1)}%`;
-
-            const tb1Delta = latTB1 - budgetTB1;
-            document.getElementById('tb1-delta').textContent = (tb1Delta >= 0 ? '+' : '') + tb1Delta.toFixed(1);
-            const tb1Rag = document.getElementById('tb1-rag').querySelector('.traffic-light');
-            tb1Rag.className = 'traffic-light ' + (tb1Delta >= 0 ? 'traffic-green' : 'traffic-red');
-
-            // TB1 progressbar — % av budgetmål
-            const tb1Pct = budgetTB1 > 0 ? Math.min(100, Math.round(latTB1 / budgetTB1 * 100)) : 0;
-            document.getElementById('tb1-bar').style.width = tb1Pct + '%';
-            document.getElementById('tb1-bar').style.background = tb1Delta >= 0 ? '#3FB950' : '#F85149';
-            document.getElementById('tb1-bar-label').textContent = tb1Pct + '% av mål';
-            document.getElementById('tb1-bar-target').textContent = `Mål: ${budgetTB1.toFixed(0)}%`;
-
-            // Kassaflöde — senaste veckans värde
-            const latKassa = latest.kassa;
-            const budgetKassa = getBudgetValue(maxWeek, 'kassa');
-
-            document.getElementById('kassaValue').textContent = latKassa.toFixed(0);
-            document.getElementById('kassa-week-info').textContent = `V${maxWeek}`;
-            document.getElementById('kassa-sub').textContent = `Budget: ${budgetKassa.toFixed(0)} tkr/mån`;
-
-            const kassaDelta = latKassa - budgetKassa;
-            document.getElementById('kassa-delta').textContent = (kassaDelta >= 0 ? '+' : '') + kassaDelta.toFixed(0);
-            const kassaRag = document.getElementById('kassa-rag').querySelector('.traffic-light');
-            kassaRag.className = 'traffic-light ' + (kassaDelta >= 0 ? 'traffic-green' : 'traffic-red');
-
-            // Kassaflöde progressbar
-            const kassaPct = budgetKassa > 0 ? Math.min(100, Math.round(latKassa / budgetKassa * 100)) : 0;
-            document.getElementById('kassa-bar').style.width = kassaPct + '%';
-            document.getElementById('kassa-bar').style.background = kassaDelta >= 0 ? '#F0B429' : '#F85149';
-            document.getElementById('kassa-bar-label').textContent = kassaPct + '% av mål';
-            document.getElementById('kassa-bar-target').textContent = `Mål: ${budgetKassa.toFixed(0)} tkr`;
-
-            // Koppla kassaflöde-kortet till prognosen
-            // API-READY: Fortnox GET /invoices (förväntade inbetalningar) + GET /supplierinvoices (UE-utbetalningar)
-            // → generera prognos automatiskt istället för manuell inmatning
-            updateKassaPrognosLink();
-        }
-
-        function updateKassaPrognosLink() {
-            const el = document.getElementById('kassaPrognosText');
-            if (CASHFLOW.length === 0) {
-                el.textContent = 'Ingen prognos';
-                el.className = 'text-sm font-bold text-[#484F58]';
-                return;
-            }
-            let kassa = CF_START_KASSA;
-            let minKassa = CF_START_KASSA;
-            let minWeek = '';
-            let lastKassa = CF_START_KASSA;
-            CASHFLOW.forEach(r => {
-                const netto = (r.inPayment || 0) - (r.uePayment || 0) - (r.otherOut || 0);
-                kassa += netto;
-                if (kassa < minKassa) { minKassa = kassa; minWeek = `V${r.week}`; }
-                lastKassa = kassa;
-            });
-
-            if (minKassa < 0) {
-                el.innerHTML = `<span style="color:#F85149;">Botten ${minKassa} tkr (${minWeek})</span>`;
-            } else if (minKassa < 200) {
-                el.innerHTML = `<span style="color:#F0B429;">Låg: ${minKassa} tkr (${minWeek})</span>`;
-            } else {
-                el.innerHTML = `<span style="color:#3FB950;">OK: min ${minKassa} tkr</span>`;
-            }
-        }
-
-        function updateKMACards(data) {
-            // Egenkontroll
-            const totalEKPlan = data.reduce((sum, d) => sum + (d.ekPlan || 0), 0);
-            const totalEKGenomford = data.reduce((sum, d) => sum + (d.ekGenomford || 0), 0);
-            const ekPct = totalEKPlan > 0 ? (totalEKGenomford / totalEKPlan * 100) : 0;
-            
-            document.getElementById('ekValue').textContent = ekPct.toFixed(0);
-            document.getElementById('ek-count').textContent = `${totalEKGenomford} / ${totalEKPlan} egenkontroller`;
-            
-            const ekLight = document.getElementById('ek-light');
-            ekLight.className = 'traffic-light ' + (ekPct >= 95 ? 'traffic-green' : ekPct >= 80 ? 'traffic-yellow' : 'traffic-red');
-
-            // Besiktning
-            const totalBENya = data.reduce((sum, d) => sum + (d.beNya || 0), 0);
-            const totalBEGodkand = data.reduce((sum, d) => sum + (d.beGodkand || 0), 0);
-            const bePct = totalBENya > 0 ? (totalBEGodkand / totalBENya * 100) : 0;
-            
-            document.getElementById('beValue').textContent = bePct.toFixed(0);
-            document.getElementById('be-count').textContent = `${totalBEGodkand} / ${totalBENya} godkända`;
-            
-            const beLight = document.getElementById('be-light');
-            beLight.className = 'traffic-light ' + (bePct >= 95 ? 'traffic-green' : bePct >= 80 ? 'traffic-yellow' : 'traffic-red');
-        }
-
-        function updateCharts(data, startWeek) {
-            // Bygg fullständig veckoaxel: från startWeek till V52 (hela räkenskapsåret)
-            const dataMap = {};
-            data.forEach(d => { dataMap[d.week] = d; });
-            const endWeek = 52;
-            const allWeeks = [];
-            for (let w = startWeek; w <= endWeek; w++) allWeeks.push(w);
-
-            const chartData = {
-                labels: allWeeks.map(w => `V${w}`),
-                oms: allWeeks.map(w => dataMap[w] ? dataMap[w].oms : null),
-                omsBudget: allWeeks.map(w => getBudgetValue(w, 'oms')),
-                tb1: allWeeks.map(w => dataMap[w] ? dataMap[w].tb1 : null),
-                tb1Budget: allWeeks.map(w => getBudgetValue(w, 'tb1')),
-                kassa: allWeeks.map(w => dataMap[w] ? dataMap[w].kassa : null),
-                kassaBudget: allWeeks.map(w => getBudgetValue(w, 'kassa'))
-            };
-
-            // === Dynamisk Y-axel beräkning för alla charts ===
-            const maxBudgetOms = Math.max(...chartData.omsBudget.filter(v => v > 0), 0);
-            const maxActualOms = Math.max(...chartData.oms.filter(v => v > 0), 0);
-            const omsYMax = Math.ceil(Math.max(maxBudgetOms * 1.6, maxActualOms * 1.3)) || 5;
-
-            const maxBudgetTB1 = Math.max(...chartData.tb1Budget.filter(v => v > 0), 0);
-            const maxActualTB1 = Math.max(...chartData.tb1.filter(v => v > 0), 0);
-            const tb1YMax = Math.ceil(Math.max(maxBudgetTB1 * 1.6, maxActualTB1 * 1.3)) || 50;
-
-            const maxBudgetKassa = Math.max(...chartData.kassaBudget.filter(v => v > 0), 0);
-            const maxActualKassa = Math.max(...chartData.kassa.filter(v => v > 0), 0);
-            const kassaYMax = Math.ceil(Math.max(maxBudgetKassa * 1.6, maxActualKassa * 1.3) / 100) * 100 || 1000;
-
-            // Omsättning Chart
-            if (charts.omsChart) charts.omsChart.destroy();
-            const omsCtx = document.getElementById('omsChart').getContext('2d');
-            charts.omsChart = new Chart(omsCtx, {
-                type: 'line',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [
-                        {
-                            label: 'Faktisk',
-                            data: chartData.oms,
-                            borderColor: '#1F6FEB',
-                            backgroundColor: 'rgba(31, 111, 235, 0.1)',
-                            borderWidth: 2.5,
-                            tension: 0.4,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#1F6FEB',
-                            fill: true,
-                            spanGaps: false
-                        },
-                        {
-                            label: 'Budget',
-                            data: chartData.omsBudget,
-                            borderColor: '#F97316',
-                            borderWidth: 2.5,
-                            borderDash: [8, 4],
-                            pointRadius: 0,
-                            fill: false,
-                            backgroundColor: 'rgba(249, 115, 22, 0.05)'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#C9D1D9', font: { size: 12, weight: '500' }, usePointStyle: true, pointStyle: 'line' }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            grid: { color: '#21262D', drawBorder: false },
-                            ticks: { color: '#8B949E' },
-                            suggestedMax: omsYMax,
-                            beginAtZero: true
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#8B949E' }
-                        }
-                    }
-                }
-            });
-
-            // TB1 Chart
-            if (charts.tb1Chart) charts.tb1Chart.destroy();
-            const tb1Ctx = document.getElementById('tb1Chart').getContext('2d');
-            charts.tb1Chart = new Chart(tb1Ctx, {
-                type: 'line',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [
-                        {
-                            label: 'Faktisk',
-                            data: chartData.tb1,
-                            borderColor: '#3FB950',
-                            backgroundColor: 'rgba(63, 185, 80, 0.1)',
-                            borderWidth: 2.5,
-                            tension: 0.4,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#3FB950',
-                            fill: true,
-                            spanGaps: false
-                        },
-                        {
-                            label: 'Budget',
-                            data: chartData.tb1Budget,
-                            borderColor: '#F97316',
-                            borderWidth: 2.5,
-                            borderDash: [8, 4],
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#C9D1D9', font: { size: 12, weight: '500' }, usePointStyle: true, pointStyle: 'line' }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            grid: { color: '#21262D', drawBorder: false },
-                            ticks: { color: '#8B949E' },
-                            suggestedMax: tb1YMax,
-                            beginAtZero: true
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#8B949E' }
-                        }
-                    }
-                }
-            });
-
-            // Kassaflöde Chart
-            if (charts.kassaChart) charts.kassaChart.destroy();
-            const kassaCtx = document.getElementById('kassaChart').getContext('2d');
-            charts.kassaChart = new Chart(kassaCtx, {
-                type: 'bar',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [
-                        {
-                            label: 'Faktisk',
-                            data: chartData.kassa,
-                            backgroundColor: '#F0B429',
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Budget',
-                            data: chartData.kassaBudget,
-                            type: 'line',
-                            borderColor: '#F85149',
-                            borderWidth: 2.5,
-                            borderDash: [8, 4],
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#C9D1D9', font: { size: 12, weight: '500' }, usePointStyle: true, pointStyle: 'line' }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            grid: { color: '#21262D', drawBorder: false },
-                            ticks: { color: '#8B949E' },
-                            suggestedMax: kassaYMax,
-                            beginAtZero: true
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#8B949E' }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateDataTable(data) {
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = '';
-
-            data.forEach(row => {
-                const budgetOms = getBudgetValue(row.week, 'oms');
-                const budgetTB1 = getBudgetValue(row.week, 'tb1');
-                const budgetKassa = getBudgetValue(row.week, 'kassa');
-
-                const omsDelta = row.oms - budgetOms;
-                const tb1Delta = row.tb1 - budgetTB1;
-                const kassaDelta = row.kassa - budgetKassa;
-
-                const ekPct = (row.ekPlan > 0) ? (row.ekGenomford / row.ekPlan * 100).toFixed(0) : '-';
-                const bePct = (row.beNya > 0) ? (row.beGodkand / row.beNya * 100).toFixed(0) : '-';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>V${row.week}</td>
-                    <td>${row.date}</td>
-                    <td>${row.oms.toFixed(2)}</td>
-                    <td class="${omsDelta >= 0 ? 'text-positive' : 'text-negative'}">${(omsDelta >= 0 ? '+' : '') + omsDelta.toFixed(2)}</td>
-                    <td>${row.tb1.toFixed(1)}%</td>
-                    <td class="${tb1Delta >= 0 ? 'text-positive' : 'text-negative'}">${(tb1Delta >= 0 ? '+' : '') + tb1Delta.toFixed(1)}</td>
-                    <td>${row.kassa}</td>
-                    <td class="${kassaDelta >= 0 ? 'text-positive' : 'text-negative'}">${(kassaDelta >= 0 ? '+' : '') + kassaDelta.toFixed(0)}</td>
-                    <td>${ekPct}%</td>
-                    <td>${bePct}%</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Update footer
-            if (data.length > 0) {
-                const lastEntry = data[data.length - 1];
-                document.getElementById('lastUpdateInfo').textContent = `Senaste datainmatning: Vecka ${lastEntry.week} (${lastEntry.date})`;
-            }
-        }
-
-        // ========== INITIALIZATION ==========
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            renderDashboard();
-            updatePipelineCards();
-            updateCashflowTable();
-            updateParkedTable();
-            updateReceivablesCard();
-            document.getElementById('modalWeek').addEventListener('change', updateModalDate);
-        });
-
-        // ========== PIPELINE & ORDERSTOCK ==========
-        function openPipelineModal() {
-            renderPipelineModal();
-            document.getElementById('pipelineModal').classList.add('active');
-        }
-        function closePipelineModal() { document.getElementById('pipelineModal').classList.remove('active'); }
-
-        function renderPipelineModal() {
-            const c = document.getElementById('pipelineItems');
-            c.innerHTML = '';
-            PIPELINE.forEach((p, i) => {
-                c.innerHTML += `
-                <div class="p-3 mb-2 rounded" style="background:#161B22;border:1px solid #30363D;">
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <input class="form-input text-xs" placeholder="Projekt/kund" value="${p.name||''}" onchange="PIPELINE[${i}].name=this.value">
-                        <select class="form-input text-xs" onchange="PIPELINE[${i}].type=this.value">
-                            <option value="order" ${p.type==='order'?'selected':''}>Orderstock</option>
-                            <option value="offer" ${p.type==='offer'?'selected':''}>Offert</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div><label class="text-[10px] text-[#8B949E]">Värde Mkr</label><input type="number" class="form-input text-xs" step="0.1" value="${p.value||0}" onchange="PIPELINE[${i}].value=+this.value"></div>
-                        <div><label class="text-[10px] text-[#8B949E]">Sannolikhet %</label><input type="number" class="form-input text-xs" min="0" max="100" value="${p.hitrate||0}" onchange="PIPELINE[${i}].hitrate=+this.value"></div>
-                        <div class="flex items-end"><button class="text-[#F85149] text-xs" onclick="PIPELINE.splice(${i},1);renderPipelineModal()">Ta bort</button></div>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function addPipelineRow() {
-            PIPELINE.push({ name: '', customer: '', value: 0, type: 'offer', hitrate: 50, status: 'active' });
-            renderPipelineModal();
-        }
-
-        function savePipeline() {
-            localStorage.setItem('rm_kpi_v4_pipeline', JSON.stringify(PIPELINE));
-            closePipelineModal();
-            updatePipelineCards();
-        }
-
-        function updatePipelineCards() {
-            const orders = PIPELINE.filter(p => p.type === 'order');
-            const offers = PIPELINE.filter(p => p.type === 'offer');
-            const orderstockMkr = orders.reduce((s, p) => s + (p.value || 0), 0);
-            const monthlyCapacity = 1.7; // Mkr/mån budgeterat
-            const months = monthlyCapacity > 0 ? (orderstockMkr / monthlyCapacity).toFixed(1) : 0;
-            document.getElementById('orderstockValue').textContent = orderstockMkr.toFixed(1);
-            document.getElementById('orderstockMonths').textContent = `${months} månaders täckning`;
-
-            const offerTotal = offers.reduce((s, p) => s + (p.value || 0), 0);
-            const weightedTotal = offers.reduce((s, p) => s + (p.value || 0) * (p.hitrate || 0) / 100, 0);
-            const avgHitrate = offers.length > 0 ? (offers.reduce((s, p) => s + (p.hitrate || 0), 0) / offers.length).toFixed(0) : 0;
-            document.getElementById('pipelineValue').textContent = offerTotal.toFixed(1);
-            document.getElementById('pipelineCount').textContent = offers.length + ' st';
-            document.getElementById('pipelineHitrate').textContent = `Hit rate snitt: ${avgHitrate}%`;
-            document.getElementById('pipelineWeighted').textContent = weightedTotal.toFixed(1);
-        }
-
-        // ========== KASSAFLÖDESPROGNOS ==========
-        function openCashflowModal() {
-            document.getElementById('cfStartKassa').value = CF_START_KASSA;
-            renderCashflowModal();
-            document.getElementById('cashflowModal').classList.add('active');
-        }
-        function closeCashflowModal() { document.getElementById('cashflowModal').classList.remove('active'); }
-
-        function renderCashflowModal() {
-            const c = document.getElementById('cashflowRows');
-            // Beräkna nuvarande vecka
-            const now = new Date();
-            const diffDays = Math.floor((now - WEEK_START_DATE) / (1000 * 60 * 60 * 24));
-            const currentWeek = Math.max(1, Math.floor(diffDays / 7) + 1);
-
-            if (CASHFLOW.length === 0) {
-                for (let i = 0; i < 8; i++) {
-                    CASHFLOW.push({ week: currentWeek + i, inPayment: 0, uePayment: 0, otherOut: 0 });
-                }
-            }
-            c.innerHTML = '<div class="grid grid-cols-4 gap-1 mb-1 text-[10px] text-[#8B949E]"><span>Vecka</span><span>Inbetalning tkr</span><span>UE-bet tkr</span><span>Övrigt ut tkr</span></div>';
-            CASHFLOW.forEach((r, i) => {
-                c.innerHTML += `<div class="grid grid-cols-4 gap-1 mb-1">
-                    <input type="number" class="form-input text-xs" value="${r.week}" onchange="CASHFLOW[${i}].week=+this.value" style="width:100%">
-                    <input type="number" class="form-input text-xs" step="10" value="${r.inPayment}" onchange="CASHFLOW[${i}].inPayment=+this.value" style="width:100%">
-                    <input type="number" class="form-input text-xs" step="10" value="${r.uePayment}" onchange="CASHFLOW[${i}].uePayment=+this.value" style="width:100%">
-                    <input type="number" class="form-input text-xs" step="10" value="${r.otherOut}" onchange="CASHFLOW[${i}].otherOut=+this.value" style="width:100%">
-                </div>`;
-            });
-        }
-
-        function saveCashflow() {
-            CF_START_KASSA = parseInt(document.getElementById('cfStartKassa').value) || 147;
-            localStorage.setItem('rm_kpi_v4_cashflow', JSON.stringify({ startKassa: CF_START_KASSA, rows: CASHFLOW }));
-            closeCashflowModal();
-            updateCashflowTable();
-        }
-
-        function updateCashflowTable() {
-            const tbody = document.getElementById('cashflowTableBody');
-            const badge = document.getElementById('cfAlertBadge');
-            if (CASHFLOW.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-[#484F58]">Ingen prognos inmatad</td></tr>';
-                badge.style.display = 'none';
-                if (charts.cfChart) { charts.cfChart.destroy(); charts.cfChart = null; }
-                return;
-            }
-
-            // Beräkna kassaserien
-            let kassa = CF_START_KASSA;
-            const labels = [];
-            const kassaUBSeries = [];
-            const inSeries = [];
-            const outSeries = [];
-            let minKassa = CF_START_KASSA;
-            let minKassaWeek = '';
-
-            tbody.innerHTML = '';
-            CASHFLOW.forEach(r => {
-                const netto = (r.inPayment || 0) - (r.uePayment || 0) - (r.otherOut || 0);
-                const kassaUB = kassa + netto;
-                labels.push(`V${r.week}`);
-                kassaUBSeries.push(kassaUB);
-                inSeries.push(r.inPayment || 0);
-                outSeries.push(-((r.uePayment || 0) + (r.otherOut || 0)));
-                if (kassaUB < minKassa) { minKassa = kassaUB; minKassaWeek = `V${r.week}`; }
-
-                const nettoClass = netto >= 0 ? 'text-positive' : 'text-negative';
-                const ubClass = kassaUB >= 0 ? '' : 'text-negative font-bold';
-                tbody.innerHTML += `<tr>
-                    <td>V${r.week}</td>
-                    <td>${kassa}</td>
-                    <td class="text-positive">+${r.inPayment || 0}</td>
-                    <td class="text-negative">-${r.uePayment || 0}</td>
-                    <td class="text-negative">-${r.otherOut || 0}</td>
-                    <td class="${nettoClass}">${netto >= 0 ? '+' : ''}${netto}</td>
-                    <td class="${ubClass}">${kassaUB}</td>
-                </tr>`;
-                kassa = kassaUB;
-            });
-
-            // Varningsbadge
-            if (minKassa < 0) {
-                badge.style.display = 'inline-block';
-                badge.style.background = '#F85149';
-                badge.style.color = '#FFF';
-                badge.textContent = `VARNING: Botten ${minKassa} tkr (${minKassaWeek})`;
-            } else if (minKassa < 200) {
-                badge.style.display = 'inline-block';
-                badge.style.background = '#F0B429';
-                badge.style.color = '#000';
-                badge.textContent = `Låg kassa: ${minKassa} tkr (${minKassaWeek})`;
-            } else {
-                badge.style.display = 'none';
-            }
-
-            // Kassaflödesprognos GRAF
-            if (charts.cfChart) charts.cfChart.destroy();
-            const ctx = document.getElementById('cashflowForecastChart').getContext('2d');
-
-            // Gradient för kassa UB — grön ovanför noll, röd under
-            const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-            if (minKassa < 0) {
-                gradient.addColorStop(0, 'rgba(63, 185, 80, 0.3)');
-                gradient.addColorStop(0.5, 'rgba(63, 185, 80, 0.05)');
-                gradient.addColorStop(0.7, 'rgba(248, 81, 73, 0.05)');
-                gradient.addColorStop(1, 'rgba(248, 81, 73, 0.4)');
-            } else {
-                gradient.addColorStop(0, 'rgba(63, 185, 80, 0.3)');
-                gradient.addColorStop(1, 'rgba(63, 185, 80, 0.02)');
-            }
-
-            charts.cfChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Kassa UB (tkr)',
-                            data: kassaUBSeries,
-                            borderColor: kassaUBSeries.some(v => v < 0) ? '#F85149' : '#3FB950',
-                            borderWidth: 3,
-                            backgroundColor: gradient,
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 6,
-                            pointBackgroundColor: kassaUBSeries.map(v => v < 0 ? '#F85149' : '#3FB950'),
-                            pointBorderColor: '#0D1117',
-                            pointBorderWidth: 2
-                        },
-                        {
-                            label: 'Inbetalningar',
-                            data: inSeries,
-                            type: 'bar',
-                            backgroundColor: 'rgba(63, 185, 80, 0.4)',
-                            borderRadius: 3
-                        },
-                        {
-                            label: 'Utbetalningar',
-                            data: outSeries,
-                            type: 'bar',
-                            backgroundColor: 'rgba(248, 81, 73, 0.4)',
-                            borderRadius: 3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#C9D1D9', font: { size: 11 }, usePointStyle: true }
-                        },
-                        annotation: undefined
-                    },
-                    scales: {
-                        y: {
-                            grid: { color: '#21262D', drawBorder: false },
-                            ticks: { color: '#8B949E', callback: v => v + ' tkr' },
-                            beginAtZero: false
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#8B949E' }
-                        }
-                    }
-                },
-                plugins: [{
-                    // Rita nollinjen tydligt
-                    id: 'zeroLine',
-                    afterDraw(chart) {
-                        const yScale = chart.scales.y;
-                        const zeroY = yScale.getPixelForValue(0);
-                        if (zeroY >= yScale.top && zeroY <= yScale.bottom) {
-                            const ctx = chart.ctx;
-                            ctx.save();
-                            ctx.strokeStyle = '#8B949E';
-                            ctx.lineWidth = 2;
-                            ctx.setLineDash([6, 3]);
-                            ctx.beginPath();
-                            ctx.moveTo(chart.chartArea.left, zeroY);
-                            ctx.lineTo(chart.chartArea.right, zeroY);
-                            ctx.stroke();
-                            ctx.fillStyle = '#8B949E';
-                            ctx.font = '11px system-ui';
-                            ctx.fillText('0-linje', chart.chartArea.right - 45, zeroY - 5);
-                            ctx.restore();
-                        }
-                    }
-                }]
-            });
-        }
-
-        // ========== PARKERADE LEVERANTÖRSFAKTUROR ==========
-        function openParkedModal() {
-            document.getElementById('parkedSupplier').value = '';
-            document.getElementById('parkedInvNo').value = '';
-            document.getElementById('parkedAmount').value = '';
-            document.getElementById('parkedCustomer').value = '';
-            document.getElementById('parkedDue').value = '';
-            document.getElementById('parkedModal').classList.add('active');
-        }
-        function closeParkedModal() { document.getElementById('parkedModal').classList.remove('active'); }
-
-        function saveParked() {
-            const p = {
-                supplier: document.getElementById('parkedSupplier').value,
-                invNo: document.getElementById('parkedInvNo').value,
-                amount: parseInt(document.getElementById('parkedAmount').value) || 0,
-                customer: document.getElementById('parkedCustomer').value,
-                due: document.getElementById('parkedDue').value,
-                status: 'parkerad'
-            };
-            if (p.supplier) {
-                PARKED.push(p);
-                localStorage.setItem('rm_kpi_v4_parked', JSON.stringify(PARKED));
-            }
-            closeParkedModal();
-            updateParkedTable();
-            updateReceivablesCard();
-        }
-
-        function updateParkedTable() {
-            const tbody = document.getElementById('parkedTableBody');
-            if (PARKED.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-[#484F58]">Inga parkerade fakturor</td></tr>'; return; }
-            tbody.innerHTML = '';
-            PARKED.forEach((p, i) => {
-                const statusClass = p.status === 'parkerad' ? 'text-[#F0B429]' : 'text-[#3FB950]';
-                const statusBtn = p.status === 'parkerad'
-                    ? `<button class="text-xs text-[#3FB950]" onclick="releaseParked(${i})">Frisläpp</button>`
-                    : `<span class="text-xs text-[#3FB950]">Frisläppt</span>`;
-                tbody.innerHTML += `<tr>
-                    <td>${p.supplier}</td>
-                    <td>${p.invNo}</td>
-                    <td>${p.amount} tkr</td>
-                    <td>${p.customer}</td>
-                    <td>${p.due}</td>
-                    <td class="${statusClass}">${statusBtn}</td>
-                </tr>`;
-            });
-        }
-
-        function releaseParked(idx) {
-            PARKED[idx].status = 'frislappt';
-            localStorage.setItem('rm_kpi_v4_parked', JSON.stringify(PARKED));
-            updateParkedTable();
-        }
-
-        function updateReceivablesCard() {
-            const totalParked = PARKED.filter(p => p.status === 'parkerad').reduce((s, p) => s + p.amount, 0);
-            document.getElementById('receivablesValue').textContent = totalParked;
-        }
-
-        // ========== EXPORT FUNCTIONS ==========
-        function exportCSV() {
-            let csv = 'Vecka,Datum,Omsättning,TB1,Kassaflöde,Egen,Besiktning\n';
-            DATA.forEach(row => {
-                csv += `${row.week},${row.date},${row.oms},${row.tb1},${row.kassa},"${row.ekGenomford}/${row.ekPlan}","${row.beGodkand}/${row.beNya}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'rm_kpi_export.csv';
-            a.click();
-        }
-
-        function exportJSON() {
-            const obj = { data: DATA, budget: BUDGET };
-            const json = JSON.stringify(obj, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'rm_kpi_backup.json';
-            a.click();
-        }
-    </script>
+<div class="dashboard">
+<header>
+  <h1>RM Entreprenad och Fasad — KPI Dashboard</h1>
+  <div class="meta">Rakenskapsår nov 2025 – okt 2026 &middot; Senast uppdaterad: <span id="lastUpdate">2026-03-21</span></div>
+</header>
+
+<!-- KPI CARDS -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="label">Omsattning YTD</div>
+    <div class="value" id="kpiOmsYtd">0 Mkr</div>
+    <div class="sub" id="kpiOmsSub">Arsmal: 20.4 Mkr</div>
+    <div class="progress-bar"><div class="fill" id="kpiOmsBar" style="width:0%;background:#58A6FF"></div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">TB1 YTD</div>
+    <div class="value" id="kpiTb1">0 tkr</div>
+    <div class="sub" id="kpiTb1Sub">Mal: 20% (4.08 Mkr/ar)</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">Orderstock</div>
+    <div class="value" id="kpiOrderstock">0 tkr</div>
+    <div class="sub ok" id="kpiOrderSub">Aktiva projekt</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">Pipeline (viktad)</div>
+    <div class="value" id="kpiPipeline">0 tkr</div>
+    <div class="sub" id="kpiPipeSub">Oppna affarer × hitrate</div>
+  </div>
+</div>
+
+<!-- KASSAFLÖDE (CENTRALT) -->
+<div class="chart-row">
+  <div class="chart-box chart-full">
+    <h3>Kassaflodesprognos <span class="badge blue">8 veckor framat</span> <span class="badge" id="cfBadge"></span></h3>
+    <canvas id="cfChart" height="100"></canvas>
+  </div>
+</div>
+
+<!-- OMSÄTTNING + TB1 -->
+<div class="chart-row">
+  <div class="chart-box">
+    <h3>Omsattning vs Budget per manad</h3>
+    <canvas id="omsChart" height="140"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>TB1 vs Budget per manad</h3>
+    <canvas id="tb1Chart" height="140"></canvas>
+  </div>
+</div>
+
+<!-- PARKERADE FAKTUROR -->
+<div class="table-box">
+  <h3>Parkerade leverantorsfakturor <span class="badge red" id="parkedCount">0 st</span></h3>
+  <table id="parkedTable">
+    <thead><tr><th>Leverantor</th><th>Fakturanr</th><th>Belopp (tkr)</th><th>Forfallodag</th><th>Status</th></tr></thead>
+    <tbody id="parkedBody"></tbody>
+  </table>
+  <div style="color:#8B949E;font-size:12px;margin-top:8px;font-style:italic">Kassaflodesregeln: UE betalas inte forran kunden har betalat.</div>
+</div>
+
+<!-- BOLAGSÖVERSIKT (bara RM) -->
+<div class="table-box">
+  <h3>Bolag</h3>
+  <table>
+    <thead><tr><th>Kod</th><th>Namn</th><th>Org.nr</th><th>Sfar</th></tr></thead>
+    <tbody>
+      <tr><td>RM</td><td>RM Entreprenad och Fasad AB</td><td>559251-1462</td><td>RM Drift</td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// DATA — Ersatts med live-data fran PostgreSQL via API
+// ══════════════════════════════════════════════════
+
+const BUDGET_MONTHS = [
+  {period:'2025-11',rev:1700,tb1:340},{period:'2025-12',rev:1700,tb1:340},
+  {period:'2026-01',rev:1700,tb1:340},{period:'2026-02',rev:1700,tb1:340},
+  {period:'2026-03',rev:1700,tb1:340},{period:'2026-04',rev:1700,tb1:340},
+  {period:'2026-05',rev:1700,tb1:340},{period:'2026-06',rev:1700,tb1:340},
+  {period:'2026-07',rev:1700,tb1:340},{period:'2026-08',rev:1700,tb1:340},
+  {period:'2026-09',rev:1700,tb1:340},{period:'2026-10',rev:1700,tb1:340}
+];
+
+// Exempeldata — ersatts av Fortnox API-data via n8n
+const ACTUAL_MONTHS = [
+  {period:'2025-11',rev:1450,tb1:310,costs:1140},
+  {period:'2025-12',rev:1680,tb1:350,costs:1330},
+  {period:'2026-01',rev:1520,tb1:280,costs:1240},
+  {period:'2026-02',rev:1750,tb1:370,costs:1380},
+  {period:'2026-03',rev:850,tb1:160,costs:690}
+];
+
+// Kassaflodesdata per vecka (exempeldata)
+const CF_START = 147; // tkr, kassa vid start
+const CF_WEEKS = [
+  {week:'V18',inflow:420,outflow:380},{week:'V19',inflow:0,outflow:290},
+  {week:'V20',inflow:680,outflow:450},{week:'V21',inflow:350,outflow:520},
+  {week:'V22',inflow:0,outflow:310},{week:'V23',inflow:890,outflow:400},
+  {week:'V24',inflow:200,outflow:550},{week:'V25',inflow:750,outflow:380}
+];
+
+const PARKED_INVOICES = [
+  {supplier:'NordBygg UE AB',invNo:'F-2451',amount:285,due:'2026-04-10',status:'parkerad'},
+  {supplier:'Betong Direkt AB',invNo:'F-2467',amount:142,due:'2026-03-28',status:'parkerad'},
+  {supplier:'Markentreprenad Ost',invNo:'F-2480',amount:95,due:'2026-04-15',status:'frislappt'}
+];
+
+const ORDERSTOCK = 47000; // tkr
+const PIPELINE_WEIGHTED = 12500; // tkr
+
+// ══════════════════════════════════════════════════
+// RENDER KPI CARDS
+// ══════════════════════════════════════════════════
+
+const totalRevYtd = ACTUAL_MONTHS.reduce((s,m) => s + m.rev, 0);
+const totalTb1Ytd = ACTUAL_MONTHS.reduce((s,m) => s + m.tb1, 0);
+const arsmal = 20400;
+const pctOms = Math.min(100, (totalRevYtd / arsmal * 100));
+const tb1Pct = totalRevYtd > 0 ? (totalTb1Ytd / totalRevYtd * 100).toFixed(1) : 0;
+
+document.getElementById('kpiOmsYtd').textContent = (totalRevYtd / 1000).toFixed(1) + ' Mkr';
+document.getElementById('kpiOmsSub').textContent = pctOms.toFixed(0) + '% av arsmal (20.4 Mkr)';
+document.getElementById('kpiOmsBar').style.width = pctOms + '%';
+document.getElementById('kpiOmsBar').style.background = pctOms < 30 ? '#F85149' : pctOms < 70 ? '#D29922' : '#3FB950';
+
+document.getElementById('kpiTb1').textContent = totalTb1Ytd + ' tkr';
+document.getElementById('kpiTb1Sub').textContent = 'Tackningsgrad: ' + tb1Pct + '% (mal 20%)';
+document.getElementById('kpiTb1Sub').className = 'sub ' + (tb1Pct >= 20 ? 'ok' : 'warn');
+
+document.getElementById('kpiOrderstock').textContent = (ORDERSTOCK / 1000).toFixed(0) + ' Mkr';
+document.getElementById('kpiPipeline').textContent = (PIPELINE_WEIGHTED / 1000).toFixed(1) + ' Mkr';
+
+// ══════════════════════════════════════════════════
+// KASSAFLÖDESPROGNOS (CENTRALT)
+// ══════════════════════════════════════════════════
+
+const cfLabels = CF_WEEKS.map(w => w.week);
+let runningKassa = CF_START;
+const kassaUB = CF_WEEKS.map(w => {
+  runningKassa += w.inflow - w.outflow;
+  return runningKassa;
+});
+const minKassa = Math.min(...kassaUB);
+const minWeek = cfLabels[kassaUB.indexOf(minKassa)];
+
+const cfBadge = document.getElementById('cfBadge');
+if (minKassa < 0) {
+  cfBadge.textContent = 'VARNING: Botten ' + minKassa + ' tkr (' + minWeek + ')';
+  cfBadge.className = 'badge red';
+} else if (minKassa < 300) {
+  cfBadge.textContent = 'Botten ' + minKassa + ' tkr (' + minWeek + ')';
+  cfBadge.className = 'badge red';
+} else {
+  cfBadge.textContent = 'Min kassa: ' + minKassa + ' tkr';
+  cfBadge.className = 'badge green';
+}
+
+new Chart(document.getElementById('cfChart'), {
+  type: 'line',
+  data: {
+    labels: cfLabels,
+    datasets: [
+      {
+        label: 'Kassa UB (tkr)',
+        data: kassaUB,
+        borderColor: '#58A6FF',
+        backgroundColor: 'rgba(88,166,255,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 5,
+        pointBackgroundColor: kassaUB.map(v => v < 0 ? '#F85149' : '#58A6FF'),
+        borderWidth: 2
+      },
+      {
+        label: 'Inbetalningar',
+        data: CF_WEEKS.map(w => w.inflow),
+        type: 'bar',
+        backgroundColor: 'rgba(63,185,80,0.5)',
+        borderRadius: 4,
+        barPercentage: 0.4
+      },
+      {
+        label: 'Utbetalningar',
+        data: CF_WEEKS.map(w => -w.outflow),
+        type: 'bar',
+        backgroundColor: 'rgba(248,81,73,0.4)',
+        borderRadius: 4,
+        barPercentage: 0.4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {labels: {color: '#8B949E', font: {size: 11}}},
+      tooltip: {callbacks: {label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' tkr'}}
+    },
+    scales: {
+      x: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}},
+      y: {ticks: {color: '#8B949E', callback: v => v + ' tkr'}, grid: {color: '#21262D'}}
+    }
+  },
+  plugins: [{
+    id: 'zeroLine',
+    afterDraw(chart) {
+      const yScale = chart.scales.y;
+      if (yScale.min < 0) {
+        const ctx = chart.ctx;
+        const y = yScale.getPixelForValue(0);
+        ctx.save();
+        ctx.strokeStyle = '#F85149';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(chart.chartArea.left, y);
+        ctx.lineTo(chart.chartArea.right, y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }]
+});
+
+// ══════════════════════════════════════════════════
+// OMSÄTTNING VS BUDGET
+// ══════════════════════════════════════════════════
+
+const allPeriods = BUDGET_MONTHS.map(b => b.period);
+const actualMap = {};
+ACTUAL_MONTHS.forEach(m => actualMap[m.period] = m);
+
+new Chart(document.getElementById('omsChart'), {
+  type: 'bar',
+  data: {
+    labels: allPeriods.map(p => p.replace('2025-','').replace('2026-','')),
+    datasets: [
+      {
+        label: 'Budget (tkr)',
+        data: BUDGET_MONTHS.map(b => b.rev),
+        backgroundColor: 'rgba(248,129,52,0.25)',
+        borderColor: '#F97316',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'Utfall (tkr)',
+        data: allPeriods.map(p => actualMap[p] ? actualMap[p].rev : null),
+        backgroundColor: 'rgba(88,166,255,0.6)',
+        borderColor: '#58A6FF',
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {legend: {labels: {color: '#8B949E', font: {size: 11}}}},
+    scales: {
+      x: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}},
+      y: {ticks: {color: '#8B949E', callback: v => v/1000+' Mkr'}, grid: {color: '#21262D'}, beginAtZero: true}
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════
+// TB1 VS BUDGET
+// ══════════════════════════════════════════════════
+
+new Chart(document.getElementById('tb1Chart'), {
+  type: 'bar',
+  data: {
+    labels: allPeriods.map(p => p.replace('2025-','').replace('2026-','')),
+    datasets: [
+      {
+        label: 'TB1 Budget (tkr)',
+        data: BUDGET_MONTHS.map(b => b.tb1),
+        backgroundColor: 'rgba(248,129,52,0.25)',
+        borderColor: '#F97316',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'TB1 Utfall (tkr)',
+        data: allPeriods.map(p => actualMap[p] ? actualMap[p].tb1 : null),
+        backgroundColor: 'rgba(63,185,80,0.6)',
+        borderColor: '#3FB950',
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {legend: {labels: {color: '#8B949E', font: {size: 11}}}},
+    scales: {
+      x: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}},
+      y: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}, beginAtZero: true}
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════
+// PARKERADE FAKTUROR
+// ══════════════════════════════════════════════════
+
+const parkedBody = document.getElementById('parkedBody');
+const parkedOnly = PARKED_INVOICES.filter(f => f.status === 'parkerad');
+document.getElementById('parkedCount').textContent = parkedOnly.length + ' st / ' + parkedOnly.reduce((s,f) => s + f.amount, 0) + ' tkr';
+
+PARKED_INVOICES.forEach(f => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td>' + f.supplier + '</td><td>' + f.invNo + '</td><td>' + f.amount + '</td><td>' + f.due + '</td><td><span class="tag ' + f.status + '">' + (f.status === 'parkerad' ? 'Parkerad' : 'Frislappt') + '</span></td>';
+  parkedBody.appendChild(tr);
+});
+
+document.getElementById('lastUpdate').textContent = new Date().toISOString().slice(0,10);
+</script>
 </body>
 </html>
