@@ -1,49 +1,95 @@
 #!/bin/bash
 set -e
 
-# Create sync script
+# Create improved sync script - direct PostgreSQL to PostgreSQL
 cat > /opt/rm-infra/sync_twenty.sh << 'SYNC'
 #!/bin/bash
-# Twenty CRM -> PostgreSQL sync (var 15:e minut via cron)
+# Twenty CRM -> PostgreSQL sync (direkt via SQL, ingen API)
 
-TOKEN=$(docker exec rm-twenty curl -s http://localhost:3000/metadata \
-  -H "Content-Type: application/json" \
-  -d '{"query":"mutation { signIn(email: \"daniel@boenosverige.se\", password: \"RmTwenty2026crm\") { tokens { accessOrWorkspaceAgnosticToken { token } } } }"}' \
-  2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['signIn']['tokens']['accessOrWorkspaceAgnosticToken']['token'])" 2>/dev/null)
+docker exec rm-postgres psql -U rmadmin -d rm_central -c "
+-- Rensa gamla deals
+DELETE FROM pipeline_deal WHERE company_code = 'RM';
 
-if [ -z "$TOKEN" ]; then echo "$(date): Auth failed"; exit 1; fi
+-- Synka fran Twenty-databasen direkt
+INSERT INTO pipeline_deal (company_code, twenty_id, name, stage, value, hit_rate)
+SELECT 
+    'RM',
+    o.id::text,
+    o.name,
+    LOWER(o.stage),
+    COALESCE((o.\"amountAmountMicros\")::numeric / 1000000, 0),
+    CASE 
+        WHEN o.stage = 'PROPOSAL' THEN 75
+        WHEN o.stage = 'MEETING' THEN 50
+        ELSE 25
+    END
+FROM dblink(
+    'dbname=twenty user=rmadmin password=Rm4x7KoncernDB2026stack',
+    'SELECT id, name, stage, \"amountAmountMicros\" FROM core.opportunity WHERE \"deletedAt\" IS NULL'
+) AS o(id uuid, name text, stage text, \"amountAmountMicros\" bigint);
+" 2>/dev/null
 
-DEALS=$(docker exec rm-twenty curl -s http://localhost:3000/graphql \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"query":"query { opportunities(first: 200) { edges { node { id name stage closeDate } } } }"}' 2>/dev/null)
-
-echo "$DEALS" | python3 -c "
-import sys, json, subprocess
-data = json.load(sys.stdin)
-edges = data.get('data',{}).get('opportunities',{}).get('edges',[])
-hr = {'SCREENING': 25, 'MEETING': 50, 'PROPOSAL': 75}
-sql = \"DELETE FROM pipeline_deal WHERE company_code = 'RM';\n\"
-for e in edges:
-    n = e['node']
-    name = n['name'].replace(\"'\", \"''\")
-    stage = (n.get('stage') or 'screening').lower()
-    h = hr.get(n.get('stage',''), 25)
-    sql += \"INSERT INTO pipeline_deal (company_code, twenty_id, name, stage, value, hit_rate) VALUES ('RM', '%s', '%s', '%s', 0, %d);\n\" % (n['id'], name, stage, h)
-proc = subprocess.run(['docker', 'exec', '-i', 'rm-postgres', 'psql', '-U', 'rmadmin', '-d', 'rm_central'], input=sql, capture_output=True, text=True)
-print('$(date): Synced %d deals' % len(edges))
-"
+if [ $? -ne 0 ]; then
+    # dblink not available, try alternative approach
+    # Query twenty DB and pipe to rm_central
+    DEALS=$(docker exec rm-postgres psql -U rmadmin -d twenty -t -A -F '|' -c "
+        SELECT id, name, stage, COALESCE(\"amountAmountMicros\", 0) 
+        FROM core.opportunity 
+        WHERE \"deletedAt\" IS NULL
+    " 2>/dev/null)
+    
+    if [ -z "$DEALS" ]; then
+        # Try without core schema
+        DEALS=$(docker exec rm-postgres psql -U rmadmin -d twenty -t -A -F '|' -c "
+            SELECT id, name, stage, 0 
+            FROM public.opportunity 
+            WHERE \"deletedAt\" IS NULL
+        " 2>/dev/null)
+    fi
+    
+    if [ -n "$DEALS" ]; then
+        # Clear and re-insert
+        docker exec rm-postgres psql -U rmadmin -d rm_central -c "DELETE FROM pipeline_deal WHERE company_code = 'RM';" 2>/dev/null
+        
+        COUNT=0
+        echo "$DEALS" | while IFS='|' read -r id name stage amount; do
+            if [ -n "$name" ]; then
+                safe_name=$(echo "$name" | sed "s/'/''/g")
+                stage_lower=$(echo "$stage" | tr '[:upper:]' '[:lower:]')
+                case "$stage" in
+                    PROPOSAL) hr=75 ;;
+                    MEETING) hr=50 ;;
+                    *) hr=25 ;;
+                esac
+                docker exec rm-postgres psql -U rmadmin -d rm_central -c "
+                    INSERT INTO pipeline_deal (company_code, twenty_id, name, stage, value, hit_rate) 
+                    VALUES ('RM', '$id', '$safe_name', '$stage_lower', $((amount / 1000000)), $hr);
+                " 2>/dev/null
+                COUNT=$((COUNT + 1))
+            fi
+        done
+        echo "$(date): Synced deals from twenty DB"
+    else
+        echo "$(date): No deals found in twenty DB"
+    fi
+else
+    echo "$(date): Synced via dblink"
+fi
 SYNC
 
 chmod +x /opt/rm-infra/sync_twenty.sh
 
-# Add to cron (every 15 min)
-(crontab -l 2>/dev/null | grep -v sync_twenty; echo "*/15 * * * * /opt/rm-infra/sync_twenty.sh >> /var/log/rm_sync.log 2>&1") | crontab -
+# Test: check twenty DB schema
+echo "=== Twenty DB tables ==="
+docker exec rm-postgres psql -U rmadmin -d twenty -c "\dt core.*" 2>/dev/null || \
+docker exec rm-postgres psql -U rmadmin -d twenty -c "\dt" 2>/dev/null
 
-# Run once now
+echo ""
+echo "=== Opportunity data ==="
+docker exec rm-postgres psql -U rmadmin -d twenty -t -c "
+SELECT tablename FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema') AND tablename LIKE '%pportunit%' LIMIT 5
+" 2>/dev/null
+
+# Run sync
 /opt/rm-infra/sync_twenty.sh
-
-# Also stop n8n to free memory
-cd /opt/rm-infra
-docker stop rm-n8n 2>/dev/null
-echo "SYNC SETUP COMPLETE"
+echo "SYNC FIX COMPLETE"
