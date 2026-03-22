@@ -1,372 +1,789 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RM Fasad — KPI Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0D1117;color:#C9D1D9;min-height:100vh}
-.dashboard{max-width:1400px;margin:0 auto;padding:24px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid #21262D;padding-bottom:16px}
-header h1{font-size:22px;font-weight:600;color:#F0F6FC}
-header .meta{font-size:13px;color:#8B949E}
-header .meta span{color:#58A6FF}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM KPI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.kpi-card{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:20px}
-.kpi-card .label{font-size:12px;color:#8B949E;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
-.kpi-card .value{font-size:28px;font-weight:700;color:#F0F6FC}
-.kpi-card .sub{font-size:12px;color:#8B949E;margin-top:4px}
-.kpi-card .sub.warn{color:#F85149}
-.kpi-card .sub.ok{color:#3FB950}
-.kpi-card .progress-bar{height:6px;background:#21262D;border-radius:3px;margin-top:12px;overflow:hidden}
-.kpi-card .progress-bar .fill{height:100%;border-radius:3px;transition:width 0.5s}
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0D1117;
+            color: #E6EDF3;
+            line-height: 1.5;
+            padding: 24px;
+        }
 
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.chart-full{grid-column:1/-1}
-.chart-box{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:20px}
-.chart-box h3{font-size:14px;font-weight:600;color:#C9D1D9;margin-bottom:16px}
-.chart-box .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:500}
-.badge.red{background:rgba(248,81,73,0.15);color:#F85149}
-.badge.green{background:rgba(63,185,80,0.15);color:#3FB950}
-.badge.blue{background:rgba(88,166,255,0.15);color:#58A6FF}
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
 
-.table-box{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:20px;margin-bottom:24px}
-.table-box h3{font-size:14px;font-weight:600;color:#C9D1D9;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;color:#8B949E;font-weight:500;padding:8px 12px;border-bottom:1px solid #21262D}
-td{padding:8px 12px;border-bottom:1px solid #21262D;color:#C9D1D9}
-tr:hover td{background:#1C2128}
-.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
-.tag.parkerad{background:rgba(248,81,73,0.15);color:#F85149}
-.tag.frislappt{background:rgba(63,185,80,0.15);color:#3FB950}
+        /* HEADER */
+        .header {
+            margin-bottom: 32px;
+        }
 
-@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}.chart-row{grid-template-columns:1fr}}
-</style>
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #E6EDF3;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #8B949E;
+        }
+
+        /* KPI CARDS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: #30363D;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #8B949E;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #58A6FF;
+            margin-bottom: 12px;
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            color: #8B949E;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #21262D;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #58A6FF, #3FB950);
+            border-radius: 3px;
+            animation: growWidth 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes growWidth {
+            from {
+                width: 0;
+                opacity: 1;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* SECTION TITLE */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #E6EDF3;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #F85149;
+            color: #0D1117;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.warning {
+            background: #F97316;
+        }
+
+        .badge.success {
+            background: #3FB950;
+        }
+
+        /* KASSAFLÖDESPROGNOS */
+        .cash-forecast-container {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 32px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 16px;
+        }
+
+        /* PIPELINE SECTION */
+        .pipeline-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1200px) {
+            .pipeline-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pipeline-card {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .pipeline-chart-container {
+            position: relative;
+            height: 100px;
+            margin-top: 12px;
+        }
+
+        .stage-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+            font-size: 12px;
+        }
+
+        .stage-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #0D1117;
+            border-radius: 4px;
+            border-left: 3px solid #58A6FF;
+        }
+
+        .stage-item.kontrakterat { border-left-color: #3FB950; }
+        .stage-item.anbud { border-left-color: #F97316; }
+        .stage-item.kalkyl { border-left-color: #58A6FF; }
+        .stage-item.ovrigt { border-left-color: #8B949E; }
+
+        .stage-amount {
+            font-weight: 600;
+            color: #58A6FF;
+        }
+
+        /* DEALS TABLE */
+        .deals-table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #0D1117;
+            border-bottom: 2px solid #21262D;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #8B949E;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #21262D;
+            color: #E6EDF3;
+        }
+
+        tr:hover {
+            background: #0D1117;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #1F6FEB;
+            color: #E6EDF3;
+        }
+
+        .status-tag.kontrakterat {
+            background: #3FB950;
+            color: #0D1117;
+        }
+
+        .status-tag.kalkyl {
+            background: #58A6FF;
+            color: #0D1117;
+        }
+
+        .status-tag.anbud {
+            background: #F97316;
+            color: #0D1117;
+        }
+
+        .status-tag.inlamnat {
+            background: #8B949E;
+            color: #0D1117;
+        }
+
+        /* CHARTS ROW */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .chart-card-large {
+            position: relative;
+            height: 280px;
+            margin-top: 12px;
+        }
+
+        /* SUPPLIERS TABLE */
+        .suppliers-card {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 32px;
+        }
+
+        .suppliers-header {
+            margin-bottom: 16px;
+        }
+
+        .supplier-note {
+            background: #0D1117;
+            border-left: 3px solid #F97316;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #8B949E;
+            margin-top: 16px;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding-top: 24px;
+            border-top: 1px solid #21262D;
+            color: #8B949E;
+            font-size: 12px;
+        }
+
+        /* UTILITY */
+        .text-success {
+            color: #3FB950;
+        }
+
+        .text-warning {
+            color: #F97316;
+        }
+
+        .text-danger {
+            color: #F85149;
+        }
+    </style>
 </head>
 <body>
-<div class="dashboard">
-<header>
-  <h1>RM Entreprenad och Fasad — KPI Dashboard</h1>
-  <div class="meta">Rakenskapsår nov 2025 – okt 2026 &middot; Senast uppdaterad: <span id="lastUpdate">2026-03-21</span></div>
-</header>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>RM Entreprenad och Fasad</h1>
+            <p>KPI Dashboard — Räkenskapsår nov 2025 – okt 2026</p>
+        </div>
 
-<!-- KPI CARDS -->
-<div class="kpi-row">
-  <div class="kpi-card">
-    <div class="label">Omsattning YTD</div>
-    <div class="value" id="kpiOmsYtd">0 Mkr</div>
-    <div class="sub" id="kpiOmsSub">Arsmal: 20.4 Mkr</div>
-    <div class="progress-bar"><div class="fill" id="kpiOmsBar" style="width:0%;background:#58A6FF"></div></div>
-  </div>
-  <div class="kpi-card">
-    <div class="label">TB1 YTD</div>
-    <div class="value" id="kpiTb1">0 tkr</div>
-    <div class="sub" id="kpiTb1Sub">Mal: 20% (4.08 Mkr/ar)</div>
-  </div>
-  <div class="kpi-card">
-    <div class="label">Orderstock</div>
-    <div class="value" id="kpiOrderstock">0 tkr</div>
-    <div class="sub ok" id="kpiOrderSub">Aktiva projekt</div>
-  </div>
-  <div class="kpi-card">
-    <div class="label">Pipeline (viktad)</div>
-    <div class="value" id="kpiPipeline">0 tkr</div>
-    <div class="sub" id="kpiPipeSub">Oppna affarer × hitrate</div>
-  </div>
-</div>
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+            <!-- Omsättning YTD -->
+            <div class="kpi-card">
+                <div class="kpi-label">Omsättning YTD</div>
+                <div class="kpi-value">7,3 Mkr</div>
+                <div class="kpi-subtext">36% av 20,4 Mkr årsmål</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 36%; animation-delay: 0.1s;"></div>
+                </div>
+            </div>
 
-<!-- KASSAFLÖDE (CENTRALT) -->
-<div class="chart-row">
-  <div class="chart-box chart-full">
-    <h3>Kassaflodesprognos <span class="badge blue">8 veckor framat</span> <span class="badge" id="cfBadge"></span></h3>
-    <canvas id="cfChart" height="100"></canvas>
-  </div>
-</div>
+            <!-- TB1 YTD -->
+            <div class="kpi-card">
+                <div class="kpi-label">TB1 YTD</div>
+                <div class="kpi-value text-success">1 470 tkr</div>
+                <div class="kpi-subtext">20,3% av omsättning (mål: ≥20%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #3FB950, #3FB950); animation-delay: 0.2s;"></div>
+                </div>
+            </div>
 
-<!-- OMSÄTTNING + TB1 -->
-<div class="chart-row">
-  <div class="chart-box">
-    <h3>Omsattning vs Budget per manad</h3>
-    <canvas id="omsChart" height="140"></canvas>
-  </div>
-  <div class="chart-box">
-    <h3>TB1 vs Budget per manad</h3>
-    <canvas id="tb1Chart" height="140"></canvas>
-  </div>
-</div>
+            <!-- Orderstock -->
+            <div class="kpi-card">
+                <div class="kpi-label">Orderstock</div>
+                <div class="kpi-value">10,2 Mkr</div>
+                <div class="kpi-subtext">5 kontrakterade projekt</div>
+                <div style="font-size: 11px; color: #8B949E; line-height: 1.6;">
+                    Grimvägen 9M • Rouletten 325k • Källargolv 250k • Mark 260k • Betong 400k
+                </div>
+            </div>
 
-<!-- PARKERADE FAKTUROR -->
-<div class="table-box">
-  <h3>Parkerade leverantorsfakturor <span class="badge red" id="parkedCount">0 st</span></h3>
-  <table id="parkedTable">
-    <thead><tr><th>Leverantor</th><th>Fakturanr</th><th>Belopp (tkr)</th><th>Forfallodag</th><th>Status</th></tr></thead>
-    <tbody id="parkedBody"></tbody>
-  </table>
-  <div style="color:#8B949E;font-size:12px;margin-top:8px;font-style:italic">Kassaflodesregeln: UE betalas inte forran kunden har betalat.</div>
-</div>
+            <!-- Pipeline -->
+            <div class="kpi-card">
+                <div class="kpi-label">Pipeline Total</div>
+                <div class="kpi-value">72,3 Mkr</div>
+                <div class="kpi-subtext">29 aktiva affärer</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #58A6FF, #3FB950); animation-delay: 0.3s;"></div>
+                </div>
+            </div>
+        </div>
 
-<!-- BOLAGSÖVERSIKT (bara RM) -->
-<div class="table-box">
-  <h3>Bolag</h3>
-  <table>
-    <thead><tr><th>Kod</th><th>Namn</th><th>Org.nr</th><th>Sfar</th></tr></thead>
-    <tbody>
-      <tr><td>RM</td><td>RM Entreprenad och Fasad AB</td><td>559251-1462</td><td>RM Drift</td></tr>
-    </tbody>
-  </table>
-</div>
-</div>
+        <!-- KASSAFLÖDESPROGNOS -->
+        <div class="cash-forecast-container">
+            <div class="section-title">
+                Kassaflödesprognos 8 veckor framåt
+                <span class="badge warning">Uppmärksamhet</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="cashForecastChart"></canvas>
+            </div>
+        </div>
 
-<script>
-// ══════════════════════════════════════════════════
-// DATA — Ersatts med live-data fran PostgreSQL via API
-// ══════════════════════════════════════════════════
+        <!-- PIPELINE SECTION -->
+        <div class="pipeline-section">
+            <!-- Pipeline Breakdown -->
+            <div class="pipeline-card">
+                <div class="section-title">Pipeline-fördelning per stadium</div>
+                <div class="pipeline-chart-container">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+                <div class="stage-legend">
+                    <div class="stage-item kontrakterat">
+                        <span>Kontrakterat</span>
+                        <span class="stage-amount">10,2 Mkr</span>
+                    </div>
+                    <div class="stage-item anbud">
+                        <span>Anbud ute</span>
+                        <span class="stage-amount">31,5 Mkr</span>
+                    </div>
+                    <div class="stage-item kalkyl">
+                        <span>Kalkyl</span>
+                        <span class="stage-amount">27,1 Mkr</span>
+                    </div>
+                    <div class="stage-item ovrigt">
+                        <span>Övrigt</span>
+                        <span class="stage-amount">3,5 Mkr</span>
+                    </div>
+                </div>
+            </div>
 
-const BUDGET_MONTHS = [
-  {period:'2025-11',rev:1700,tb1:340},{period:'2025-12',rev:1700,tb1:340},
-  {period:'2026-01',rev:1700,tb1:340},{period:'2026-02',rev:1700,tb1:340},
-  {period:'2026-03',rev:1700,tb1:340},{period:'2026-04',rev:1700,tb1:340},
-  {period:'2026-05',rev:1700,tb1:340},{period:'2026-06',rev:1700,tb1:340},
-  {period:'2026-07',rev:1700,tb1:340},{period:'2026-08',rev:1700,tb1:340},
-  {period:'2026-09',rev:1700,tb1:340},{period:'2026-10',rev:1700,tb1:340}
-];
+            <!-- Top 10 Deals -->
+            <div class="pipeline-card">
+                <div class="section-title">10 största affärer</div>
+                <div class="deals-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Projekt</th>
+                                <th>Belopp</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>LSS G17 Gruppen</td>
+                                <td>14,7 M</td>
+                                <td><span class="status-tag">Kontrakt</span></td>
+                            </tr>
+                            <tr>
+                                <td>Hässelby Berså</td>
+                                <td>11,3 M</td>
+                                <td><span class="status-tag kalkyl">Kalkyl</span></td>
+                            </tr>
+                            <tr>
+                                <td>Villa Träkvista</td>
+                                <td>10,0 M</td>
+                                <td><span class="status-tag kalkyl">Kalkyl</span></td>
+                            </tr>
+                            <tr>
+                                <td>Grimvägen 12</td>
+                                <td>9,0 M</td>
+                                <td><span class="status-tag kontrakterat">Kontrakterat</span></td>
+                            </tr>
+                            <tr>
+                                <td>Värmdö Projekt</td>
+                                <td>7,7 M</td>
+                                <td><span class="status-tag anbud">Anbud</span></td>
+                            </tr>
+                            <tr>
+                                <td>Grimvägen Stomkomp</td>
+                                <td>5,8 M</td>
+                                <td><span class="status-tag kalkyl">Kalkyl</span></td>
+                            </tr>
+                            <tr>
+                                <td>Lappkärrsberget</td>
+                                <td>4,9 M</td>
+                                <td><span class="status-tag anbud">Anbud</span></td>
+                            </tr>
+                            <tr>
+                                <td>Grus/Transport</td>
+                                <td>3,5 M</td>
+                                <td><span class="status-tag anbud">Anbud</span></td>
+                            </tr>
+                            <tr>
+                                <td>Campus Et 2</td>
+                                <td>2,0 M</td>
+                                <td><span class="status-tag inlamnat">Inlämnat</span></td>
+                            </tr>
+                            <tr>
+                                <td>RAM Solna Bagartorp</td>
+                                <td>1,2 M</td>
+                                <td><span class="status-tag anbud">Anbud</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-// Exempeldata — ersatts av Fortnox API-data via n8n
-const ACTUAL_MONTHS = [
-  {period:'2025-11',rev:1450,tb1:310,costs:1140},
-  {period:'2025-12',rev:1680,tb1:350,costs:1330},
-  {period:'2026-01',rev:1520,tb1:280,costs:1240},
-  {period:'2026-02',rev:1750,tb1:370,costs:1380},
-  {period:'2026-03',rev:850,tb1:160,costs:690}
-];
+        <!-- OMSÄTTNING & TB1 CHARTS -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="section-title">Omsättning vs Budget per månad</div>
+                <div class="chart-card-large">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
 
-// Kassaflodesdata per vecka (exempeldata)
-const CF_START = 147; // tkr, kassa vid start
-const CF_WEEKS = [
-  {week:'V18',inflow:420,outflow:380},{week:'V19',inflow:0,outflow:290},
-  {week:'V20',inflow:680,outflow:450},{week:'V21',inflow:350,outflow:520},
-  {week:'V22',inflow:0,outflow:310},{week:'V23',inflow:890,outflow:400},
-  {week:'V24',inflow:200,outflow:550},{week:'V25',inflow:750,outflow:380}
-];
+            <div class="chart-card">
+                <div class="section-title">TB1 vs Budget per månad</div>
+                <div class="chart-card-large">
+                    <canvas id="tb1Chart"></canvas>
+                </div>
+            </div>
+        </div>
 
-const PARKED_INVOICES = [
-  {supplier:'NordBygg UE AB',invNo:'F-2451',amount:285,due:'2026-04-10',status:'parkerad'},
-  {supplier:'Betong Direkt AB',invNo:'F-2467',amount:142,due:'2026-03-28',status:'parkerad'},
-  {supplier:'Markentreprenad Ost',invNo:'F-2480',amount:95,due:'2026-04-15',status:'frislappt'}
-];
+        <!-- PARKERADE LEVERANTÖRSFAKTUROR -->
+        <div class="suppliers-card">
+            <div class="suppliers-header">
+                <div class="section-title">
+                    Parkerade leverantörsfakturor
+                    <span class="badge">2 st / 427 tkr</span>
+                </div>
+            </div>
+            <div class="deals-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Leverantör</th>
+                            <th>Fakturanr</th>
+                            <th>Belopp (tkr)</th>
+                            <th>Förfallodag</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>NordBygg UE AB</td>
+                            <td>F-2451</td>
+                            <td>285</td>
+                            <td>2026-04-10</td>
+                            <td><span class="status-tag" style="background: #F85149;">Parkerad</span></td>
+                        </tr>
+                        <tr>
+                            <td>Betong Direkt AB</td>
+                            <td>F-2467</td>
+                            <td>142</td>
+                            <td>2026-03-28</td>
+                            <td><span class="status-tag" style="background: #F85149;">Parkerad</span></td>
+                        </tr>
+                        <tr>
+                            <td>Markentreprenad Öst</td>
+                            <td>F-2480</td>
+                            <td>95</td>
+                            <td>2026-04-15</td>
+                            <td><span class="status-tag kontrakterat">Frisläppt</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="supplier-note">
+                <strong>Kassaflödesregeln:</strong> UE-fakturor betalas inte förrän kunden har betalat motsatt belopp.
+            </div>
+        </div>
 
-const ORDERSTOCK = 47000; // tkr
-const PIPELINE_WEIGHTED = 12500; // tkr
+        <!-- FOOTER -->
+        <div class="footer">
+            Senast uppdaterad: 2026-03-22 · Data: Twenty CRM + PostgreSQL · RM Entreprenad och Fasad AB
+        </div>
+    </div>
 
-// ══════════════════════════════════════════════════
-// RENDER KPI CARDS
-// ══════════════════════════════════════════════════
+    <script>
+        // Swedish number formatter
+        function formatSwedenNumber(num) {
+            return new Intl.NumberFormat('sv-SE').format(num);
+        }
 
-const totalRevYtd = ACTUAL_MONTHS.reduce((s,m) => s + m.rev, 0);
-const totalTb1Ytd = ACTUAL_MONTHS.reduce((s,m) => s + m.tb1, 0);
-const arsmal = 20400;
-const pctOms = Math.min(100, (totalRevYtd / arsmal * 100));
-const tb1Pct = totalRevYtd > 0 ? (totalTb1Ytd / totalRevYtd * 100).toFixed(1) : 0;
+        // Chart.js default options
+        Chart.defaults.color = '#8B949E';
+        Chart.defaults.borderColor = '#21262D';
+        Chart.defaults.font.family = 'Inter, sans-serif';
 
-document.getElementById('kpiOmsYtd').textContent = (totalRevYtd / 1000).toFixed(1) + ' Mkr';
-document.getElementById('kpiOmsSub').textContent = pctOms.toFixed(0) + '% av arsmal (20.4 Mkr)';
-document.getElementById('kpiOmsBar').style.width = pctOms + '%';
-document.getElementById('kpiOmsBar').style.background = pctOms < 30 ? '#F85149' : pctOms < 70 ? '#D29922' : '#3FB950';
+        // KASSAFLÖDESPROGNOS CHART
+        const cashForecastCtx = document.getElementById('cashForecastChart').getContext('2d');
+        new Chart(cashForecastCtx, {
+            type: 'bar',
+            data: {
+                labels: ['V18', 'V19', 'V20', 'V21', 'V22', 'V23', 'V24', 'V25'],
+                datasets: [
+                    {
+                        label: 'Inflow',
+                        data: [450, 820, 650, 1100, 900, 750, 600, 950],
+                        backgroundColor: '#3FB950',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    },
+                    {
+                        label: 'Outflow',
+                        data: [380, 520, 600, 450, 850, 700, 650, 500],
+                        backgroundColor: '#F85149',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    },
+                    {
+                        label: 'Kumulativ kassa',
+                        data: [217, 517, 567, 1217, 1267, 1317, 1267, 1717],
+                        type: 'line',
+                        borderColor: '#58A6FF',
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#58A6FF',
+                        pointBorderColor: '#0D1117',
+                        pointBorderWidth: 2,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { padding: 16, boxWidth: 12 }
+                    },
+                    filler: {
+                        propagate: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => v + ' tk' }
+                    }
+                }
+            }
+        });
 
-document.getElementById('kpiTb1').textContent = totalTb1Ytd + ' tkr';
-document.getElementById('kpiTb1Sub').textContent = 'Tackningsgrad: ' + tb1Pct + '% (mal 20%)';
-document.getElementById('kpiTb1Sub').className = 'sub ' + (tb1Pct >= 20 ? 'ok' : 'warn');
+        // PIPELINE CHART (Horizontal Stacked Bar)
+        const pipelineCtx = document.getElementById('pipelineChart').getContext('2d');
+        new Chart(pipelineCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Pipeline'],
+                datasets: [
+                    {
+                        label: 'Kontrakterat',
+                        data: [10235295],
+                        backgroundColor: '#3FB950',
+                        borderRadius: [4, 0, 0, 4],
+                    },
+                    {
+                        label: 'Anbud ute',
+                        data: [31472942],
+                        backgroundColor: '#F97316',
+                    },
+                    {
+                        label: 'Kalkyl',
+                        data: [27062562],
+                        backgroundColor: '#58A6FF',
+                    },
+                    {
+                        label: 'Övrigt',
+                        data: [3500000],
+                        backgroundColor: '#8B949E',
+                        borderRadius: [0, 4, 4, 0],
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': ' + formatSwedenNumber(ctx.parsed.x) + ' SEK'
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: true, ticks: { display: false } },
+                    y: { stacked: true }
+                }
+            }
+        });
 
-document.getElementById('kpiOrderstock').textContent = (ORDERSTOCK / 1000).toFixed(0) + ' Mkr';
-document.getElementById('kpiPipeline').textContent = (PIPELINE_WEIGHTED / 1000).toFixed(1) + ' Mkr';
+        // OMSÄTTNING CHART
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+                datasets: [
+                    {
+                        label: 'Budget',
+                        data: [1700, 1700, 1700, 1700, 1700],
+                        backgroundColor: '#F97316',
+                        borderRadius: 4,
+                        order: 2,
+                    },
+                    {
+                        label: 'Utfall',
+                        data: [1450, 1680, 1520, 1750, 850],
+                        backgroundColor: '#58A6FF',
+                        borderRadius: 4,
+                        order: 1,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': ' + formatSwedenNumber(ctx.parsed.y) + ' tk'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => v + ' tk' }
+                    }
+                }
+            }
+        });
 
-// ══════════════════════════════════════════════════
-// KASSAFLÖDESPROGNOS (CENTRALT)
-// ══════════════════════════════════════════════════
-
-const cfLabels = CF_WEEKS.map(w => w.week);
-let runningKassa = CF_START;
-const kassaUB = CF_WEEKS.map(w => {
-  runningKassa += w.inflow - w.outflow;
-  return runningKassa;
-});
-const minKassa = Math.min(...kassaUB);
-const minWeek = cfLabels[kassaUB.indexOf(minKassa)];
-
-const cfBadge = document.getElementById('cfBadge');
-if (minKassa < 0) {
-  cfBadge.textContent = 'VARNING: Botten ' + minKassa + ' tkr (' + minWeek + ')';
-  cfBadge.className = 'badge red';
-} else if (minKassa < 300) {
-  cfBadge.textContent = 'Botten ' + minKassa + ' tkr (' + minWeek + ')';
-  cfBadge.className = 'badge red';
-} else {
-  cfBadge.textContent = 'Min kassa: ' + minKassa + ' tkr';
-  cfBadge.className = 'badge green';
-}
-
-new Chart(document.getElementById('cfChart'), {
-  type: 'line',
-  data: {
-    labels: cfLabels,
-    datasets: [
-      {
-        label: 'Kassa UB (tkr)',
-        data: kassaUB,
-        borderColor: '#58A6FF',
-        backgroundColor: 'rgba(88,166,255,0.08)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 5,
-        pointBackgroundColor: kassaUB.map(v => v < 0 ? '#F85149' : '#58A6FF'),
-        borderWidth: 2
-      },
-      {
-        label: 'Inbetalningar',
-        data: CF_WEEKS.map(w => w.inflow),
-        type: 'bar',
-        backgroundColor: 'rgba(63,185,80,0.5)',
-        borderRadius: 4,
-        barPercentage: 0.4
-      },
-      {
-        label: 'Utbetalningar',
-        data: CF_WEEKS.map(w => -w.outflow),
-        type: 'bar',
-        backgroundColor: 'rgba(248,81,73,0.4)',
-        borderRadius: 4,
-        barPercentage: 0.4
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {labels: {color: '#8B949E', font: {size: 11}}},
-      tooltip: {callbacks: {label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' tkr'}}
-    },
-    scales: {
-      x: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}},
-      y: {ticks: {color: '#8B949E', callback: v => v + ' tkr'}, grid: {color: '#21262D'}}
-    }
-  },
-  plugins: [{
-    id: 'zeroLine',
-    afterDraw(chart) {
-      const yScale = chart.scales.y;
-      if (yScale.min < 0) {
-        const ctx = chart.ctx;
-        const y = yScale.getPixelForValue(0);
-        ctx.save();
-        ctx.strokeStyle = '#F85149';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
-        ctx.beginPath();
-        ctx.moveTo(chart.chartArea.left, y);
-        ctx.lineTo(chart.chartArea.right, y);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-  }]
-});
-
-// ══════════════════════════════════════════════════
-// OMSÄTTNING VS BUDGET
-// ══════════════════════════════════════════════════
-
-const allPeriods = BUDGET_MONTHS.map(b => b.period);
-const actualMap = {};
-ACTUAL_MONTHS.forEach(m => actualMap[m.period] = m);
-
-new Chart(document.getElementById('omsChart'), {
-  type: 'bar',
-  data: {
-    labels: allPeriods.map(p => p.replace('2025-','').replace('2026-','')),
-    datasets: [
-      {
-        label: 'Budget (tkr)',
-        data: BUDGET_MONTHS.map(b => b.rev),
-        backgroundColor: 'rgba(248,129,52,0.25)',
-        borderColor: '#F97316',
-        borderWidth: 1,
-        borderRadius: 4
-      },
-      {
-        label: 'Utfall (tkr)',
-        data: allPeriods.map(p => actualMap[p] ? actualMap[p].rev : null),
-        backgroundColor: 'rgba(88,166,255,0.6)',
-        borderColor: '#58A6FF',
-        borderWidth: 1,
-        borderRadius: 4
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {legend: {labels: {color: '#8B949E', font: {size: 11}}}},
-    scales: {
-      x: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}},
-      y: {ticks: {color: '#8B949E', callback: v => v/1000+' Mkr'}, grid: {color: '#21262D'}, beginAtZero: true}
-    }
-  }
-});
-
-// ══════════════════════════════════════════════════
-// TB1 VS BUDGET
-// ══════════════════════════════════════════════════
-
-new Chart(document.getElementById('tb1Chart'), {
-  type: 'bar',
-  data: {
-    labels: allPeriods.map(p => p.replace('2025-','').replace('2026-','')),
-    datasets: [
-      {
-        label: 'TB1 Budget (tkr)',
-        data: BUDGET_MONTHS.map(b => b.tb1),
-        backgroundColor: 'rgba(248,129,52,0.25)',
-        borderColor: '#F97316',
-        borderWidth: 1,
-        borderRadius: 4
-      },
-      {
-        label: 'TB1 Utfall (tkr)',
-        data: allPeriods.map(p => actualMap[p] ? actualMap[p].tb1 : null),
-        backgroundColor: 'rgba(63,185,80,0.6)',
-        borderColor: '#3FB950',
-        borderWidth: 1,
-        borderRadius: 4
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {legend: {labels: {color: '#8B949E', font: {size: 11}}}},
-    scales: {
-      x: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}},
-      y: {ticks: {color: '#8B949E'}, grid: {color: '#21262D'}, beginAtZero: true}
-    }
-  }
-});
-
-// ══════════════════════════════════════════════════
-// PARKERADE FAKTUROR
-// ══════════════════════════════════════════════════
-
-const parkedBody = document.getElementById('parkedBody');
-const parkedOnly = PARKED_INVOICES.filter(f => f.status === 'parkerad');
-document.getElementById('parkedCount').textContent = parkedOnly.length + ' st / ' + parkedOnly.reduce((s,f) => s + f.amount, 0) + ' tkr';
-
-PARKED_INVOICES.forEach(f => {
-  const tr = document.createElement('tr');
-  tr.innerHTML = '<td>' + f.supplier + '</td><td>' + f.invNo + '</td><td>' + f.amount + '</td><td>' + f.due + '</td><td><span class="tag ' + f.status + '">' + (f.status === 'parkerad' ? 'Parkerad' : 'Frislappt') + '</span></td>';
-  parkedBody.appendChild(tr);
-});
-
-document.getElementById('lastUpdate').textContent = new Date().toISOString().slice(0,10);
-</script>
+        // TB1 CHART
+        const tb1Ctx = document.getElementById('tb1Chart').getContext('2d');
+        new Chart(tb1Ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+                datasets: [
+                    {
+                        label: 'Budget',
+                        data: [340, 340, 340, 340, 340],
+                        backgroundColor: '#F97316',
+                        borderRadius: 4,
+                        order: 2,
+                    },
+                    {
+                        label: 'Utfall',
+                        data: [310, 350, 280, 370, 160],
+                        backgroundColor: '#3FB950',
+                        borderRadius: 4,
+                        order: 1,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': ' + formatSwedenNumber(ctx.parsed.y) + ' tk'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => v + ' tk' }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
