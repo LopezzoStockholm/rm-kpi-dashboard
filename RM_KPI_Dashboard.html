@@ -379,23 +379,77 @@
                 </div>
             </div>
 
-            <!-- Orderstock -->
+            <!-- Extern orderstock -->
             <div class="kpi-card">
-                <div class="kpi-label">Orderstock</div>
-                <div class="kpi-value">10,2 Mkr</div>
-                <div class="kpi-subtext">5 kontrakterade projekt</div>
-                <div style="font-size: 11px; color: #8B949E; line-height: 1.6;">
-                    Grimvägen 9M • Rouletten 325k • Källargolv 250k • Mark 260k • Betong 400k
+                <div class="kpi-label">Extern orderstock</div>
+                <div class="kpi-value">10,6 Mkr</div>
+                <div class="kpi-subtext" style="color:#3FB950">6 kontrakterade externa</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.6">
+                    Grimvägen 9M • Rouletten 325k • Källargolv 250k • Mark 260k • Betong 400k • Brf Vakna 125k
                 </div>
             </div>
 
-            <!-- Pipeline -->
+            <!-- Intern orderstock -->
             <div class="kpi-card">
-                <div class="kpi-label">Pipeline Total</div>
-                <div class="kpi-value">72,3 Mkr</div>
-                <div class="kpi-subtext">29 aktiva affärer</div>
+                <div class="kpi-label">Intern orderstock</div>
+                <div class="kpi-value">15,4 Mkr</div>
+                <div class="kpi-subtext">4 interna affärer (100%)</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.6">
+                    Grimvägen 9M • Stomkomp 5.75M • Betong 400k • Mark 260k
+                </div>
+            </div>
+        </div>
+
+        <!-- PIPELINE KPI RAD 2 -->
+        <div class="kpi-grid" style="margin-top:-8px">
+            <!-- Viktad pipeline -->
+            <div class="kpi-card">
+                <div class="kpi-label">Viktad pipeline</div>
+                <div class="kpi-value">21,0 Mkr</div>
+                <div class="kpi-subtext">23 affärer × hitrate per typ</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.5;margin-top:6px">
+                    <span style="color:#F85149">●</span> Kall 3,8 Mkr (10 st)
+                    <span style="color:#F97316;margin-left:8px">●</span> Varm 11,9 Mkr (3 st)<br>
+                    <span style="color:#58A6FF">●</span> Styrd 7,3 Mkr (4 st)
+                    <span style="color:#3FB950;margin-left:8px">●</span> Service 550 tkr (2 st)
+                </div>
+            </div>
+
+            <!-- Pipeline total -->
+            <div class="kpi-card">
+                <div class="kpi-label">Pipeline total (oviktat)</div>
+                <div class="kpi-value">83,5 Mkr</div>
+                <div class="kpi-subtext">23 aktiva affärer</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #58A6FF, #3FB950); animation-delay: 0.3s;"></div>
+                    <div class="progress-fill" style="width:100%;background:linear-gradient(90deg,#3FB950 18%,#F97316 18% 55%,#58A6FF 55% 70%,#F85149 70%);animation-delay:0.3s"></div>
+                </div>
+                <div style="font-size:10px;color:#8B949E;margin-top:4px;display:flex;justify-content:space-between">
+                    <span style="color:#3FB950">Intern 18%</span>
+                    <span style="color:#F97316">Varm 20%</span>
+                    <span style="color:#58A6FF">Styrd 15%</span>
+                    <span style="color:#F85149">Kall 46%</span>
+                </div>
+            </div>
+
+            <!-- Servicejobb MTD -->
+            <div class="kpi-card">
+                <div class="kpi-label">Servicejobb</div>
+                <div class="kpi-value">625 tkr</div>
+                <div class="kpi-subtext">2 löpande affärer</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.6">
+                    Brf Vakna 125k • STC Gym 500k
+                </div>
+            </div>
+
+            <!-- Hitrate per typ -->
+            <div class="kpi-card">
+                <div class="kpi-label">Snitt hitrate (viktat)</div>
+                <div class="kpi-value">25%</div>
+                <div class="kpi-subtext">Baserat på affärstyp × stadie</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.6;margin-top:4px">
+                    <span style="color:#F85149">Kall ~10%</span> •
+                    <span style="color:#F97316">Varm ~40%</span> •
+                    <span style="color:#58A6FF">Styrd ~70%</span>
                 </div>
             </div>
         </div>
@@ -415,26 +469,30 @@
         <div class="pipeline-section">
             <!-- Pipeline Breakdown -->
             <div class="pipeline-card">
-                <div class="section-title">Pipeline-fördelning per stadium</div>
+                <div class="section-title">Pipeline per affärstyp</div>
                 <div class="pipeline-chart-container">
                     <canvas id="pipelineChart"></canvas>
                 </div>
                 <div class="stage-legend">
                     <div class="stage-item kontrakterat">
-                        <span>Kontrakterat</span>
-                        <span class="stage-amount">10,2 Mkr</span>
+                        <span>Intern (100%)</span>
+                        <span class="stage-amount">15,4 Mkr</span>
                     </div>
                     <div class="stage-item anbud">
-                        <span>Anbud ute</span>
-                        <span class="stage-amount">31,5 Mkr</span>
+                        <span>Varm (40%)</span>
+                        <span class="stage-amount">17,0 Mkr</span>
                     </div>
                     <div class="stage-item kalkyl">
-                        <span>Kalkyl</span>
-                        <span class="stage-amount">27,1 Mkr</span>
+                        <span>Styrd (70%)</span>
+                        <span class="stage-amount">12,1 Mkr</span>
                     </div>
-                    <div class="stage-item ovrigt">
-                        <span>Övrigt</span>
-                        <span class="stage-amount">3,5 Mkr</span>
+                    <div class="stage-item ovrigt" style="color:#F85149">
+                        <span>Kall (10%)</span>
+                        <span class="stage-amount">38,3 Mkr</span>
+                    </div>
+                    <div class="stage-item" style="color:#D29922">
+                        <span>Service (90%)</span>
+                        <span class="stage-amount">625 tkr</span>
                     </div>
                 </div>
             </div>
@@ -448,54 +506,64 @@
                             <tr>
                                 <th>Projekt</th>
                                 <th>Belopp</th>
-                                <th>Status</th>
+                                <th>Typ</th>
+                                <th>Viktat</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>LSS G17 Gruppen</td>
                                 <td>14,7 M</td>
-                                <td><span class="status-tag">Kontrakt</span></td>
+                                <td><span class="status-tag" style="background:rgba(249,115,22,0.15);color:#F97316">Varm</span></td>
+                                <td style="color:#3FB950">10,3 M</td>
                             </tr>
                             <tr>
                                 <td>Hässelby Berså</td>
                                 <td>11,3 M</td>
-                                <td><span class="status-tag kalkyl">Kalkyl</span></td>
+                                <td><span class="status-tag" style="background:rgba(248,81,73,0.15);color:#F85149">Kall</span></td>
+                                <td style="color:#8B949E">1,1 M</td>
                             </tr>
                             <tr>
                                 <td>Villa Träkvista</td>
                                 <td>10,0 M</td>
-                                <td><span class="status-tag kalkyl">Kalkyl</span></td>
+                                <td><span class="status-tag" style="background:rgba(248,81,73,0.15);color:#F85149">Kall</span></td>
+                                <td style="color:#8B949E">1,0 M</td>
                             </tr>
                             <tr>
                                 <td>Grimvägen 12</td>
                                 <td>9,0 M</td>
-                                <td><span class="status-tag kontrakterat">Kontrakterat</span></td>
+                                <td><span class="status-tag" style="background:rgba(63,185,80,0.15);color:#3FB950">Intern</span></td>
+                                <td style="color:#3FB950">9,0 M</td>
                             </tr>
                             <tr>
-                                <td>Värmdö Projekt</td>
+                                <td>Värmdö</td>
                                 <td>7,7 M</td>
-                                <td><span class="status-tag anbud">Anbud</span></td>
+                                <td><span class="status-tag" style="background:rgba(248,81,73,0.15);color:#F85149">Kall</span></td>
+                                <td style="color:#8B949E">770 k</td>
                             </tr>
                             <tr>
                                 <td>Grimvägen Stomkomp</td>
                                 <td>5,8 M</td>
-                                <td><span class="status-tag kalkyl">Kalkyl</span></td>
+                                <td><span class="status-tag" style="background:rgba(63,185,80,0.15);color:#3FB950">Intern</span></td>
+                                <td style="color:#3FB950">5,5 M</td>
                             </tr>
                             <tr>
                                 <td>Lappkärrsberget</td>
                                 <td>4,9 M</td>
-                                <td><span class="status-tag anbud">Anbud</span></td>
+                                <td><span class="status-tag" style="background:rgba(88,166,255,0.15);color:#58A6FF">Styrd</span></td>
+                                <td style="color:#58A6FF">3,9 M</td>
                             </tr>
                             <tr>
                                 <td>Grus/Transport</td>
                                 <td>3,5 M</td>
-                                <td><span class="status-tag anbud">Anbud</span></td>
+                                <td><span class="status-tag" style="background:rgba(248,81,73,0.15);color:#F85149">Kall</span></td>
+                                <td style="color:#8B949E">700 k</td>
                             </tr>
                             <tr>
-                                <td>Campus Et 2</td>
-                                <td>2,0 M</td>
-                                <td><span class="status-tag inlamnat">Inlämnat</span></td>
+                                <td>Balder Haninge</td>
+                                <td>3,0 M</td>
+                                <td><span class="status-tag" style="background:rgba(88,166,255,0.15);color:#58A6FF">Styrd</span></td>
+                                <td style="color:#58A6FF">1,8 M</td>
                             </tr>
                             <tr>
                                 <td>RAM Solna Bagartorp</td>
@@ -691,25 +759,30 @@
                 labels: ['Pipeline'],
                 datasets: [
                     {
-                        label: 'Kontrakterat',
-                        data: [10235295],
+                        label: 'Intern',
+                        data: [15410295],
                         backgroundColor: 'rgba(63, 185, 80, 0.5)',
                         borderRadius: [4, 0, 0, 4],
                     },
                     {
-                        label: 'Anbud ute',
-                        data: [31472942],
+                        label: 'Varm',
+                        data: [17011531],
                         backgroundColor: 'rgba(249, 115, 22, 0.45)',
                     },
                     {
-                        label: 'Kalkyl',
-                        data: [27062562],
+                        label: 'Styrd',
+                        data: [12139500],
                         backgroundColor: 'rgba(88, 166, 255, 0.45)',
                     },
                     {
-                        label: 'Övrigt',
-                        data: [3500000],
-                        backgroundColor: 'rgba(139, 148, 158, 0.4)',
+                        label: 'Kall',
+                        data: [38283442],
+                        backgroundColor: 'rgba(248, 81, 73, 0.35)',
+                    },
+                    {
+                        label: 'Service',
+                        data: [625000],
+                        backgroundColor: 'rgba(210, 153, 34, 0.45)',
                         borderRadius: [0, 4, 4, 0],
                     }
                 ]
