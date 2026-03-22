@@ -599,16 +599,20 @@
                 labels: ['V18', 'V19', 'V20', 'V21', 'V22', 'V23', 'V24', 'V25'],
                 datasets: [
                     {
-                        label: 'Inflow',
+                        label: 'Inbetalningar',
                         data: [450, 820, 650, 1100, 900, 750, 600, 950],
-                        backgroundColor: '#3FB950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.45)',
+                        borderColor: 'rgba(63, 185, 80, 0.7)',
+                        borderWidth: 1,
                         borderRadius: 4,
                         borderSkipped: false,
                     },
                     {
-                        label: 'Outflow',
-                        data: [380, 520, 600, 450, 850, 700, 650, 500],
-                        backgroundColor: '#F85149',
+                        label: 'Utbetalningar',
+                        data: [-380, -520, -600, -450, -850, -700, -650, -500],
+                        backgroundColor: 'rgba(248, 81, 73, 0.4)',
+                        borderColor: 'rgba(248, 81, 73, 0.65)',
+                        borderWidth: 1,
                         borderRadius: 4,
                         borderSkipped: false,
                     },
@@ -616,12 +620,15 @@
                         label: 'Kumulativ kassa',
                         data: [217, 517, 567, 1217, 1267, 1317, 1267, 1717],
                         type: 'line',
-                        borderColor: '#58A6FF',
-                        borderWidth: 3,
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 5,
-                        pointBackgroundColor: '#58A6FF',
+                        borderColor: 'rgba(88, 166, 255, 0.8)',
+                        backgroundColor: 'rgba(88, 166, 255, 0.06)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: function(ctx) {
+                            return ctx.parsed.y < 0 ? '#F85149' : 'rgba(88, 166, 255, 0.9)';
+                        },
                         pointBorderColor: '#0D1117',
                         pointBorderWidth: 2,
                     }
@@ -638,15 +645,42 @@
                     },
                     filler: {
                         propagate: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.label + ': ' + Math.abs(ctx.parsed.y) + ' tkr';
+                            }
+                        }
                     }
                 },
                 scales: {
+                    x: {
+                        grid: { color: 'rgba(33, 38, 45, 0.6)' }
+                    },
                     y: {
-                        beginAtZero: true,
-                        ticks: { callback: v => v + ' tk' }
+                        ticks: { callback: v => v + ' tkr' },
+                        grid: { color: 'rgba(33, 38, 45, 0.6)' }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'zeroLine',
+                afterDraw(chart) {
+                    const yScale = chart.scales.y;
+                    const y = yScale.getPixelForValue(0);
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(248, 81, 73, 0.5)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([6, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(chart.chartArea.left, y);
+                    ctx.lineTo(chart.chartArea.right, y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }]
         });
 
         // PIPELINE CHART (Horizontal Stacked Bar)
@@ -659,23 +693,23 @@
                     {
                         label: 'Kontrakterat',
                         data: [10235295],
-                        backgroundColor: '#3FB950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.5)',
                         borderRadius: [4, 0, 0, 4],
                     },
                     {
                         label: 'Anbud ute',
                         data: [31472942],
-                        backgroundColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.45)',
                     },
                     {
                         label: 'Kalkyl',
                         data: [27062562],
-                        backgroundColor: '#58A6FF',
+                        backgroundColor: 'rgba(88, 166, 255, 0.45)',
                     },
                     {
                         label: 'Övrigt',
                         data: [3500000],
-                        backgroundColor: '#8B949E',
+                        backgroundColor: 'rgba(139, 148, 158, 0.4)',
                         borderRadius: [0, 4, 4, 0],
                     }
                 ]
@@ -709,14 +743,18 @@
                     {
                         label: 'Budget',
                         data: [1700, 1700, 1700, 1700, 1700],
-                        backgroundColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.3)',
+                        borderColor: 'rgba(249, 115, 22, 0.5)',
+                        borderWidth: 1,
                         borderRadius: 4,
                         order: 2,
                     },
                     {
                         label: 'Utfall',
                         data: [1450, 1680, 1520, 1750, 850],
-                        backgroundColor: '#58A6FF',
+                        backgroundColor: 'rgba(88, 166, 255, 0.5)',
+                        borderColor: 'rgba(88, 166, 255, 0.7)',
+                        borderWidth: 1,
                         borderRadius: 4,
                         order: 1,
                     }
@@ -752,14 +790,18 @@
                     {
                         label: 'Budget',
                         data: [340, 340, 340, 340, 340],
-                        backgroundColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.3)',
+                        borderColor: 'rgba(249, 115, 22, 0.5)',
+                        borderWidth: 1,
                         borderRadius: 4,
                         order: 2,
                     },
                     {
                         label: 'Utfall',
                         data: [310, 350, 280, 370, 160],
-                        backgroundColor: '#3FB950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.5)',
+                        borderColor: 'rgba(63, 185, 80, 0.7)',
+                        borderWidth: 1,
                         borderRadius: 4,
                         order: 1,
                     }
