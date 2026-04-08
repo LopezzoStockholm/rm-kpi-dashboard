@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM Drift & Projekt — Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-card: #ffffff;
+            --bg-header: #1a1a2e;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #e0e0e0;
+            --positive: #28a745;
+            --negative: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--bg-header);
+            color: #ffffff;
+            padding: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        header .date-info {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--info);
+        }
+
+        .kpi-card.positive {
+            border-left-color: var(--positive);
+        }
+
+        .kpi-card.negative {
+            border-left-color: var(--negative);
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .kpi-card.negative .kpi-value {
+            color: var(--negative);
+        }
+
+        .kpi-card.positive .kpi-value {
+            color: var(--positive);
+        }
+
+        /* Sections */
+        .section {
+            background-color: var(--bg-card);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .section h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--bg-primary);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-container h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: calc(100% - 40px);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        thead {
+            background-color: var(--bg-primary);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+        tbody tr:hover {
+            background-color: var(--bg-primary);
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-open {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-done {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-blocked {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-active {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* KMA Status */
+        .kma-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .kma-card {
+            background-color: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--info);
+        }
+
+        .kma-card.attention {
+            border-left-color: var(--warning);
+        }
+
+        .kma-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .kma-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--bg-header);
+            color: #ffffff;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        footer p {
+            margin: 0.3rem 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.4rem;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>RM Drift & Projekt — Dashboard</h1>
+        <div class="date-info">Uppdaterad: <span id="current-date"></span></div>
+    </header>
+
+    <main>
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card positive">
+                <div class="kpi-label">Aktiva projekt</div>
+                <div class="kpi-value">8</div>
+            </div>
+            <div class="kpi-card positive">
+                <div class="kpi-label">Resursutnyttjande</div>
+                <div class="kpi-value">87%</div>
+            </div>
+            <div class="kpi-card negative">
+                <div class="kpi-label">ÄTA-compliance</div>
+                <div class="kpi-value">62%</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Reklamationer öppna</div>
+                <div class="kpi-value">2</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Projekt-status</h3>
+                <div class="chart-wrapper">
+                    <canvas id="projectStatusChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Resurser per projekt</h3>
+                <div class="chart-wrapper">
+                    <canvas id="resourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planner Tasks -->
+        <div class="section">
+            <h2>Operativa uppgifter — Planner</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Uppgift</th>
+                        <th>Bucket</th>
+                        <th>Ansvarig</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Besiktning Fasad Rörviken 4A</td>
+                        <td>Besiktning</td>
+                        <td>Erik S.</td>
+                        <td>2026-03-28</td>
+                        <td><span class="status-badge status-active">Igång</span></td>
+                    </tr>
+                    <tr>
+                        <td>Anbud Målning Signalisten</td>
+                        <td>Anbud</td>
+                        <td>Mattias</td>
+                        <td>2026-03-26</td>
+                        <td><span class="status-badge status-open">Öppen</span></td>
+                    </tr>
+                    <tr>
+                        <td>Faktura Nya Roslagen Etapp 2</td>
+                        <td>Administration</td>
+                        <td>Inger K.</td>
+                        <td>2026-03-25</td>
+                        <td><span class="status-badge status-done">Avslutad</span></td>
+                    </tr>
+                    <tr>
+                        <td>Resurs för Sofiadalen — Personal</td>
+                        <td>Bemanning</td>
+                        <td>Pär</td>
+                        <td>2026-03-27</td>
+                        <td><span class="status-badge status-blocked">Blockerad</span></td>
+                    </tr>
+                    <tr>
+                        <td>Månadsstatus RM Fasad</td>
+                        <td>Rapportering</td>
+                        <td>Daniel</td>
+                        <td>2026-03-31</td>
+                        <td><span class="status-badge status-active">Igång</span></td>
+                    </tr>
+                    <tr>
+                        <td>KMA avvikelse-granska (öppen 3)</td>
+                        <td>Kvalitet</td>
+                        <td>Helena</td>
+                        <td>2026-04-02</td>
+                        <td><span class="status-badge status-open">Öppen</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <!-- TODO: Hämta från Microsoft Planner API via Graph -->
+        </div>
+
+        <!-- KMA Status -->
+        <div class="section">
+            <h2>KMA-status</h2>
+            <div class="kma-grid">
+                <div class="kma-card attention">
+                    <div class="kma-label">Avvikelser öppna</div>
+                    <div class="kma-value">3</div>
+                </div>
+                <div class="kma-card">
+                    <div class="kma-label">Senaste intern revision</div>
+                    <div class="kma-value">2026-02-15</div>
+                </div>
+                <div class="kma-card">
+                    <div class="kma-label">Nästa revision planerad</div>
+                    <div class="kma-value">2026-04-10</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>RM Entreprenad och Fasad AB — Drift & Projekt</p>
+        <p>Org.nr 559251-1462</p>
+        <p id="footer-date"></p>
+    </footer>
+
+    <script>
+        // Data definitions
+        const dashboardData = {
+            projectStatus: {
+                labels: ['Anbud', 'Igång', 'Besiktning', 'Avslutat'],
+                data: [3, 5, 2, 4]
+            },
+            resources: {
+                projects: [
+                    { name: 'Signalisten', carpenter: 2, electrician: 1, painter: 3, other: 0 },
+                    { name: 'Nya Roslagen', carpenter: 3, electrician: 2, painter: 2, other: 1 },
+                    { name: 'Sofiadalen', carpenter: 2, electrician: 1, painter: 1, other: 2 },
+                    { name: 'Rörviken 4A', carpenter: 1, electrician: 3, painter: 2, other: 0 },
+                    { name: 'Fasadvård Södermalm', carpenter: 2, electrician: 0, painter: 4, other: 1 }
+                ]
+            }
+        };
+
+        // Initialize date display
+        function initializeDates() {
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            const today = new Date();
+            const dateString = today.toLocaleDateString('sv-SE', options);
+            document.getElementById('current-date').textContent = dateString;
+            document.getElementById('footer-date').textContent = dateString;
+        }
+
+        // Chart configuration
+        const chartColors = {
+            blue: '#17a2b8',
+            green: '#28a745',
+            orange: '#fd7e14',
+            red: '#dc3545',
+            purple: '#6f42c1',
+            yellow: '#ffc107'
+        };
+
+        // Project Status Chart (Horizontal Bar)
+        function initProjectStatusChart() {
+            const ctx = document.getElementById('projectStatusChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'barH',
+                data: {
+                    labels: dashboardData.projectStatus.labels,
+                    datasets: [{
+                        label: 'Antal projekt',
+                        data: dashboardData.projectStatus.data,
+                        backgroundColor: [
+                            chartColors.yellow,
+                            chartColors.blue,
+                            chartColors.orange,
+                            chartColors.green
+                        ],
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 6,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Resources Chart (Stacked Bar)
+        function initResourceChart() {
+            const ctx = document.getElementById('resourceChart').getContext('2d');
+            const projects = dashboardData.resources.projects;
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: projects.map(p => p.name),
+                    datasets: [
+                        {
+                            label: 'Snickare',
+                            data: projects.map(p => p.carpenter),
+                            backgroundColor: chartColors.orange
+                        },
+                        {
+                            label: 'Elektriker',
+                            data: projects.map(p => p.electrician),
+                            backgroundColor: chartColors.red
+                        },
+                        {
+                            label: 'Målare',
+                            data: projects.map(p => p.painter),
+                            backgroundColor: chartColors.blue
+                        },
+                        {
+                            label: 'Övrigt',
+                            data: projects.map(p => p.other),
+                            backgroundColor: chartColors.purple
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDates();
+            initProjectStatusChart();
+            initResourceChart();
+        });
+    </script>
+</body>
+</html>

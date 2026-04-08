@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM KPI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js">
+// ═══════════════════════════════════════════════════════════
+// NEXT SECTION
+// ═══════════════════════════════════════════════════════════
+
+function nextStatusBadge(status, code) {
+    const STATUS_COLOR = {10:'#8B949E',5:'#F97316',40:'#D29922',50:'#58A6FF',60:'#3FB950',85:'#a371f7',90:'#6E7681',1:'#30363D',0:'#6E7681'};
+    const STATUS_BG    = {10:'rgba(139,148,158,0.15)',5:'rgba(249,115,22,0.15)',40:'rgba(210,153,34,0.15)',50:'rgba(88,166,255,0.15)',60:'rgba(63,185,80,0.15)',85:'rgba(163,113,247,0.15)',90:'rgba(110,118,129,0.15)',1:'rgba(48,54,61,0.5)',0:'rgba(110,118,129,0.1)'};
+    if (!status || status === 'Okänd') return '<span style="color:#6E7681;font-size:11px">—</span>';
+    const c = STATUS_COLOR[code] || '#8B949E';
+    const b = STATUS_BG[code]   || 'rgba(139,148,158,0.15)';
+    return '<span class="tag" style="background:'+b+';color:'+c+';font-size:11px">'+status+'</span>';
+}
+
+function renderNext() {
+    if (!NEXT_PROJECTS || NEXT_PROJECTS.length === 0) return;
+
+    const STATUS_COLOR = {
+        10: '#8B949E', // NY
+        5:  '#F97316', // Anbud
+        40: '#D29922', // Beställt
+        50: '#58A6FF', // Pågående
+        60: '#3FB950', // Utfört
+        85: '#a371f7', // Garanti
+        90: '#6E7681', // Avslutat
+        1:  '#30363D',  // Admin
+    };
+    const STATUS_BG = {
+        10: 'rgba(139,148,158,0.15)',
+        5:  'rgba(249,115,22,0.15)',
+        40: 'rgba(210,153,34,0.15)',
+        50: 'rgba(88,166,255,0.15)',
+        60: 'rgba(63,185,80,0.15)',
+        85: 'rgba(163,113,247,0.15)',
+        90: 'rgba(110,118,129,0.15)',
+        1:  'rgba(48,54,61,0.5)',
+    };
+
+    const active   = NEXT_PROJECTS.filter(p => p.status_code === 50);
+    const anbud    = NEXT_PROJECTS.filter(p => p.status_code === 5);
+    const bestalt  = NEXT_PROJECTS.filter(p => p.status_code === 40);
+    const avslutat = NEXT_PROJECTS.filter(p => p.status_code === 90);
+
+    // Badge
+    const countBadge = document.getElementById('next-count-badge');
+    if (countBadge) countBadge.textContent = `${active.length} pågående`;
+
+    // KPI cards
+    const kpiGrid = document.getElementById('next-kpis');
+    if (kpiGrid) {
+        kpiGrid.innerHTML = [
+            { label: 'Pågående projekt', value: active.length, color: '#58A6FF' },
+            { label: 'Anbud',            value: anbud.length,  color: '#F97316' },
+            { label: 'Beställt',         value: bestalt.length, color: '#D29922' },
+            { label: 'Arbetsorder tot.', value: NEXT_WORKORDERS.length, color: '#3FB950' },
+        ].map(k => `
+            <div class="kpi-card">
+                <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+                <div class="kpi-label">${k.label}</div>
+            </div>
+        `).join('');
+    }
+
+    // Table builder
+    function buildTable(projects) {
+        if (!projects.length) return '<p style="color:#6E7681;padding:12px">Inga projekt</p>';
+        const rows = projects.map(p => {
+            const c = STATUS_COLOR[p.status_code] || '#8B949E';
+            const b = STATUS_BG[p.status_code]   || 'rgba(139,148,158,0.15)';
+            const wos = NEXT_WORKORDERS.filter(w => w.project_id === p.project_id);
+            const woBadge = wos.length > 1 
+                ? `<span class="tag" style="background:rgba(139,148,158,0.15);color:#8B949E;font-size:10px;margin-left:4px">${wos.length} AO</span>`
+                : '';
+            return `<tr>
+                <td style="color:#8B949E;font-size:12px;white-space:nowrap">${p.project_no}</td>
+                <td style="font-weight:500">${p.project_name}${woBadge}</td>
+                <td><span class="tag" style="background:${b};color:${c}">${p.status_name}</span></td>
+            </tr>`;
+        }).join('');
+        return `<table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr>
+                <th style="text-align:left;padding:8px 12px 8px 0;color:#6E7681;font-weight:500;border-bottom:1px solid #21262D;white-space:nowrap">Projektnr</th>
+                <th style="text-align:left;padding:8px 12px;color:#6E7681;font-weight:500;border-bottom:1px solid #21262D">Projektnamn</th>
+                <th style="text-align:left;padding:8px 0 8px 12px;color:#6E7681;font-weight:500;border-bottom:1px solid #21262D">Status</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    const activeTable = document.getElementById('next-table');
+    if (activeTable) activeTable.innerHTML = buildTable(active);
+
+    const allTable = document.getElementById('next-all-table');
+    if (allTable) {
+        const visible = NEXT_PROJECTS.filter(p => p.status_code !== 1 && p.status_code !== 10);
+        allTable.innerHTML = buildTable(visible);
+    }
+}
+
+</script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0D1117;
+            color: #E6EDF3;
+            line-height: 1.5;
+            padding: 24px;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        /* HEADER */
+        .header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+        .header h1 { font-size: 32px; font-weight: 700; color: #E6EDF3; margin-bottom: 4px; }
+        .header p { font-size: 14px; color: #8B949E; }
+        .filters { display: flex; gap: 12px; align-items: center; }
+        .filter-group label { font-size: 11px; color: #8B949E; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 6px; }
+        .filter-group select {
+            padding: 7px 12px; border: 1px solid #21262D; border-radius: 6px;
+            background: #161B22; color: #E6EDF3; font-family: 'Inter', sans-serif; font-size: 13px; cursor: pointer;
+        }
+        .filter-group select:hover { border-color: #30363D; }
+        .filter-group select option { background: #161B22; }
+
+        /* KPI CARDS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .kpi-card {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color 0.3s ease;
+        }
+        .kpi-card:hover { border-color: #30363D; }
+        .kpi-label {
+            font-size: 12px; font-weight: 600; color: #8B949E;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+        }
+        .kpi-value { font-size: 28px; font-weight: 700; color: #58A6FF; margin-bottom: 8px; }
+        .kpi-subtext { font-size: 12px; color: #8B949E; line-height: 1.6; }
+        .progress-bar { height: 6px; background: #21262D; border-radius: 3px; overflow: hidden; margin-top: 12px; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease-out; }
+
+        /* SECTION TITLE */
+        .section-title {
+            font-size: 16px; font-weight: 600; color: #E6EDF3; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 4px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge.live { background: #3FB950; color: #0D1117; }
+
+        /* CARDS */
+        .card {
+            background: #161B22;
+            border: 1px solid #21262D;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card:hover { border-color: #30363D; }
+
+        /* GRID LAYOUTS */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+        .grid-full { grid-column: 1 / -1; }
+        @media (max-width: 1200px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        /* CHART */
+        .chart-area { position: relative; height: 300px; margin-top: 12px; }
+        .chart-area-sm { position: relative; height: 120px; margin-top: 12px; }
+
+        /* HITRATE MATRIX */
+        .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .matrix-table th {
+            padding: 10px 12px; text-align: left; font-weight: 600; color: #8B949E;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 2px solid #21262D;
+        }
+        .matrix-table td { padding: 10px 12px; border-bottom: 1px solid #21262D; text-align: right; }
+        .matrix-table td:first-child { text-align: left; font-weight: 600; color: #E6EDF3; text-transform: capitalize; }
+        .matrix-table tr:hover td { background: #0D1117; }
+        .hr-cell {
+            display: inline-block; padding: 3px 10px; border-radius: 4px;
+            font-size: 11px; font-weight: 600; min-width: 48px; text-align: center;
+        }
+        .hr-high { background: rgba(63,185,80,0.15); color: #3FB950; }
+        .hr-mid { background: rgba(249,115,22,0.15); color: #F97316; }
+        .hr-low { background: rgba(248,81,73,0.15); color: #F85149; }
+
+        /* PROJECTS TABLE */
+        .projects-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .projects-table thead { background: #0D1117; border-bottom: 2px solid #21262D; }
+        .projects-table th {
+            padding: 12px; text-align: left; font-weight: 600; color: #8B949E;
+            text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
+            cursor: pointer; user-select: none; white-space: nowrap;
+        }
+        .projects-table th:hover { color: #E6EDF3; }
+        .projects-table td { padding: 12px; border-bottom: 1px solid #21262D; color: #E6EDF3; }
+        .projects-table tr:hover td { background: #0D1117; }
+        .projects-table .text-right { text-align: right; }
+        .projects-table .mono { font-variant-numeric: tabular-nums; }
+        .projects-table .tb1-positive { color: #3FB950; font-weight: 600; }
+        .projects-table .tb1-negative { color: #F85149; font-weight: 600; }
+
+        /* DEAL TABLE */
+        .deals-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .deals-table thead { background: #0D1117; border-bottom: 2px solid #21262D; }
+        .deals-table th {
+            padding: 12px; text-align: left; font-weight: 600; color: #8B949E;
+            text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
+            cursor: pointer; user-select: none; white-space: nowrap;
+        }
+        .deals-table th:hover { color: #E6EDF3; }
+        .deals-table td { padding: 12px; border-bottom: 1px solid #21262D; color: #E6EDF3; }
+        .deals-table tr:hover td { background: #0D1117; }
+        .deals-table .text-right { text-align: right; }
+        .deals-table .mono { font-variant-numeric: tabular-nums; }
+
+        /* STATUS TAGS */
+        .tag {
+            display: inline-block; padding: 4px 10px; border-radius: 4px;
+            font-size: 11px; font-weight: 600;
+        }
+        .tag-kall { background: rgba(248,81,73,0.15); color: #F85149; }
+        .tag-varm { background: rgba(249,115,22,0.15); color: #F97316; }
+        .tag-styrd { background: rgba(88,166,255,0.15); color: #58A6FF; }
+        .tag-service { background: rgba(210,153,34,0.15); color: #D29922; }
+        .tag-intern { background: rgba(63,185,80,0.15); color: #3FB950; }
+
+        .stage-inkommit { background: rgba(139,148,158,0.15); color: #8B949E; }
+        .stage-kalkyl { background: rgba(88,166,255,0.15); color: #58A6FF; }
+        .stage-offert_skickad { background: rgba(249,115,22,0.15); color: #F97316; }
+        .stage-forhandling { background: rgba(210,153,34,0.15); color: #D29922; }
+        .stage-kontrakterat { background: rgba(63,185,80,0.15); color: #3FB950; }
+        .stage-leverans { background: rgba(63,185,80,0.25); color: #3FB950; }
+        .stage-fakturerat { background: rgba(63,185,80,0.35); color: #3FB950; }
+
+        /* STAGE LEGEND */
+        .stage-legend { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+        .stage-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; background: #0D1117; border-radius: 4px;
+            border-left: 3px solid #58A6FF; font-size: 13px;
+        }
+        .stage-amount { font-weight: 600; }
+
+        /* COLORS */
+        .text-blue { color: #58A6FF; }
+        .text-green { color: #3FB950; }
+        .text-orange { color: #F97316; }
+        .text-red { color: #F85149; }
+        .text-muted { color: #8B949E; }
+        .text-gold { color: #D29922; }
+
+        /* FOOTER */
+        .footer {
+            text-align: center; padding-top: 24px; margin-top: 16px;
+            border-top: 1px solid #21262D; color: #8B949E; font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .kpi-grid { grid-template-columns: 1fr 1fr; }
+            body { padding: 16px; }
+        }
+        @media print {
+            body { background: #fff; color: #000; }
+            .card, .kpi-card { border: 1px solid #ddd; background: #fff; }
+            .filters { display: none; }
+        }
+    
+        /* FORECAST TOGGLE */
+        .forecast-toggle {
+            padding: 6px 16px; border: 1px solid #21262D; border-radius: 6px;
+            background: #0D1117; color: #8B949E; font-family: 'Inter', sans-serif;
+            font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .forecast-toggle:hover { border-color: #58A6FF; color: #E6EDF3; }
+        .forecast-toggle.active { background: #58A6FF; color: #0D1117; border-color: #58A6FF; }
+
+        /* COLLAPSIBLE SECTIONS */
+        .collapsible-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; cursor: pointer; user-select: none;
+            border-top: 1px solid #21262D; margin-top: 8px;
+        }
+        .collapsible-header:hover { opacity: 0.85; }
+        .collapsible-header h3 {
+            font-size: 16px; font-weight: 600; color: #E6EDF3; margin: 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .collapsible-header .ch-summary {
+            font-size: 12px; color: #8B949E; font-weight: 400; margin-left: 12px;
+        }
+        .collapsible-chevron {
+            width: 20px; height: 20px; color: #8B949E; transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .collapsible-header.open .collapsible-chevron { transform: rotate(180deg); }
+        .collapsible-body { display: none; padding-bottom: 8px; }
+        .collapsible-body.open { display: block; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <h1>RM Entreprenad och Fasad</h1>
+            <p>Pipeline Dashboard — realtidsdata fr&aring;n Twenty CRM</p>
+        </div>
+        <div class="filters">
+            <div class="filter-group">
+                <label>Steg</label>
+                <select id="filter-stage" onchange="dashboard.applyFilters()">
+                    <option value="all">Alla steg</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Typ</label>
+                <select id="filter-type" onchange="dashboard.applyFilters()">
+                    <option value="all">Alla typer</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI RAD 1 -->
+    <div class="kpi-grid" id="kpi-row-1"></div>
+
+    <!-- KPI RAD 2 -->
+    <div class="kpi-grid" id="kpi-row-2" style="margin-top:-16px"></div>
+
+    <!-- EKONOMI SECTION (Fortnox) -->
+    <div id="fortnox-section" style="display:none">
+        <div style="margin-bottom:16px;padding-top:8px;border-top:2px solid #21262D">
+            <div class="section-title" style="font-size:20px;justify-content:space-between">
+                <span>Ekonomi <span class="badge live">Fortnox</span></span>
+                <a id="fnx-open-btn" href="#" target="_blank" style="font-size:11px;font-weight:600;color:#0D1117;background:#3FB950;padding:5px 14px;border-radius:4px;text-decoration:none;display:none">&Ouml;ppna Fortnox</a>
+            </div>
+        </div>
+        <div class="kpi-grid" id="finance-kpi-row"></div>
+        <div class="collapsible-header" data-section="sec-top5" onclick="toggleSection('sec-top5')">
+            <h3>Topp 5 kunder &amp; leverant&ouml;rer</h3>
+            <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+        </div>
+        <div id="sec-top5" class="collapsible-body">
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-title">Topp 5 kunder (oms&auml;ttning)</div>
+                <div id="top-customers-table" style="overflow-x:auto"></div>
+            </div>
+            <div class="card">
+                <div class="section-title">Topp 5 leverant&ouml;rer (kostnad)</div>
+                <div id="top-suppliers-table" style="overflow-x:auto"></div>
+            </div>
+        </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-title">F&ouml;rfallna kundfakturor</div>
+                <div id="overdue-invoices-table" style="overflow-x:auto"></div>
+            </div>
+            <div class="card">
+                <div class="section-title" style="color:#D29922">Parkerade leverant&ouml;rsfakturor <span id="si-parkerad-badge" class="tag" style="background:rgba(210,153,34,0.15);color:#D29922;font-size:11px;margin-left:6px"></span></div>
+                <div id="si-parkerad-table" style="overflow-x:auto"></div>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-title" style="color:#58A6FF">Bevakade leverant&ouml;rsfakturor <span id="si-bevakas-badge" class="tag" style="background:rgba(88,166,255,0.15);color:#58A6FF;font-size:11px;margin-left:6px"></span></div>
+                <div id="si-bevakas-table" style="overflow-x:auto"></div>
+            </div>
+            <div class="card">
+                <div class="section-title" style="color:#F85149">F&ouml;rfallna leverant&ouml;rsfakturor <span id="si-overdue-badge" class="tag" style="background:rgba(248,81,73,0.15);color:#F85149;font-size:11px;margin-left:6px"></span></div>
+                <div id="si-overdue-table" style="overflow-x:auto"></div>
+            </div>
+        </div>
+        <div class="collapsible-header" data-section="sec-charts-eco" onclick="toggleSection('sec-charts-eco')">
+            <h3>Kassafl&ouml;de &amp; TB1-diagram</h3>
+            <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+        </div>
+        <div id="sec-charts-eco" class="collapsible-body">
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-title">Kassafl&ouml;de (fordringar vs skulder)</div>
+                <div class="chart-area"><canvas id="chart-cashflow"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="section-title">TB1 &mdash; int&auml;kter vs kostnader</div>
+                <div class="chart-area"><canvas id="chart-tb1"></canvas></div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- LIKVIDITETSPROGNOS SECTION -->
+    <div id="forecast-section" style="display:none">
+        <div style="margin-bottom:16px;padding-top:8px;border-top:2px solid #21262D">
+            <div class="section-title" style="font-size:20px">
+                Kassafl&ouml;desprognos <span id="forecast-weeks-label">8 veckor</span> fram&aring;t
+                <span id="forecast-alert-badge" class="badge" style="display:none;margin-left:8px;font-size:11px"></span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="forecast-toggle active" data-weeks="8" onclick="dashboard.setForecastWeeks(8)">8 veckor</button>
+                <button class="forecast-toggle" data-weeks="26" onclick="dashboard.setForecastWeeks(26)">26 veckor</button>
+                <button class="forecast-toggle" data-weeks="52" onclick="dashboard.setForecastWeeks(52)">52 veckor</button>
+            </div>
+        </div>
+        <div class="card">
+            <div id="banksaldo-row" style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:12px 16px;background:#161B22;border-radius:8px;border:1px solid #21262D">
+                <div style="font-size:13px;color:#8B949E;white-space:nowrap">Kassaposition (konto 1930):</div>
+                <div id="banksaldo-display" style="font-size:18px;font-weight:600;color:#E6EDF3;font-family:'JetBrains Mono',monospace"></div>
+                <div id="banksaldo-date" style="font-size:11px;color:#8B949E"></div>
+            </div>
+            <div class="chart-area" style="height:360px"><canvas id="chart-forecast"></canvas></div>
+            <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12px;color:#8B949E">
+                <div>Gr&ouml;nt = Inbetalningar (kundfordringar) &middot; R&ouml;tt = Utbetalningar (lev.skulder) &middot; Bl&aring; linje = Kumulativ kassa</div>
+                <div id="forecast-summary" style="font-weight:600"></div>
+            </div>
+        </div>
+    </div>
+
+            <!-- PROJECTS SECTION -->
+    <div class="collapsible-header" data-section="sec-projects" onclick="toggleSection('sec-projects')">
+        <h3>Projektlönsamhet &mdash; pågående projekt</h3>
+        <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div id="sec-projects" class="collapsible-body">
+        <div class="card">
+            <div id="projects-container" style="display:none">
+                <div class="section-title" style="margin-bottom:12px">Grupperad vy</div>
+                <div style="overflow-x:auto">
+                    <table class="projects-table">
+                        <thead>
+                            <tr>
+                                <th>Projekt</th>
+                                <th>Ledare</th>
+                                <th class="text-right">Intäkter</th>
+                                <th class="text-right">Kostnader</th>
+                                <th class="text-right">TB1</th>
+                                <th class="text-right">TB1%</th>
+                                <th class="text-right">Fakturor (K/L)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="project-groups-tbody"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:24px">
+                    <div class="section-title" style="margin-bottom:12px;cursor:pointer" onclick="document.getElementById('detail-projects').style.display=document.getElementById('detail-projects').style.display==='none'?'block':'none'">Detaljvy per projektkod &#9662;</div>
+                    <div id="detail-projects" style="display:none;overflow-x:auto">
+                        <table class="projects-table">
+                            <thead>
+                                <tr>
+                                    <th>Kod</th>
+                                    <th>Beskrivning</th>
+                                    <th>Grupp</th>
+                                    <th>Ledare</th>
+                                    <th>Next</th>
+                                    <th class="text-right">Intäkter</th>
+                                    <th class="text-right">Kostnader</th>
+                                    <th class="text-right">TB1</th>
+                                    <th class="text-right">TB1%</th>
+                                    <th class="text-right">Fakturor (K/L)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projects-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="projects-empty" style="padding:20px;text-align:center;color:#8B949E">
+                Ingen projektdata tillgänglig
+            </div>
+        </div>
+    </div>
+
+    <!-- CRM + NEXT UNIFIED PROJECT VIEW -->
+    <div class="collapsible-header" data-section="sec-crm-next" onclick="toggleSection('sec-crm-next')">
+        <h3>Projektstatus &mdash; CRM + Next <span class="badge live" style="background:rgba(136,98,255,0.15);color:#8862FF">Unified</span> <span id="unified-count-badge" class="tag" style="background:rgba(136,98,255,0.1);color:#8862FF;font-size:11px;margin-left:4px"></span></h3>
+        <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div id="sec-crm-next" class="collapsible-body">
+        <div class="card">
+            <div id="unified-kpis" class="kpi-row" style="margin-bottom:16px"></div>
+            <div id="unified-container" style="display:none">
+                <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="unified-filters">
+                    <button class="tag" style="cursor:pointer;background:rgba(136,98,255,0.15);color:#8862FF;border:none;padding:4px 10px;font-size:12px" onclick="filterUnified('all')">Alla</button>
+                    <button class="tag" style="cursor:pointer;background:rgba(63,185,80,0.15);color:#3FB950;border:none;padding:4px 10px;font-size:12px" onclick="filterUnified('active')">P&aring;g&aring;ende</button>
+                    <button class="tag" style="cursor:pointer;background:rgba(210,153,34,0.15);color:#D29922;border:none;padding:4px 10px;font-size:12px" onclick="filterUnified('bid')">Anbud/Kalkyl</button>
+                    <button class="tag" style="cursor:pointer;background:rgba(248,81,73,0.15);color:#F85149;border:none;padding:4px 10px;font-size:12px" onclick="filterUnified('risk')">TB &lt; 20%</button>
+                </div>
+                <div style="overflow-x:auto">
+                    <table class="data-table" id="unified-table">
+                        <thead>
+                            <tr>
+                                <th>Proj.nr</th>
+                                <th>Deal</th>
+                                <th>F&ouml;retag</th>
+                                <th>CRM-fas</th>
+                                <th>Next-status</th>
+                                <th>Kontakt</th>
+                                <th class="text-right">Budget</th>
+                                <th class="text-right">Bokf&ouml;rt</th>
+                                <th class="text-right">TB%</th>
+                                <th class="text-right">Prognos</th>
+                                <th>Projektledare</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unified-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="unified-empty" style="padding:20px;text-align:center;color:#8B949E">
+                Ingen kopplad projektdata tillg&auml;nglig
+            </div>
+        </div>
+    </div>
+
+<div class="collapsible-header" data-section="sec-pipeline" onclick="toggleSection('sec-pipeline')">
+            <h3>Pipeline &mdash; aff&auml;rstyp &amp; topp 10</h3>
+            <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+        </div>
+        <div id="sec-pipeline" class="collapsible-body">
+    <!-- PIPELINE SECTION -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-title">Pipeline per aff&auml;rstyp</div>
+            <div class="chart-area-sm"><canvas id="chart-type-bar"></canvas></div>
+            <div id="type-legend" class="stage-legend"></div>
+        </div>
+        <div class="card">
+            <div class="section-title">10 st&ouml;rsta aff&auml;rer</div>
+            <div id="top10-table" style="overflow-x:auto"></div>
+        </div>
+    </div>
+        </div>
+
+        <div class="collapsible-header" data-section="sec-pipeline-charts" onclick="toggleSection('sec-pipeline-charts')">
+            <h3>Pipeline-diagram (per steg)</h3>
+            <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+        </div>
+        <div id="sec-pipeline-charts" class="collapsible-body">
+    <!-- CHARTS -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-title">Pipelinev&auml;rde per steg (Mkr)</div>
+            <div class="chart-area"><canvas id="chart-stage-value"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="section-title">Uppskattat vs viktat per steg</div>
+            <div class="chart-area"><canvas id="chart-stage-compare"></canvas></div>
+        </div>
+    </div>
+        </div>
+
+        <div class="collapsible-header" data-section="sec-stacked" onclick="toggleSection('sec-stacked')">
+            <h3>Pipeline per steg &amp; typ (staplat)</h3>
+            <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+        </div>
+        <div id="sec-stacked" class="collapsible-body">
+    <!-- STACKED -->
+    <div class="card" style="margin-bottom:32px">
+        <div class="section-title">Pipeline per steg och aff&auml;rstyp (Mkr)</div>
+        <div class="chart-area"><canvas id="chart-stacked"></canvas></div>
+    </div>
+        </div>
+
+        <div class="collapsible-header" data-section="sec-hitrate" onclick="toggleSection('sec-hitrate')">
+            <h3>Hitrate-matris</h3>
+            <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+        </div>
+        <div id="sec-hitrate" class="collapsible-body">
+    <!-- HITRATE MATRIX -->
+    <div class="card" style="margin-bottom:32px">
+        <div class="section-title">Hitrate-matris <span class="badge live">Live</span></div>
+        <div id="hitrate-matrix"></div>
+    </div>
+        </div>
+
+    <div class="collapsible-header" data-section="sec-deals" onclick="toggleSection('sec-deals')">
+        <h3>Alla deals <span id="deal-count-badge" class="badge live"></span></h3>
+        <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div id="sec-deals" class="collapsible-body">
+    <div class="card" style="margin-bottom:32px">
+        <div id="deal-table" style="overflow-x:auto"></div>
+    </div>
+    </div>
+
+
+
+
+    <!-- PLANNER SECTION -->
+    <div class="collapsible-header" data-section="sec-planner" onclick="toggleSection('sec-planner')">
+        <h3>Uppgifter <span class="badge live">Planner</span> <span id="planner-count-badge" class="tag" style="background:rgba(88,166,255,0.15);color:#58A6FF;font-size:11px;margin-left:4px"></span></h3>
+        <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div id="sec-planner" class="collapsible-body">
+        <!-- Planner KPI cards -->
+        <div class="kpi-grid" id="planner-kpis"></div>
+        <!-- Planner board view per plan -->
+        <div id="planner-boards"></div>
+        <!-- Planner task table -->
+        <div class="card" style="margin-bottom:32px">
+            <div class="section-title">Alla uppgifter</div>
+            <div id="planner-table" style="overflow-x:auto"></div>
+        </div>
+    </div>
+
+
+    <!-- NEXT SECTION -->
+    <div class="collapsible-header" data-section="sec-next" onclick="toggleSection('sec-next')">
+        <h3>Projekt <span class="badge live" style="background:rgba(63,185,80,0.15);color:#3FB950">Next</span> <span id="next-count-badge" class="tag" style="background:rgba(63,185,80,0.1);color:#3FB950;font-size:11px;margin-left:4px"></span></h3>
+        <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div id="sec-next" class="collapsible-body">
+        <div class="kpi-grid" id="next-kpis"></div>
+        <div class="card" style="margin-bottom:32px">
+            <div class="section-title">Aktiva projekt</div>
+            <div id="next-table" style="overflow-x:auto"></div>
+        </div>
+        <div class="card" style="margin-bottom:32px">
+            <div class="section-title">Alla projekt</div>
+            <div id="next-all-table" style="overflow-x:auto"></div>
+        </div>
+    </div>
+
+    <!-- NEXT vs FORTNOX COMPARISON -->
+    <div class="collapsible-header" data-section="sec-next-vs-fnx" onclick="toggleSection('sec-next-vs-fnx')">
+        <h3>Next vs Fortnox <span class="badge live" style="background:rgba(210,153,34,0.15);color:#D29922">J\u00e4mf\u00f6relse</span></h3>
+        <svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div id="sec-next-vs-fnx" class="collapsible-body">
+        <div class="kpi-grid" id="nextvsfnx-kpis"></div>
+        <div class="card" style="margin-bottom:32px">
+            <div class="section-title">Projektkostnader \u2014 Next Tech vs Fortnox</div>
+            <div id="nextvsfnx-table" style="overflow-x:auto"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Data synkad fr&aring;n Twenty CRM + Fortnox + Planner + Next &middot; Senast uppdaterad: <span id="data-date"></span>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA (injected by generate_dashboard.py)
+// ═══════════════════════════════════════════════════════════
+const DEALS = [
+{"name":"Rocmore Signalisten Solna","stage":"forhandling","deal_type":"styrd","estimated_value":40000000,"calculated_value":0,"hit_rate":90},
+{"name":"LSS G17 Gruppen","stage":"offert_skickad","deal_type":"varm","estimated_value":14686531,"calculated_value":0,"hit_rate":25},
+{"name":"Hässelby Berså","stage":"kalkyl","deal_type":"kall","estimated_value":11312562,"calculated_value":0,"hit_rate":10},
+{"name":"Villa Träkvista","stage":"kalkyl","deal_type":"kall","estimated_value":10000000,"calculated_value":0,"hit_rate":10},
+{"name":"Grimvägen 12","stage":"forhandling","deal_type":"intern","estimated_value":9000000,"calculated_value":0,"hit_rate":100},
+{"name":"Värmdö","stage":"kalkyl","deal_type":"kall","estimated_value":7731180,"calculated_value":0,"hit_rate":10},
+{"name":"Grimvagen NKP Sydost 7 MSEK","stage":"forhandling","deal_type":"intern","estimated_value":7000000,"calculated_value":0,"hit_rate":100},
+{"name":"Järfälla Grimvägen Et 1 Stomkomp","stage":"kalkyl","deal_type":"intern","estimated_value":5750000,"calculated_value":0,"hit_rate":95},
+{"name":"Lappkärrsberget brandväg","stage":"kalkyl","deal_type":"styrd","estimated_value":4914100,"calculated_value":0,"hit_rate":60},
+{"name":"Grus/Transport","stage":"kalkyl","deal_type":"kall","estimated_value":3500000,"calculated_value":0,"hit_rate":10},
+{"name":"Utfackningsväggar","stage":"kalkyl","deal_type":"styrd","estimated_value":3000000,"calculated_value":0,"hit_rate":60},
+{"name":"Balder Haninge","stage":"kalkyl","deal_type":"styrd","estimated_value":3000000,"calculated_value":0,"hit_rate":60},
+{"name":"Campus Et 2","stage":"offert_skickad","deal_type":"varm","estimated_value":2000000,"calculated_value":0,"hit_rate":25},
+{"name":"Tureberg 25:45","stage":"kalkyl","deal_type":"kall","estimated_value":2000000,"calculated_value":0,"hit_rate":10},
+{"name":"Kungens Kurva","stage":"kalkyl","deal_type":"kall","estimated_value":1500000,"calculated_value":0,"hit_rate":10},
+{"name":"RAM Solna Lekplats Bagartorp","stage":"kalkyl","deal_type":"styrd","estimated_value":1225400,"calculated_value":0,"hit_rate":60},
+{"name":"Nedre egilsvägen","stage":"kalkyl","deal_type":"kall","estimated_value":1200000,"calculated_value":0,"hit_rate":10},
+{"name":"Oljeavskiljare","stage":"kalkyl","deal_type":"kall","estimated_value":525200,"calculated_value":0,"hit_rate":10},
+{"name":"STC Gym","stage":"kalkyl","deal_type":"service","estimated_value":500000,"calculated_value":0,"hit_rate":85},
+{"name":"Järfälla Grimvägen Et 1 Betong","stage":"forhandling","deal_type":"intern","estimated_value":400000,"calculated_value":0,"hit_rate":100},
+{"name":"Rouletten","stage":"forhandling","deal_type":"varm","estimated_value":325000,"calculated_value":0,"hit_rate":70},
+{"name":"Björklövsstigen 3","stage":"kalkyl","deal_type":"kall","estimated_value":264500,"calculated_value":0,"hit_rate":10},
+{"name":"Järfälla Grimvägen Et 1 Mark","stage":"forhandling","deal_type":"intern","estimated_value":260295,"calculated_value":0,"hit_rate":100},
+{"name":"Källargolv","stage":"forhandling","deal_type":"kall","estimated_value":250000,"calculated_value":0,"hit_rate":50},
+{"name":"Brf Vakna","stage":"forhandling","deal_type":"service","estimated_value":125000,"calculated_value":0,"hit_rate":95},
+{"name":"Gipsentreprenad","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"2 st tysta hytter","stage":"forhandling","deal_type":"service","estimated_value":0,"calculated_value":0,"hit_rate":95},
+{"name":"Utbyggnad stall","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"VA Håbo","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"Karlholmstrand","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"Karlholm projekt","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"Tätskikt balkonger","stage":"forhandling","deal_type":"service","estimated_value":0,"calculated_value":0,"hit_rate":95}
+];
+
+const HITRATE_MATRIX = {
+    intern:  {inkommit:90, kalkyl:95, offert_skickad:100, forhandling:100, kontrakterat:100, leverans:100, fakturerat:100},
+    kall:    {inkommit:5,  kalkyl:10, offert_skickad:20,  forhandling:50,  kontrakterat:100, leverans:100, fakturerat:100},
+    varm:    {inkommit:15, kalkyl:30, offert_skickad:50,  forhandling:70,  kontrakterat:100, leverans:100, fakturerat:100},
+    styrd:   {inkommit:40, kalkyl:60, offert_skickad:80,  forhandling:90,  kontrakterat:100, leverans:100, fakturerat:100},
+    service: {inkommit:70, kalkyl:85, offert_skickad:95,  forhandling:95,  kontrakterat:100, leverans:100, fakturerat:100}
+};
+
+const FORTNOX = {
+    has_data: false
+};
+const PLANNER = [];
+
+const NEXT_PROJECTS = [];
+const NEXT_WORKORDERS = [];
+const NEXT_ECONOMY = [];
+const CRM_NEXT_UNIFIED = [];
+
+
+
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const STAGE_ORDER = ['inkommit','kalkyl','offert_skickad','forhandling','kontrakterat','leverans','fakturerat'];
+const STAGE_LABELS = {inkommit:'Inkommit',kalkyl:'Kalkyl',offert_skickad:'Offert skickad',forhandling:'Förhandling',kontrakterat:'Kontrakterat',leverans:'Leverans',fakturerat:'Fakturerat'};
+const TYPE_ORDER = ['intern','varm','styrd','service','kall'];
+const TYPE_LABELS = {kall:'Kall',varm:'Varm',styrd:'Styrd',service:'Service',intern:'Intern'};
+const TYPE_COLORS = {kall:'#F85149',varm:'#F97316',styrd:'#58A6FF',service:'#D29922',intern:'#3FB950'};
+const TYPE_BG = {kall:'rgba(248,81,73,0.15)',varm:'rgba(249,115,22,0.15)',styrd:'rgba(88,166,255,0.15)',service:'rgba(210,153,34,0.15)',intern:'rgba(63,185,80,0.15)'};
+const STAGE_COLORS_MAP = {inkommit:'#8B949E',kalkyl:'#58A6FF',offert_skickad:'#F97316',forhandling:'#D29922',kontrakterat:'#3FB950',leverans:'#3FB950',fakturerat:'#3FB950'};
+
+// Chart.js global defaults
+Chart.defaults.color = '#8B949E';
+Chart.defaults.borderColor = '#21262D';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function fmt(v) {
+    if (v >= 1e6) return (v/1e6).toFixed(1).replace('.0','') + ' Mkr';
+    if (v >= 1e3) return Math.round(v/1e3) + ' tkr';
+    if (v === 0) return '0';
+    return v.toLocaleString('sv-SE') + ' kr';
+}
+function fmtShort(v) {
+    if (v >= 1e6) return (v/1e6).toFixed(1).replace('.0','') + ' M';
+    if (v >= 1e3) return Math.round(v/1e3) + ' k';
+    return v.toString();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD CLASS
+// ═══════════════════════════════════════════════════════════
+
+function toggleSection(id) {
+    var header = document.querySelector('[data-section="' + id + '"]');
+    var body = document.getElementById(id);
+    if (!header || !body) return;
+    header.classList.toggle('open');
+    body.classList.toggle('open');
+}
+const CHEVRON_SVG = '<svg class="collapsible-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>';
+
+const LABEL_API_URL = '';
+const LABEL_API_KEY = 'rm-label-2026';
+
+function setSupplierLabel(fortnoxId, label) {
+    fetch(LABEL_API_URL + '/api/label', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Api-Key': LABEL_API_KEY},
+        body: JSON.stringify({type: 'supplier', fortnox_id: fortnoxId, label: label})
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) {
+            // Update local data and re-sort into correct table
+            var allSi = FORTNOX.all_supplier_invoices || [];
+            for (var i = 0; i < allSi.length; i++) {
+                if (String(allSi[i].fortnox_id) === String(fortnoxId)) {
+                    allSi[i].label = label;
+                    break;
+                }
+            }
+            // Re-render by triggering dashboard refresh of the supplier sections
+            if (window._dashboard) window._dashboard.renderFinancials();
+        } else {
+            alert('Kunde inte uppdatera etikett: ' + (d.error || 'ok\u00e4nt fel'));
+        }
+    }).catch(function(e) {
+        alert('API-fel: ' + e.message);
+    });
+}
+
+function setCustomerLabel(fortnoxId, label) {
+    fetch(LABEL_API_URL + '/api/label', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Api-Key': LABEL_API_KEY},
+        body: JSON.stringify({type: 'customer', fortnox_id: fortnoxId, label: label})
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) {
+            var oi = FORTNOX.overdue_invoices || [];
+            for (var i = 0; i < oi.length; i++) {
+                if (String(oi[i].fortnox_id) === String(fortnoxId)) {
+                    oi[i].label = label;
+                    break;
+                }
+            }
+            if (window._dashboard) window._dashboard.renderFinancials();
+        } else {
+            alert('Kunde inte uppdatera etikett: ' + (d.error || 'ok\u00e4nt fel'));
+        }
+    }).catch(function(e) {
+        alert('API-fel: ' + e.message);
+    });
+}
+
+function setBanksaldo() {
+    var input = document.getElementById('banksaldo-input');
+    if (!input) return;
+    var val = parseFloat(input.value);
+    if (isNaN(val)) { alert('Ange ett giltigt belopp'); return; }
+    fetch(LABEL_API_URL + '/api/banksaldo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Api-Key': LABEL_API_KEY},
+        body: JSON.stringify({balance: val})
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) {
+            FORTNOX.bank_balance = d.balance;
+            FORTNOX.bank_balance_date = d.date;
+            if (window._dashboard) window._dashboard.renderFinancials();
+        } else {
+            alert('Kunde inte spara banksaldo: ' + (d.error || ''));
+        }
+    }).catch(function(e) { alert('API-fel: ' + e.message); });
+}
+
+class Dashboard {
+    constructor(data) {
+        this.rawData = data;
+        this.filteredData = data;
+        this.charts = {};
+        this.sortCol = 'estimated_value';
+        this.sortDir = 'desc';
+        this.init();
+    }
+
+    init() {
+        this.populateFilters();
+        this.renderKPIs();
+        this.renderCharts();
+        this.renderTypeLegend();
+        this.renderTop10();
+        this.renderHitrateMatrix();
+        this.renderDealTable();
+        if (FORTNOX.has_data) this.renderFinancials();
+        if (FORTNOX.has_data && FORTNOX.forecast_weeks) this.renderForecast(8);
+        if (FORTNOX.has_data && (FORTNOX.projects || FORTNOX.project_groups)) this.renderProjects();
+        document.getElementById('data-date').textContent = new Date().toLocaleString('sv-SE');
+    }
+
+    populateFilters() {
+        const ss = document.getElementById('filter-stage');
+        STAGE_ORDER.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = STAGE_LABELS[s]; ss.appendChild(o); });
+        const ts = document.getElementById('filter-type');
+        TYPE_ORDER.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = TYPE_LABELS[t]; ts.appendChild(o); });
+    }
+
+    applyFilters() {
+        const stage = document.getElementById('filter-stage').value;
+        const type = document.getElementById('filter-type').value;
+        this.filteredData = this.rawData.filter(d => {
+            if (stage !== 'all' && d.stage !== stage) return false;
+            if (type !== 'all' && d.deal_type !== type) return false;
+            return true;
+        });
+        this.renderKPIs();
+        Object.values(this.charts).forEach(c => c.destroy());
+        this.renderCharts();
+        this.renderTypeLegend();
+        this.renderTop10();
+        this.renderDealTable();
+    }
+
+    // ─── KPIs ─────────────────────────────────────────────
+    renderKPIs() {
+        const d = this.filteredData;
+        const total = d.reduce((s,r) => s + r.estimated_value, 0);
+        const weighted = d.reduce((s,r) => s + r.estimated_value * r.hit_rate / 100, 0);
+        const count = d.length;
+        const withValue = d.filter(r => r.estimated_value > 0).length;
+        const wAvgHr = total > 0 ? (weighted / total * 100) : 0;
+
+        // Per type breakdown
+        const byType = {};
+        TYPE_ORDER.forEach(t => byType[t] = {value:0, weighted:0, count:0});
+        d.forEach(r => { if(byType[r.deal_type]) { byType[r.deal_type].value += r.estimated_value; byType[r.deal_type].weighted += r.estimated_value * r.hit_rate/100; byType[r.deal_type].count++; }});
+
+        // External = not intern
+        const extVal = d.filter(r => r.deal_type !== 'intern' && (r.stage === 'kontrakterat' || r.stage === 'forhandling')).reduce((s,r) => s + r.estimated_value, 0);
+        const intVal = d.filter(r => r.deal_type === 'intern').reduce((s,r) => s + r.estimated_value, 0);
+
+        // KPI row 1 — all cards link to Twenty CRM opportunities
+        const twentyUrl = 'https://crm.rmef.se/objects/opportunities';
+        const kpiLink = (inner) => `<a href="${twentyUrl}" target="_blank" style="color:inherit;text-decoration:none;display:block">${inner}</a>`;
+
+        document.getElementById('kpi-row-1').innerHTML = `
+            <div class="kpi-card" style="cursor:pointer" onclick="window.open('${twentyUrl}','_blank')">
+                <div class="kpi-label">Viktad pipeline</div>
+                <div class="kpi-value">${fmt(weighted)}</div>
+                <div class="kpi-subtext">${count} aff\u00e4rer \u00d7 hitrate per typ</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.8;margin-top:8px">
+                    ${TYPE_ORDER.filter(t => byType[t].count > 0).map(t =>
+                        `<span style="color:${TYPE_COLORS[t]}">●</span> ${TYPE_LABELS[t]} ${fmt(byType[t].weighted)} (${byType[t].count} st)`
+                    ).join('<br>')}
+                </div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer" onclick="window.open('${twentyUrl}','_blank')">
+                <div class="kpi-label">Pipeline total (oviktat)</div>
+                <div class="kpi-value">${fmt(total)}</div>
+                <div class="kpi-subtext">${withValue} aff\u00e4rer med v\u00e4rde</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:100%;background:linear-gradient(90deg,${TYPE_ORDER.filter(t=>byType[t].value>0).map(t => {
+                        const pct = total > 0 ? (byType[t].value/total*100) : 0;
+                        return TYPE_COLORS[t] + ' ' + pct.toFixed(0) + '%';
+                    }).join(',')})"></div>
+                </div>
+                <div style="font-size:10px;color:#8B949E;margin-top:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+                    ${TYPE_ORDER.filter(t => byType[t].value > 0).map(t =>
+                        `<span style="color:${TYPE_COLORS[t]}">${TYPE_LABELS[t]} ${total>0?(byType[t].value/total*100).toFixed(0):'0'}%</span>`
+                    ).join('')}
+                </div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer" onclick="window.open('${twentyUrl}?viewId=b89ba576-5da5-49c3-b8d9-627ef73887c3','_blank')">
+                <div class="kpi-label">Intern orderstock</div>
+                <div class="kpi-value text-green">${fmt(intVal)}</div>
+                <div class="kpi-subtext">${byType.intern?.count || 0} interna aff\u00e4rer (100% hitrate)</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer" onclick="window.open('${twentyUrl}?viewId=b89ba576-5da5-49c3-b8d9-627ef73887c3','_blank')">
+                <div class="kpi-label">Snitt hitrate (viktat)</div>
+                <div class="kpi-value">${wAvgHr.toFixed(0)}%</div>
+                <div class="kpi-subtext">Baserat p\u00e5 aff\u00e4rstyp \u00d7 stadie</div>
+                <div style="font-size:11px;color:#8B949E;line-height:1.6;margin-top:6px">
+                    ${TYPE_ORDER.map(t => `<span style="color:${TYPE_COLORS[t]}">${TYPE_LABELS[t]} ~${byType[t].value>0?Math.round(byType[t].weighted/byType[t].value*100):0}%</span>`).join(' \u00b7 ')}
+                </div>
+            </div>
+        `;
+    }
+
+    // ─── TYPE LEGEND ──────────────────────────────────────
+    renderTypeLegend() {
+        const byType = {};
+        TYPE_ORDER.forEach(t => byType[t] = {value:0, count:0});
+        this.filteredData.forEach(r => { if(byType[r.deal_type]) { byType[r.deal_type].value += r.estimated_value; byType[r.deal_type].count++; }});
+
+        document.getElementById('type-legend').innerHTML = TYPE_ORDER.filter(t => byType[t].count > 0).map(t =>
+            `<div class="stage-item" style="border-left-color:${TYPE_COLORS[t]}">
+                <span>${TYPE_LABELS[t]} (${byType[t].count} st)</span>
+                <span class="stage-amount" style="color:${TYPE_COLORS[t]}">${fmt(byType[t].value)}</span>
+            </div>`
+        ).join('');
+    }
+
+    // ─── TOP 10 ───────────────────────────────────────────
+    renderTop10() {
+        const top = [...this.filteredData].sort((a,b) => b.estimated_value - a.estimated_value).slice(0, 10);
+        let html = '<table class="deals-table"><thead><tr><th>Projekt</th><th>Belopp</th><th>Typ</th><th>Viktat</th></tr></thead><tbody>';
+        top.forEach(r => {
+            const w = r.estimated_value * r.hit_rate / 100;
+            const nameLink = r.twenty_id ? '<a href="https://crm.rmef.se/object/opportunity/'+r.twenty_id+'" target="_blank" style="color:#58A6FF;text-decoration:none">'+r.name+'</a>' : r.name;
+            html += `<tr>
+                <td>${nameLink}</td>
+                <td class="text-right mono">${fmtShort(r.estimated_value)}</td>
+                <td><span class="tag tag-${r.deal_type}">${TYPE_LABELS[r.deal_type]||r.deal_type}</span></td>
+                <td class="text-right mono" style="color:${w >= r.estimated_value * 0.5 ? '#3FB950' : '#8B949E'}">${fmtShort(w)}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('top10-table').innerHTML = html;
+    }
+
+    // ─── CHARTS ───────────────────────────────────────────
+    destroyCharts() {
+        ["chart-cashflow","chart-tb1","chart-forecast","chart-type-bar","chart-stage-value","chart-stage-compare","chart-stacked"].forEach(function(id) {
+            var el = document.getElementById(id); if (!el) return;
+            var existing = Chart.getChart(el);
+            if (existing) existing.destroy();
+        });
+    }
+
+    renderCharts() {
+        this.destroyCharts();
+        this.charts.typeBar = this.createTypeBarChart();
+        this.charts.stageValue = this.createStageValueChart();
+        this.charts.stageCompare = this.createStageCompareChart();
+        this.charts.stacked = this.createStackedChart();
+    }
+
+    aggByStage() {
+        const agg = {};
+        STAGE_ORDER.forEach(s => agg[s] = {value:0, weighted:0, count:0});
+        this.filteredData.forEach(d => { if(agg[d.stage]) { agg[d.stage].value += d.estimated_value; agg[d.stage].weighted += d.estimated_value*d.hit_rate/100; agg[d.stage].count++; }});
+        return agg;
+    }
+
+    createTypeBarChart() {
+        const byType = {};
+        TYPE_ORDER.forEach(t => byType[t] = 0);
+        this.filteredData.forEach(r => { if(byType[r.deal_type] !== undefined) byType[r.deal_type] += r.estimated_value; });
+        const types = TYPE_ORDER.filter(t => byType[t] > 0);
+        return new Chart(document.getElementById('chart-type-bar'), {
+            type: 'bar',
+            data: {
+                labels: types.map(t => TYPE_LABELS[t]),
+                datasets: [{ data: types.map(t => byType[t]/1e6), backgroundColor: types.map(t => TYPE_COLORS[t]+'cc'), borderRadius: 4 }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt(ctx.parsed.x*1e6) }}},
+                scales: { x:{beginAtZero:true, ticks:{callback:v=>v+' M'}, grid:{color:'#21262D'}}, y:{grid:{display:false}} }
+            }
+        });
+    }
+
+    createStageValueChart() {
+        const agg = this.aggByStage();
+        const stages = STAGE_ORDER.filter(s => agg[s].count > 0);
+        return new Chart(document.getElementById('chart-stage-value'), {
+            type: 'bar',
+            data: {
+                labels: stages.map(s => STAGE_LABELS[s]),
+                datasets: [{ data: stages.map(s => agg[s].value/1e6), backgroundColor: stages.map(s => STAGE_COLORS_MAP[s]+'cc'), borderRadius: 4 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt(ctx.parsed.y*1e6) }}},
+                scales: { y:{beginAtZero:true, ticks:{callback:v=>v+' M'}, grid:{color:'#21262D'}}, x:{grid:{display:false}} }
+            }
+        });
+    }
+
+    createStageCompareChart() {
+        const agg = this.aggByStage();
+        const stages = STAGE_ORDER.filter(s => agg[s].count > 0);
+        return new Chart(document.getElementById('chart-stage-compare'), {
+            type: 'bar',
+            data: {
+                labels: stages.map(s => STAGE_LABELS[s]),
+                datasets: [
+                    { label: 'Uppskattat', data: stages.map(s => agg[s].value/1e6), backgroundColor: '#21262D', borderRadius: 4 },
+                    { label: 'Viktat', data: stages.map(s => agg[s].weighted/1e6), backgroundColor: '#58A6FFcc', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend:{position:'top',labels:{usePointStyle:true,padding:16,color:'#8B949E'}}, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+fmt(ctx.parsed.y*1e6) }}},
+                scales: { y:{beginAtZero:true, ticks:{callback:v=>v+' M'}, grid:{color:'#21262D'}}, x:{grid:{display:false}} }
+            }
+        });
+    }
+
+    createStackedChart() {
+        const stages = STAGE_ORDER.filter(s => this.filteredData.some(d => d.stage === s));
+        const datasets = TYPE_ORDER.map(t => ({
+            label: TYPE_LABELS[t],
+            data: stages.map(s => this.filteredData.filter(d => d.stage===s && d.deal_type===t).reduce((sum,d) => sum+d.estimated_value, 0)/1e6),
+            backgroundColor: TYPE_COLORS[t]+'cc', borderRadius: 2
+        }));
+        return new Chart(document.getElementById('chart-stacked'), {
+            type: 'bar',
+            data: { labels: stages.map(s => STAGE_LABELS[s]), datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend:{position:'top',labels:{usePointStyle:true,padding:16,color:'#8B949E'}}, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+fmt(ctx.parsed.y*1e6) }}},
+                scales: { x:{stacked:true, grid:{display:false}}, y:{stacked:true, beginAtZero:true, ticks:{callback:v=>v+' M'}, grid:{color:'#21262D'}} }
+            }
+        });
+    }
+
+    // ─── HITRATE MATRIX ───────────────────────────────────
+    renderHitrateMatrix() {
+        let html = '<table class="matrix-table"><thead><tr><th>Affärstyp</th>';
+        STAGE_ORDER.forEach(s => html += '<th style="text-align:center">'+STAGE_LABELS[s]+'</th>');
+        html += '</tr></thead><tbody>';
+        TYPE_ORDER.forEach(t => {
+            html += '<tr><td>'+TYPE_LABELS[t]+'</td>';
+            STAGE_ORDER.forEach(s => {
+                const hr = HITRATE_MATRIX[t]?.[s] || 0;
+                const cls = hr >= 80 ? 'hr-high' : hr >= 40 ? 'hr-mid' : 'hr-low';
+                html += '<td style="text-align:center"><span class="hr-cell '+cls+'">'+hr+'%</span></td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        document.getElementById('hitrate-matrix').innerHTML = html;
+    }
+
+    // ─── DEAL TABLE ───────────────────────────────────────
+    renderDealTable() {
+        const d = [...this.filteredData].sort((a,b) => {
+            let av = a[this.sortCol], bv = b[this.sortCol];
+            if (this.sortCol === '_weighted') { av = a.estimated_value*a.hit_rate/100; bv = b.estimated_value*b.hit_rate/100; }
+            const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+            return this.sortDir === 'asc' ? cmp : -cmp;
+        });
+        document.getElementById('deal-count-badge').textContent = d.length + ' st';
+        const cols = [
+            {field:'name', label:'Projekt'},
+            {field:'stage', label:'Steg'},
+            {field:'deal_type', label:'Typ'},
+            {field:'estimated_value', label:'Uppskattat'},
+            {field:'hit_rate', label:'Hitrate'},
+            {field:'_weighted', label:'Viktat'}
+        ];
+        let html = '<table class="deals-table"><thead><tr>';
+        cols.forEach(c => {
+            const arrow = this.sortCol === c.field ? (this.sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+            const align = ['estimated_value','hit_rate','_weighted'].includes(c.field) ? ' text-right' : '';
+            html += `<th class="${align}" onclick="dashboard.sortTable('${c.field}')">${c.label}${arrow}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        d.forEach(r => {
+            const w = r.estimated_value * r.hit_rate / 100;
+            html += '<tr>';
+            if (r.twenty_id) {
+                html += '<td><a href="https://crm.rmef.se/object/opportunity/'+r.twenty_id+'" target="_blank" style="color:#58A6FF;text-decoration:none">'+r.name+'</a></td>';
+            } else {
+                html += '<td>'+r.name+'</td>';
+            }
+            html += '<td><span class="tag stage-'+r.stage+'">'+(STAGE_LABELS[r.stage]||r.stage)+'</span></td>';
+            html += '<td><span class="tag tag-'+r.deal_type+'">'+(TYPE_LABELS[r.deal_type]||r.deal_type)+'</span></td>';
+            html += '<td class="text-right mono">'+fmt(r.estimated_value)+'</td>';
+            html += '<td class="text-right mono">'+r.hit_rate+'%</td>';
+            html += '<td class="text-right mono" style="color:'+(w >= r.estimated_value*0.5 ? '#3FB950' : '#8B949E')+'">'+fmt(w)+'</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        document.getElementById('deal-table').innerHTML = html;
+    }
+
+    sortTable(field) {
+        if (this.sortCol === field) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortCol = field; this.sortDir = 'desc'; }
+        this.renderDealTable();
+    }
+
+    // ─── FINANCIALS (Fortnox) ─────────────────────────────
+    renderFinancials() {
+        ["chart-cashflow","chart-tb1","chart-forecast"].forEach(function(id) {
+            var el = document.getElementById(id); if (!el) return;
+            var existing = Chart.getChart(el);
+            if (existing) existing.destroy();
+        });
+        document.getElementById('fortnox-section').style.display = 'block';
+        const f = FORTNOX;
+
+        const tb1Color = f.tb1 >= 0 ? '#3FB950' : '#F85149';
+        const tb1Margin = f.tb1_margin ? f.tb1_margin.toFixed(1) : '0';
+        const overdueRecv = f.overdue_receivables || 0;
+        const overdueReal = f.overdue_real || 0;
+        const overdueLabeled = f.overdue_labeled || 0;
+        const overduePay = f.overdue_payables || 0;
+        const netCashflow = (f.receivables || 0) - (f.payables || 0);
+
+        // CFO risk classification
+        const recvSafe = f.recv_safe || 0;
+        const recvRisk = f.recv_risk || 0;
+        const recvCritical = f.recv_critical || 0;
+        const recvWeighted = f.recv_weighted || 0;
+
+        const recvParked = f.recv_parked || 0;
+        let recvText = '';
+        recvText += '<span style="color:#3FB950">S\u00e4kra: ' + fmt(recvSafe) + '</span>';
+        if (recvRisk > 0) recvText += '<br><span style="color:#D29922">Bevakade (50%): ' + fmt(recvRisk) + '</span>';
+        if (recvCritical > 0) recvText += '<br><span style="color:#F85149">F\u00f6rfallna (25%): ' + fmt(recvCritical) + '</span>';
+        if (recvParked > 0) recvText += '<br><span style="color:#8B949E">Parkerade (0%): ' + fmt(recvParked) + '</span>';
+        recvText += '<br><span style="font-size:10px;color:#8B949E">Riskviktat: ' + fmt(recvWeighted) + '</span>';
+
+        var fnxBase = f.app_id ? 'https://apps2.fortnox.se/app/' + f.app_id : '';
+        if (fnxBase) { var btn = document.getElementById('fnx-open-btn'); btn.href = fnxBase; btn.style.display = 'inline-block'; }
+        var fnxKfList = fnxBase ? fnxBase + '/kf/invoicelist' : '';
+        var fnxLfList = fnxBase ? fnxBase + '/lf/sinvoicelist' : '';
+
+        document.getElementById('finance-kpi-row').innerHTML =
+            '<div class="kpi-card" style="cursor:pointer" onclick="window.open(\'' + fnxKfList + '\',\'_blank\')">' +
+                '<div class="kpi-label">Fakturerad omsättning <span style="font-size:11px;color:#8B949E;font-weight:normal">(Rullande 12 mån)</span></div>' +
+                '<div class="kpi-value">' + fmt(f.net_revenue || 0) + '</div>' +
+                '<div class="kpi-subtext">' + (f.invoice_count || 0) + ' fakturor' + (f.credit_notes ? ' (kreditnotor: ' + fmt(Math.abs(f.credit_notes)) + ')' : '') + '</div>' +
+            '</div>' +
+            '<div class="kpi-card" style="cursor:pointer" onclick="window.open(\'' + fnxKfList + '\',\'_blank\')">' +
+                '<div class="kpi-label">TB1</div>' +
+                '<div class="kpi-value" style="color:' + tb1Color + '">' + fmt(f.tb1 || 0) + '</div>' +
+                '<div class="kpi-subtext">Marginal: ' + tb1Margin + '% \u00b7 Lev.kostnader: ' + fmt(f.supplier_costs || 0) + '</div>' +
+                '<div class="progress-bar" style="margin-top:12px"><div class="progress-fill" style="width:' + Math.min(Math.max(f.tb1_margin||0,0),100) + '%;background:' + tb1Color + '"></div></div>' +
+            '</div>' +
+            '<div class="kpi-card" style="cursor:pointer" onclick="window.open(\'' + fnxKfList + '\',\'_blank\')">' +
+                '<div class="kpi-label">Kundfordringar</div>' +
+                '<div class="kpi-value">' + fmt(f.receivables || 0) + '</div>' +
+                '<div class="kpi-subtext">' + recvText + '</div>' +
+            '</div>' +
+            '<div class="kpi-card" style="cursor:pointer" onclick="window.open(\'' + fnxLfList + '\',\'_blank\')">' +
+                '<div class="kpi-label">Leverant\u00f6rsskulder</div>' +
+                '<div class="kpi-value text-orange">' + fmt(f.payables || 0) + '</div>' +
+                '<div class="kpi-subtext">' +
+                    ((f.si_parkerad_count || 0) > 0 ? '<span style="color:#D29922">Parkerade: ' + fmt(f.si_parkerad_total || 0) + '</span><br>' : '') +
+                    ((f.si_overdue_unlabeled_count || 0) > 0 ? '<span style="color:#F85149">F\u00f6rfallna: ' + fmt(f.si_overdue_unlabeled_total || 0) + '</span><br>' : '') +
+                    (f.supplier_invoice_count || 0) + ' fakturor' +
+                '</div>' +
+            '</div>';
+
+        // Top customers table
+        if (f.top_customers && f.top_customers.length) {
+            var h = '<table class="deals-table"><thead><tr><th>Kund</th><th class="text-right">Belopp</th><th class="text-right">Antal</th></tr></thead><tbody>';
+            f.top_customers.forEach(function(c) {
+                h += '<tr><td>' + c.name + '</td><td class="text-right mono">' + fmt(c.total) + '</td><td class="text-right mono">' + c.count + '</td></tr>';
+            });
+            h += '</tbody></table>';
+            document.getElementById('top-customers-table').innerHTML = h;
+        }
+
+        // Top suppliers table
+        if (f.top_suppliers && f.top_suppliers.length) {
+            var h2 = '<table class="deals-table"><thead><tr><th>Leverant\u00f6r</th><th class="text-right">Belopp</th><th class="text-right">Antal</th></tr></thead><tbody>';
+            f.top_suppliers.forEach(function(s) {
+                h2 += '<tr><td>' + s.name + '</td><td class="text-right mono">' + fmt(s.total) + '</td><td class="text-right mono">' + s.count + '</td></tr>';
+            });
+            h2 += '</tbody></table>';
+            document.getElementById('top-suppliers-table').innerHTML = h2;
+        }
+
+        // Banksaldo display — bokfört saldo från Fortnox SIE4
+        var bsDisplay = document.getElementById('banksaldo-display');
+        var bsDate = document.getElementById('banksaldo-date');
+        if (bsDisplay) {
+            if (f.bank_balance !== null && f.bank_balance !== undefined) {
+                bsDisplay.textContent = fmt(f.bank_balance);
+                bsDisplay.style.color = f.bank_balance >= 0 ? '#3FB950' : '#F85149';
+                if (bsDate) bsDate.textContent = f.bank_balance_date ? 'Bokf\u00f6rt per ' + f.bank_balance_date + ' \u00b7 Synkas var 2:e timme' : '';
+            } else {
+                bsDisplay.textContent = 'V\u00e4ntar p\u00e5 synk';
+                bsDisplay.style.color = '#8B949E';
+            }
+        }
+
+        // Overdue customer invoices table with labels
+        var overdueEl = document.getElementById('overdue-invoices-table');
+        if (f.overdue_invoices && f.overdue_invoices.length) {
+            var h3 = '<table class="deals-table"><thead><tr><th>Faktura</th><th>Kund</th><th>F\u00f6rfallodag</th><th class="text-right">Saldo</th><th>Etikett</th></tr></thead><tbody>';
+            f.overdue_invoices.forEach(function(inv) {
+                var labelSelect = '<select onchange="setCustomerLabel(\'' + inv.fortnox_id + '\', this.value)" style="background:#161B22;color:#C9D1D9;border:1px solid #30363D;border-radius:4px;padding:2px 4px;font-size:11px;cursor:pointer">' +
+                    '<option value=""' + (!inv.label ? ' selected' : '') + '>\u2014</option>' +
+                    '<option value="Parkerad"' + (inv.label === 'Parkerad' ? ' selected' : '') + '>Parkerad</option>' +
+                    '<option value="Bevakas"' + (inv.label === 'Bevakas' ? ' selected' : '') + '>Bevakas</option>' +
+                    '<option value="Tvist"' + (inv.label === 'Tvist' ? ' selected' : '') + '>Tvist</option>' +
+                    '</select>';
+                var fnxLink = f.app_id ? '<a href="https://apps2.fortnox.se/app/' + f.app_id + '/kf/invoice/' + inv.fortnox_id + '" target="_blank" style="color:#58A6FF;text-decoration:none">' + inv.fortnox_id + '</a>' : inv.fortnox_id;
+                h3 += '<tr><td>' + fnxLink + '</td><td>' + inv.customer_name + '</td><td>' + inv.due_date + '</td><td class="text-right mono">' + fmt(inv.balance) + '</td><td>' + labelSelect + '</td></tr>';
+            });
+            h3 += '</tbody></table>';
+            overdueEl.innerHTML = h3;
+        } else {
+            overdueEl.innerHTML = '<p style="color:#8B949E;font-size:13px;padding:12px">Inga f\u00f6rfallna kundfakturor</p>';
+        }
+
+        // Supplier invoices by label — Parkerade, Bevakade, Förfallna
+        var allSi = f.all_supplier_invoices || [];
+        var siParkerad = allSi.filter(function(i) { return i.label === 'Parkerad'; });
+        var siBevakas = allSi.filter(function(i) { return i.label === 'Bevakas'; });
+        var siOverdue = allSi.filter(function(i) { return i.is_overdue && !i.label; });
+
+        function renderSiTable(items, elId, emptyMsg) {
+            var el = document.getElementById(elId);
+            if (!el) return;
+            if (items.length === 0) {
+                el.innerHTML = '<p style="color:#8B949E;font-size:13px;padding:12px">' + emptyMsg + '</p>';
+                return;
+            }
+            var h = '<table class="deals-table"><thead><tr><th>Faktura</th><th>Leverant\u00f6r</th><th>F\u00f6rfallodag</th><th class="text-right">Saldo</th><th>Etikett</th></tr></thead><tbody>';
+            items.forEach(function(inv) {
+                var siLink = f.app_id ? '<a href="https://apps2.fortnox.se/app/' + f.app_id + '/lf/supplierinvoice/' + inv.fortnox_id + '" target="_blank" style="color:#58A6FF;text-decoration:none">' + inv.fortnox_id + '</a>' : inv.fortnox_id;
+                var labelSelect = '<select onchange="setSupplierLabel(\'' + inv.fortnox_id + '\', this.value)" style="background:#161B22;color:#C9D1D9;border:1px solid #30363D;border-radius:4px;padding:2px 4px;font-size:11px;cursor:pointer">' +
+                    '<option value=""' + (!inv.label ? ' selected' : '') + '>—</option>' +
+                    '<option value="Parkerad"' + (inv.label === 'Parkerad' ? ' selected' : '') + '>Parkerad</option>' +
+                    '<option value="Bevakas"' + (inv.label === 'Bevakas' ? ' selected' : '') + '>Bevakas</option>' +
+                    '<option value="Tvist"' + (inv.label === 'Tvist' ? ' selected' : '') + '>Tvist</option>' +
+                    '</select>';
+                h += '<tr><td>' + siLink + '</td><td>' + inv.supplier_name + '</td><td>' + inv.due_date + '</td><td class="text-right mono">' + fmt(inv.balance) + '</td><td>' + labelSelect + '</td></tr>';
+            });
+            h += '</tbody></table>';
+            el.innerHTML = h;
+        }
+
+        renderSiTable(siParkerad, 'si-parkerad-table', 'Inga parkerade leverant\u00f6rsfakturor');
+        renderSiTable(siBevakas, 'si-bevakas-table', 'Inga bevakade leverant\u00f6rsfakturor');
+        renderSiTable(siOverdue, 'si-overdue-table', 'Inga f\u00f6rfallna leverant\u00f6rsfakturor utan etikett');
+
+        // Badges
+        var pBadge = document.getElementById('si-parkerad-badge');
+        if (pBadge) pBadge.textContent = siParkerad.length > 0 ? siParkerad.length + ' st \u00b7 ' + fmt(f.si_parkerad_total || 0) : '';
+        var bBadge = document.getElementById('si-bevakas-badge');
+        if (bBadge) bBadge.textContent = siBevakas.length > 0 ? siBevakas.length + ' st \u00b7 ' + fmt(f.si_bevakas_total || 0) : '';
+        var oBadge = document.getElementById('si-overdue-badge');
+        if (oBadge) oBadge.textContent = siOverdue.length > 0 ? siOverdue.length + ' st \u00b7 ' + fmt(f.si_overdue_unlabeled_total || 0) : '';
+
+        // Cashflow chart
+        this.charts.cashflow = new Chart(document.getElementById('chart-cashflow'), {
+            type: 'bar',
+            data: {
+                labels: ['Kundfordringar', 'Lev.skulder', 'Netto'],
+                datasets: [{
+                    data: [f.receivables || 0, -(f.payables || 0), netCashflow],
+                    backgroundColor: [
+                        'rgba(88,166,255,0.7)',
+                        'rgba(249,115,22,0.7)',
+                        netCashflow >= 0 ? 'rgba(63,185,80,0.7)' : 'rgba(248,81,73,0.7)'
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: function(ctx) { return fmt(Math.abs(ctx.parsed.y)); } }}},
+                scales: { y:{ticks:{callback:function(v){return fmtShort(Math.abs(v));}}, grid:{color:'#21262D'}}, x:{grid:{display:false}} }
+            }
+        });
+
+        // TB1 doughnut
+        this.charts.tb1 = new Chart(document.getElementById('chart-tb1'), {
+            type: 'doughnut',
+            data: {
+                labels: ['TB1 (marginal)', 'Lev.kostnader'],
+                datasets: [{
+                    data: [Math.max(f.tb1||0, 0), f.supplier_costs||0],
+                    backgroundColor: ['rgba(63,185,80,0.8)', 'rgba(249,115,22,0.5)'],
+                    borderColor: ['#3FB950', '#F97316'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend:{position:'bottom',labels:{usePointStyle:true,padding:16,color:'#8B949E'}},
+                    tooltip:{ callbacks:{ label: function(ctx) { return ctx.label + ': ' + fmt(ctx.parsed); } }}
+                }
+            }
+        });
+    }
+
+
+    // ─── LIQUIDITY FORECAST ─────────────────────────────
+    renderForecast(numWeeks) {
+        numWeeks = numWeeks || 8;
+        document.getElementById('forecast-section').style.display = 'block';
+        const f = FORTNOX;
+        const weeks = (f.forecast_weeks || []).slice(0, numWeeks);
+        if (!weeks.length) return;
+
+        const labels = weeks.map(w => w.label);
+        // Risk-weighted: only count what we realistically expect to receive/pay
+        const inData = weeks.map(w => w.inbetalningar_viktat || w.inbetalningar);
+        const inDataRaw = weeks.map(w => w.inbetalningar);
+        const utData = weeks.map(w => -(w.utbetalningar_justerat || w.utbetalningar));
+        const utDataRaw = weeks.map(w => -w.utbetalningar);
+
+        // Cumulative cash (risk-weighted) — start from bank balance
+        let cumulative = [];
+        let startBalance = (f.bank_balance !== null && f.bank_balance !== undefined) ? f.bank_balance : 0;
+        let running = startBalance;
+        for (let i = 0; i < weeks.length; i++) {
+            running += (weeks[i].inbetalningar_viktat || weeks[i].inbetalningar) - (weeks[i].utbetalningar_justerat || weeks[i].utbetalningar);
+            cumulative.push(running);
+        }
+        // Cumulative cash (raw/optimistic for comparison)
+        let cumulativeRaw = [];
+        let runningRaw = startBalance;
+        for (let i = 0; i < weeks.length; i++) {
+            runningRaw += weeks[i].inbetalningar - weeks[i].utbetalningar;
+            cumulativeRaw.push(runningRaw);
+        }
+
+        // Update label
+        document.getElementById('forecast-weeks-label').textContent = numWeeks + ' veckor';
+
+        // Alert badge (based on risk-weighted cumulative)
+        const alertEl = document.getElementById('forecast-alert-badge');
+        const minCash = Math.min(...cumulative);
+        const hasNegWeek = cumulative.some(v => v < 0);
+        if (hasNegWeek) {
+            alertEl.style.display = 'inline-block';
+            alertEl.style.background = '#F85149';
+            alertEl.style.color = '#fff';
+            alertEl.textContent = 'Varning — negativt kassafl\u00f6de';
+        } else if (minCash < 200000) {
+            alertEl.style.display = 'inline-block';
+            alertEl.style.background = '#D29922';
+            alertEl.style.color = '#0D1117';
+            alertEl.textContent = 'Uppmarksamhet';
+        } else {
+            alertEl.style.display = 'none';
+        }
+
+        // Summary with both raw and weighted
+        const totalInW = weeks.reduce((s,w) => s + (w.inbetalningar_viktat || w.inbetalningar), 0);
+        const totalUtA = weeks.reduce((s,w) => s + (w.utbetalningar_justerat || w.utbetalningar), 0);
+        const totalInRaw = weeks.reduce((s,w) => s + w.inbetalningar, 0);
+        const totalUtRaw = weeks.reduce((s,w) => s + w.utbetalningar, 0);
+        const nettoW = totalInW - totalUtA;
+        document.getElementById('forecast-summary').innerHTML =
+            (startBalance ? '<b>Startsaldo:</b> ' + fmt(startBalance) + ' | ' : '') + '<b>Riskviktat:</b> In: <span style="color:#3FB950">' + fmt(totalInW) + '</span> | Ut: <span style="color:#F85149">' + fmt(totalUtA) + '</span> | <b>Netto: <span style="color:' + (nettoW >= 0 ? '#3FB950' : '#F85149') + '">' + fmt(nettoW) + '</span></b>' +
+            '<br><span style="font-size:11px;color:#8B949E">Oviktat: In ' + fmt(totalInRaw) + ' | Ut ' + fmt(totalUtRaw) + ' | Netto ' + fmt(totalInRaw - totalUtRaw) + '</span>';
+
+        // Toggle buttons
+        document.querySelectorAll('.forecast-toggle').forEach(function(btn) {
+            btn.classList.toggle('active', parseInt(btn.dataset.weeks) === numWeeks);
+        });
+
+        // Destroy old chart
+        if (this.charts.forecast) this.charts.forecast.destroy();
+
+        this.charts.forecast = new Chart(document.getElementById('chart-forecast'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Inbetalningar',
+                        data: inData,
+                        backgroundColor: 'rgba(63,185,80,0.7)',
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: 'Utbetalningar',
+                        data: utData,
+                        backgroundColor: 'rgba(248,81,73,0.55)',
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: startBalance ? 'Kumulativ kassa (fr\u00e5n banksaldo)' : 'Kumulativ kassa (riskviktad)',
+                        data: cumulative,
+                        type: 'line',
+                        borderColor: '#58A6FF',
+                        backgroundColor: 'rgba(88,166,255,0.1)',
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#58A6FF',
+                        fill: false,
+                        tension: 0.3,
+                        order: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Kumulativ kassa (oviktad)',
+                        data: cumulativeRaw,
+                        type: 'line',
+                        borderColor: 'rgba(210,153,34,0.75)',
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 2,
+                        pointBackgroundColor: 'rgba(210,153,34,0.75)',
+                        fill: false,
+                        tension: 0.3,
+                        order: 1,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true, padding: 20, color: '#8B949E', font: { size: 12 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var val = Math.abs(ctx.parsed.y);
+                                return ctx.dataset.label + ': ' + fmtShort(val);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#8B949E', font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { color: '#21262D' },
+                        ticks: {
+                            color: '#8B949E',
+                            callback: function(v) { return fmtShort(Math.abs(v)); }
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'zeroLine',
+                afterDraw: function(chart) {
+                    var yScale = chart.scales.y;
+                    var ctx2 = chart.ctx;
+                    var yZero = yScale.getPixelForValue(0);
+                    ctx2.save();
+                    ctx2.setLineDash([6, 4]);
+                    ctx2.strokeStyle = 'rgba(248,81,73,0.4)';
+                    ctx2.lineWidth = 1;
+                    ctx2.beginPath();
+                    ctx2.moveTo(chart.chartArea.left, yZero);
+                    ctx2.lineTo(chart.chartArea.right, yZero);
+                    ctx2.stroke();
+                    ctx2.restore();
+                }
+            }]
+        });
+    }
+
+    setForecastWeeks(n) {
+        this.renderForecast(n);
+    }
+    renderProjects() {
+        const projects = FORTNOX.projects || [];
+        const groups = FORTNOX.project_groups || [];
+        const container = document.getElementById('projects-container');
+        const empty = document.getElementById('projects-empty');
+        
+        if ((!projects || projects.length === 0) && (!groups || groups.length === 0)) {
+            container.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+        
+        container.style.display = 'block';
+        empty.style.display = 'none';
+        
+        // Render grouped view
+        const gtbody = document.getElementById('project-groups-tbody');
+        if (gtbody && groups.length > 0) {
+            gtbody.innerHTML = '';
+            groups.forEach(function(g) {
+                const tb1Color = g.tb1 >= 0 ? '#3FB950' : '#F85149';
+                const row = document.createElement('tr');
+                row.innerHTML = 
+                    '<td><strong>' + (g.group_name || '-') + '</strong></td>' +
+                    '<td style="color:#8B949E;font-size:12px">' + (g.leaders || '-') + '</td>' +
+                    '<td class="text-right mono">' + fmt(g.net_revenue || 0) + '</td>' +
+                    '<td class="text-right mono">' + fmt(g.supplier_costs || 0) + '</td>' +
+                    '<td class="text-right mono" style="color:' + tb1Color + '"><strong>' + fmt(g.tb1 || 0) + '</strong></td>' +
+                    '<td class="text-right mono" style="color:' + tb1Color + '"><strong>' + (parseFloat(g.tb1_margin) || 0).toFixed(1) + '%</strong></td>' +
+                    '<td class="text-right mono">' + (g.invoice_count || 0) + ' / ' + (g.supplier_invoice_count || 0) + '</td>';
+                gtbody.appendChild(row);
+            });
+        }
+        
+        // Render detail view
+        const tbody = document.getElementById('projects-tbody');
+        tbody.innerHTML = '';
+        
+        projects.forEach(function(p) {
+            const tb1Color = p.tb1 >= 0 ? '#3FB950' : '#F85149';
+            const row = document.createElement('tr');
+            row.innerHTML = 
+                '<td><strong>' + p.project_number + '</strong></td>' +
+                '<td>' + (p.project_name || '-') + '</td>' +
+                '<td style="color:#8B949E">' + (p.project_group || '-') + '</td>' +
+                '<td style="color:#8B949E;font-size:12px">' + (p.project_leader || '-') + '</td>' +
+                '<td>' + nextStatusBadge(p.next_status, p.next_status_code) + '</td>' +
+                '<td class="text-right mono">' + fmt(p.net_revenue || 0) + '</td>' +
+                '<td class="text-right mono">' + fmt(p.supplier_costs || 0) + '</td>' +
+                '<td class="text-right mono" style="color:' + tb1Color + '"><strong>' + fmt(p.tb1 || 0) + '</strong></td>' +
+                '<td class="text-right mono" style="color:' + tb1Color + '"><strong>' + (parseFloat(p.tb1_margin) || 0).toFixed(1) + '%</strong></td>' +
+                '<td class="text-right mono">' + (p.invoice_count || 0) + ' / ' + (p.supplier_invoice_count || 0) + '</td>';
+            tbody.appendChild(row);
+        });
+    }
+
+
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+const dashboard = new Dashboard(DEALS);
+window._dashboard = dashboard;
+
+
+// ═══════════════════════════════════════════════════════════
+// NEXT vs FORTNOX COMPARISON
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// CRM + NEXT UNIFIED PROJECT VIEW
+// ═══════════════════════════════════════════════════════════
+function renderCrmNextUnified() {
+    if (!CRM_NEXT_UNIFIED || CRM_NEXT_UNIFIED.length === 0) {
+        document.getElementById('unified-empty').style.display = 'block';
+        document.getElementById('unified-container').style.display = 'none';
+        return;
+    }
+    document.getElementById('unified-empty').style.display = 'none';
+    document.getElementById('unified-container').style.display = 'block';
+
+    const fmt = n => { if (n === null || n === undefined || n === 0) return '\u2014'; const a = Math.abs(n); if (a >= 1e6) return (n/1e6).toFixed(1)+' Mkr'; if (a >= 1e3) return Math.round(n/1e3)+' tkr'; return Math.round(n)+' kr'; };
+
+    const data = CRM_NEXT_UNIFIED;
+    document.getElementById('unified-count-badge').textContent = data.length + ' projekt';
+
+    // KPIs
+    const active = data.filter(p => p.next_status && p.next_status.includes('Pågående'));
+    const bids = data.filter(p => p.next_status && p.next_status.includes('Anbud'));
+    const totalBooked = data.reduce((s,p) => s + (parseFloat(p.booked_revenue)||0), 0);
+    const totalBudget = data.reduce((s,p) => s + (parseFloat(p.budget_revenue)||0), 0);
+    const avgTb = data.filter(p => parseFloat(p.contribution_margin_pct) > 0);
+    const avgTbPct = avgTb.length > 0 ? avgTb.reduce((s,p) => s + parseFloat(p.contribution_margin_pct), 0) / avgTb.length : 0;
+    const riskProjects = data.filter(p => { const tb = parseFloat(p.contribution_margin_pct); return tb > 0 && tb < 20; });
+
+    document.getElementById('unified-kpis').innerHTML = `
+        <div class="card"><div class="kpi-value" style="color:#3FB950">${active.length}</div><div class="kpi-label">P\u00e5g\u00e5ende</div></div>
+        <div class="card"><div class="kpi-value" style="color:#D29922">${bids.length}</div><div class="kpi-label">Anbud</div></div>
+        <div class="card"><div class="kpi-value">${fmt(totalBooked)}</div><div class="kpi-label">Bokf\u00f6rt (int\u00e4kt)</div></div>
+        <div class="card"><div class="kpi-value" style="color:${avgTbPct >= 20 ? '#3FB950' : '#F85149'}">${avgTbPct.toFixed(1)}%</div><div class="kpi-label">Snitt TB%</div></div>
+        <div class="card"><div class="kpi-value" style="color:${riskProjects.length > 0 ? '#F85149' : '#3FB950'}">${riskProjects.length}</div><div class="kpi-label">TB &lt; 20%</div></div>
+    `;
+
+    window._unifiedData = data;
+    filterUnified('all');
+}
+
+window.filterUnified = function(filter) {
+    const data = window._unifiedData || [];
+    const fmt = n => { if (n === null || n === undefined || n === 0) return '\u2014'; const a = Math.abs(n); if (a >= 1e6) return (n/1e6).toFixed(1)+' Mkr'; if (a >= 1e3) return Math.round(n/1e3)+' tkr'; return Math.round(n)+' kr'; };
+
+    const STAGE_LABELS = {INKOMMIT:'Inkommit',KALKYL:'Kalkyl',OFFERT_SKICKAD:'Offert skickad',FORHANDLING:'F\u00f6rhandling',KONTRAKTERAT:'Kontrakterat',LEVERANS:'Leverans',FAKTURERAT:'Fakturerat'};
+    const stageColor = s => { const m = {INKOMMIT:'#8B949E',KALKYL:'#D29922',OFFERT_SKICKAD:'#58A6FF',FORHANDLING:'#D2A8FF',KONTRAKTERAT:'#3FB950',LEVERANS:'#3FB950',FAKTURERAT:'#3FB950'}; return m[s] || '#8B949E'; };
+
+    let filtered = data;
+    if (filter === 'active') filtered = data.filter(p => p.next_status && p.next_status.includes('P\u00e5g\u00e5ende'));
+    if (filter === 'bid') filtered = data.filter(p => p.next_status && (p.next_status.includes('Anbud') || p.crm_stage === 'KALKYL'));
+    if (filter === 'risk') filtered = data.filter(p => { const tb = parseFloat(p.contribution_margin_pct); return tb > 0 && tb < 20; });
+
+    const tbody = document.getElementById('unified-tbody');
+    tbody.innerHTML = '';
+
+    filtered.forEach(p => {
+        const tbPct = parseFloat(p.contribution_margin_pct) || 0;
+        const tbColor = tbPct === 0 ? '#8B949E' : tbPct >= 20 ? '#3FB950' : tbPct >= 10 ? '#D29922' : '#F85149';
+        const crmLabel = STAGE_LABELS[p.crm_stage] || p.crm_stage || '\u2014';
+        const crmColor = stageColor(p.crm_stage);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${p.next_project_no || '\u2014'}</strong></td>
+            <td>${p.deal_name || '\u2014'}</td>
+            <td style="color:#C9D1D9">${p.company_name || '\u2014'}</td>
+            <td><span class="tag" style="background:${crmColor}22;color:${crmColor};font-size:11px">${crmLabel}</span></td>
+            <td><span class="tag" style="font-size:11px">${p.next_status || '\u2014'}</span></td>
+            <td style="color:#8B949E;font-size:12px">${p.contact_name && p.contact_name.trim() !== '' ? p.contact_name : '\u2014'}</td>
+            <td class="text-right mono">${fmt(parseFloat(p.budget_revenue)||0)}</td>
+            <td class="text-right mono">${fmt(parseFloat(p.booked_revenue)||0)}</td>
+            <td class="text-right mono" style="color:${tbColor}"><strong>${tbPct > 0 ? tbPct.toFixed(1)+'%' : '\u2014'}</strong></td>
+            <td class="text-right mono">${fmt(parseFloat(p.forecast)||0)}</td>
+            <td style="color:#8B949E;font-size:12px">${p.project_manager || '\u2014'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // Highlight active filter
+    document.querySelectorAll('#unified-filters button').forEach(btn => btn.style.opacity = '0.5');
+    const idx = {all:0, active:1, bid:2, risk:3}[filter] || 0;
+    document.querySelectorAll('#unified-filters button')[idx].style.opacity = '1';
+};
+
+
+function renderNextVsFnx() {
+    if (!NEXT_ECONOMY || NEXT_ECONOMY.length === 0) {
+        document.getElementById('nextvsfnx-kpis').innerHTML = '<div class="card" style="text-align:center;color:#8B949E;padding:20px">Ingen Next-ekonomidata tillg\u00e4nglig.</div>';
+        return;
+    }
+
+    const fmt = n => { if (n === null || n === undefined) return '\u2014'; const a = Math.abs(n); if (a >= 1e6) return (n/1e6).toFixed(1)+' Mkr'; if (a >= 1e3) return Math.round(n/1e3)+' tkr'; return Math.round(n)+' kr'; };
+
+    // KPI:er
+    const totalNextCost = NEXT_ECONOMY.reduce((s,p) => s + (parseFloat(p.next_cost)||0), 0);
+    const totalFnxCost = NEXT_ECONOMY.reduce((s,p) => s + (parseFloat(p.fnx_cost)||0), 0);
+    const totalDiff = NEXT_ECONOMY.reduce((s,p) => s + (parseFloat(p.cost_diff)||0), 0);
+    const totalNextRev = NEXT_ECONOMY.reduce((s,p) => s + (parseFloat(p.next_revenue)||0), 0);
+    const totalFnxRev = NEXT_ECONOMY.reduce((s,p) => s + (parseFloat(p.fnx_revenue)||0), 0);
+
+    const kpiHtml = `
+        <div class="card"><div class="kpi-value">${fmt(totalNextCost)}</div><div class="kpi-label">Kostnad (Next)</div></div>
+        <div class="card"><div class="kpi-value">${fmt(totalFnxCost)}</div><div class="kpi-label">Kostnad (Fortnox)</div></div>
+        <div class="card"><div class="kpi-value" style="color:${totalDiff > 0 ? '#F85149' : totalDiff < 0 ? '#3FB950' : '#8B949E'}">${fmt(totalDiff)}</div><div class="kpi-label">Differens (Next - Fnx)</div></div>
+        <div class="card"><div class="kpi-value">${NEXT_ECONOMY.length}</div><div class="kpi-label">Projekt med data</div></div>
+    `;
+    document.getElementById('nextvsfnx-kpis').innerHTML = kpiHtml;
+
+    // Tabell
+    let tbl = `<table class="data-table"><thead><tr>
+        <th>Projekt</th>
+        <th>Namn</th>
+        <th>Status</th>
+        <th class="text-right">Kostnad Next</th>
+        <th class="text-right">Kostnad Fnx</th>
+        <th class="text-right">Diff</th>
+        <th class="text-right">Int\u00e4kt Next</th>
+        <th class="text-right">Int\u00e4kt Fnx</th>
+        <th class="text-right">TB Next</th>
+        <th class="text-right">TB Fnx</th>
+        <th class="text-right">Timmar</th>
+        <th class="text-right">Fnx fakt.</th>
+    </tr></thead><tbody>`;
+
+    NEXT_ECONOMY.forEach(p => {
+        const diff = parseFloat(p.cost_diff) || 0;
+        const diffColor = diff > 0 ? '#F85149' : diff < 0 ? '#3FB950' : '#8B949E';
+        const nextTb = parseFloat(p.next_tb) || 0;
+        const fnxTb = parseFloat(p.fnx_tb) || 0;
+        const nextTbColor = nextTb >= 0 ? '#3FB950' : '#F85149';
+        const fnxTbColor = fnxTb >= 0 ? '#3FB950' : '#F85149';
+
+        tbl += `<tr>
+            <td><strong>${p.project_no}</strong></td>
+            <td>${p.next_name || '\u2014'}</td>
+            <td>${p.next_status ? '<span class="tag" style="font-size:11px">' + p.next_status + '</span>' : '\u2014'}</td>
+            <td class="text-right mono">${fmt(parseFloat(p.next_cost)||0)}</td>
+            <td class="text-right mono">${fmt(parseFloat(p.fnx_cost)||0)}</td>
+            <td class="text-right mono" style="color:${diffColor}"><strong>${fmt(diff)}</strong></td>
+            <td class="text-right mono">${fmt(parseFloat(p.next_revenue)||0)}</td>
+            <td class="text-right mono">${fmt(parseFloat(p.fnx_revenue)||0)}</td>
+            <td class="text-right mono" style="color:${nextTbColor}">${fmt(nextTb)}</td>
+            <td class="text-right mono" style="color:${fnxTbColor}">${fmt(fnxTb)}</td>
+            <td class="text-right mono">${parseFloat(p.next_hours)||0 > 0 ? parseFloat(p.next_hours).toFixed(0) : '\u2014'}</td>
+            <td class="text-right mono">${(p.fnx_inv_count||0) + ' / ' + (p.fnx_si_count||0)}</td>
+        </tr>`;
+    });
+
+    // Summarad
+    tbl += `<tr style="border-top:2px solid #30363D;font-weight:bold">
+        <td colspan="3">Totalt</td>
+        <td class="text-right mono">${fmt(totalNextCost)}</td>
+        <td class="text-right mono">${fmt(totalFnxCost)}</td>
+        <td class="text-right mono" style="color:${totalDiff > 0 ? '#F85149' : '#3FB950'}">${fmt(totalDiff)}</td>
+        <td class="text-right mono">${fmt(totalNextRev)}</td>
+        <td class="text-right mono">${fmt(totalFnxRev)}</td>
+        <td class="text-right mono" style="color:${(totalNextRev-totalNextCost) >= 0 ? '#3FB950' : '#F85149'}">${fmt(totalNextRev - totalNextCost)}</td>
+        <td class="text-right mono" style="color:${(totalFnxRev-totalFnxCost) >= 0 ? '#3FB950' : '#F85149'}">${fmt(totalFnxRev - totalFnxCost)}</td>
+        <td colspan="2"></td>
+    </tr>`;
+    tbl += '</tbody></table>';
+    document.getElementById('nextvsfnx-table').innerHTML = tbl;
+}
+
+    // ─── PLANNER SECTION ─────────────────────────────────────
+    function renderPlanner() {
+        if (!PLANNER || PLANNER.length === 0) {
+            document.getElementById('planner-kpis').innerHTML = '<div class="card" style="text-align:center;color:#8B949E;padding:40px">Ingen Planner-data tillg\u00e4nglig. Konfigurera planner-config.json och k\u00f6r planner_sync.py.</div>';
+            document.getElementById('planner-boards').innerHTML = '';
+            document.getElementById('planner-table').innerHTML = '';
+            document.getElementById('planner-count-badge').textContent = '0';
+            return;
+        }
+
+        const today = new Date().toISOString().slice(0,10);
+        const active = PLANNER.filter(t => t.percent_complete < 100);
+        const completed = PLANNER.filter(t => t.percent_complete === 100);
+        const overdue = active.filter(t => t.due_date && t.due_date < today);
+        const plans = [...new Set(PLANNER.map(t => t.plan_name))];
+
+        document.getElementById('planner-count-badge').textContent = active.length + ' aktiva';
+
+        // KPI cards
+        const kpiHtml = `
+            <div class="kpi-card">
+                <div class="kpi-label">Aktiva uppgifter</div>
+                <div class="kpi-value" style="color:#58A6FF">${active.length}</div>
+                <div class="kpi-subtext">${completed.length} avslutade &middot; ${PLANNER.length} totalt</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">F\u00f6rfallna</div>
+                <div class="kpi-value" style="color:${overdue.length > 0 ? '#F85149' : '#3FB950'}">${overdue.length}</div>
+                <div class="kpi-subtext">${overdue.length > 0 ? 'Kr\u00e4ver \u00e5tg\u00e4rd' : 'Allt i tid'}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Planer</div>
+                <div class="kpi-value" style="color:#D29922">${plans.length}</div>
+                <div class="kpi-subtext">${plans.join(', ')}</div>
+            </div>
+        `;
+        document.getElementById('planner-kpis').innerHTML = kpiHtml;
+
+        // Board view per plan (Kanban-style)
+        const bucketOrder = ['To do', 'P\u00e5g\u00e5r', 'Blockerat', 'Klart'];
+        const bucketColors = {
+            'To do': '#8B949E',
+            'P\u00e5g\u00e5r': '#58A6FF',
+            'Blockerat': '#F85149',
+            'Klart': '#3FB950'
+        };
+        let boardsHtml = '';
+        for (const plan of plans) {
+            const planTasks = active.filter(t => t.plan_name === plan);
+            if (planTasks.length === 0) continue;
+            const buckets = [...new Set(planTasks.map(t => t.bucket_name))];
+            // Sort buckets by predefined order
+            buckets.sort((a,b) => {
+                const ai = bucketOrder.indexOf(a);
+                const bi = bucketOrder.indexOf(b);
+                return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+            });
+
+            boardsHtml += `<div class="card" style="margin-bottom:16px">
+                <div class="section-title">${plan}</div>
+                <div style="display:grid;grid-template-columns:repeat(${Math.min(buckets.length, 4)}, 1fr);gap:12px">`;
+            for (const bucket of buckets) {
+                const bTasks = planTasks.filter(t => t.bucket_name === bucket);
+                const color = bucketColors[bucket] || '#8B949E';
+                boardsHtml += `<div style="background:#0D1117;border-radius:6px;padding:12px;border-top:3px solid ${color}">
+                    <div style="font-size:12px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">${bucket} <span style="opacity:0.6">${bTasks.length}</span></div>`;
+                for (const t of bTasks) {
+                    const isOverdue = t.due_date && t.due_date < today;
+                    const dueStr = t.due_date ? t.due_date : '';
+                    boardsHtml += `<div style="background:#161B22;border:1px solid #21262D;border-radius:4px;padding:10px;margin-bottom:8px;font-size:12px">
+                        <div style="font-weight:500;color:#E6EDF3;margin-bottom:4px">${t.title}</div>
+                        <div style="color:#8B949E;display:flex;justify-content:space-between">
+                            <span>${t.assignee_name || '\u2013'}</span>
+                            <span style="color:${isOverdue ? '#F85149' : '#8B949E'}">${dueStr}</span>
+                        </div>
+                    </div>`;
+                }
+                boardsHtml += '</div>';
+            }
+            boardsHtml += '</div></div>';
+        }
+        document.getElementById('planner-boards').innerHTML = boardsHtml;
+
+        // Task table (all tasks)
+        const priorityLabel = {0:'Akut',1:'Viktig',2:'Medium',3:'L\u00e5g',5:'L\u00e5g',9:'L\u00e5g'};
+        const priorityColor = {0:'#F85149',1:'#F97316',2:'#D29922',3:'#8B949E',5:'#8B949E',9:'#8B949E'};
+        let rows = PLANNER.sort((a,b) => {
+            if (a.percent_complete !== b.percent_complete) return a.percent_complete - b.percent_complete;
+            if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+            return a.due_date ? -1 : 1;
+        });
+        let tbl = `<table class="deals-table"><thead><tr>
+            <th>Uppgift</th><th>Plan</th><th>Bucket</th><th>Ansvarig</th>
+            <th>F\u00f6rfall</th><th>Prioritet</th><th>Status</th>
+        </tr></thead><tbody>`;
+        for (const t of rows) {
+            const isOverdue = t.due_date && t.due_date < today && t.percent_complete < 100;
+            const statusTag = t.percent_complete === 100
+                ? '<span class="tag" style="background:rgba(63,185,80,0.15);color:#3FB950">Klar</span>'
+                : t.percent_complete === 50
+                    ? '<span class="tag" style="background:rgba(88,166,255,0.15);color:#58A6FF">P\u00e5g\u00e5r</span>'
+                    : '<span class="tag" style="background:rgba(139,148,158,0.15);color:#8B949E">Ej startad</span>';
+            const prio = t.priority || 1;
+            const prioTag = `<span style="color:${priorityColor[prio] || '#8B949E'}">${priorityLabel[prio] || '\u2013'}</span>`;
+            tbl += `<tr style="${t.percent_complete===100?'opacity:0.5':''}">
+                <td style="font-weight:500;max-width:300px">${t.title}</td>
+                <td style="font-size:11px;color:#8B949E">${t.plan_name}</td>
+                <td><span class="tag" style="background:rgba(${
+                    t.bucket_name === 'Blockerat' ? '248,81,73' :
+                    t.bucket_name === 'P\u00e5g\u00e5r' ? '88,166,255' :
+                    t.bucket_name === 'Klart' ? '63,185,80' : '139,148,158'
+                },0.15);color:${
+                    t.bucket_name === 'Blockerat' ? '#F85149' :
+                    t.bucket_name === 'P\u00e5g\u00e5r' ? '#58A6FF' :
+                    t.bucket_name === 'Klart' ? '#3FB950' : '#8B949E'
+                }">${t.bucket_name}</span></td>
+                <td>${t.assignee_name || '\u2013'}</td>
+                <td style="color:${isOverdue ? '#F85149' : '#E6EDF3'};font-weight:${isOverdue ? '600' : '400'}">${t.due_date || '\u2013'}${isOverdue ? ' \u26a0' : ''}</td>
+                <td>${prioTag}</td>
+                <td>${statusTag}</td>
+            </tr>`;
+        }
+        tbl += '</tbody></table>';
+        document.getElementById('planner-table').innerHTML = tbl;
+    }
+    renderPlanner();
+    renderNext();
+    renderNextVsFnx();
+    renderCrmNextUnified();
+
+
+// ═══════════════════════════════════════════════════════════
+// NEXT SECTION
+// ═══════════════════════════════════════════════════════════
+
+function nextStatusBadge(status, code) {
+    const STATUS_COLOR = {10:'#8B949E',5:'#F97316',40:'#D29922',50:'#58A6FF',60:'#3FB950',85:'#a371f7',90:'#6E7681',1:'#30363D',0:'#6E7681'};
+    const STATUS_BG    = {10:'rgba(139,148,158,0.15)',5:'rgba(249,115,22,0.15)',40:'rgba(210,153,34,0.15)',50:'rgba(88,166,255,0.15)',60:'rgba(63,185,80,0.15)',85:'rgba(163,113,247,0.15)',90:'rgba(110,118,129,0.15)',1:'rgba(48,54,61,0.5)',0:'rgba(110,118,129,0.1)'};
+    if (!status || status === 'Okänd') return '<span style="color:#6E7681;font-size:11px">—</span>';
+    const c = STATUS_COLOR[code] || '#8B949E';
+    const b = STATUS_BG[code]   || 'rgba(139,148,158,0.15)';
+    return '<span class="tag" style="background:'+b+';color:'+c+';font-size:11px">'+status+'</span>';
+}
+
+function renderNext() {
+    if (!NEXT_PROJECTS || NEXT_PROJECTS.length === 0) return;
+
+    const STATUS_COLOR = {
+        10: '#8B949E', // NY
+        5:  '#F97316', // Anbud
+        40: '#D29922', // Beställt
+        50: '#58A6FF', // Pågående
+        60: '#3FB950', // Utfört
+        85: '#a371f7', // Garanti
+        90: '#6E7681', // Avslutat
+        1:  '#30363D',  // Admin
+    };
+    const STATUS_BG = {
+        10: 'rgba(139,148,158,0.15)',
+        5:  'rgba(249,115,22,0.15)',
+        40: 'rgba(210,153,34,0.15)',
+        50: 'rgba(88,166,255,0.15)',
+        60: 'rgba(63,185,80,0.15)',
+        85: 'rgba(163,113,247,0.15)',
+        90: 'rgba(110,118,129,0.15)',
+        1:  'rgba(48,54,61,0.5)',
+    };
+
+    const active   = NEXT_PROJECTS.filter(p => p.status_code === 50);
+    const anbud    = NEXT_PROJECTS.filter(p => p.status_code === 5);
+    const bestalt  = NEXT_PROJECTS.filter(p => p.status_code === 40);
+    const avslutat = NEXT_PROJECTS.filter(p => p.status_code === 90);
+
+    // Badge
+    const countBadge = document.getElementById('next-count-badge');
+    if (countBadge) countBadge.textContent = `${active.length} pågående`;
+
+    // KPI cards
+    const kpiGrid = document.getElementById('next-kpis');
+    if (kpiGrid) {
+        kpiGrid.innerHTML = [
+            { label: 'Pågående projekt', value: active.length, color: '#58A6FF' },
+            { label: 'Anbud',            value: anbud.length,  color: '#F97316' },
+            { label: 'Beställt',         value: bestalt.length, color: '#D29922' },
+            { label: 'Arbetsorder tot.', value: NEXT_WORKORDERS.length, color: '#3FB950' },
+        ].map(k => `
+            <div class="kpi-card">
+                <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+                <div class="kpi-label">${k.label}</div>
+            </div>
+        `).join('');
+    }
+
+    // Table builder
+    function buildTable(projects) {
+        if (!projects.length) return '<p style="color:#6E7681;padding:12px">Inga projekt</p>';
+        const rows = projects.map(p => {
+            const c = STATUS_COLOR[p.status_code] || '#8B949E';
+            const b = STATUS_BG[p.status_code]   || 'rgba(139,148,158,0.15)';
+            const wos = NEXT_WORKORDERS.filter(w => w.project_id === p.project_id);
+            const woBadge = wos.length > 1 
+                ? `<span class="tag" style="background:rgba(139,148,158,0.15);color:#8B949E;font-size:10px;margin-left:4px">${wos.length} AO</span>`
+                : '';
+            return `<tr>
+                <td style="color:#8B949E;font-size:12px;white-space:nowrap">${p.project_no}</td>
+                <td style="font-weight:500">${p.project_name}${woBadge}</td>
+                <td><span class="tag" style="background:${b};color:${c}">${p.status_name}</span></td>
+            </tr>`;
+        }).join('');
+        return `<table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr>
+                <th style="text-align:left;padding:8px 12px 8px 0;color:#6E7681;font-weight:500;border-bottom:1px solid #21262D;white-space:nowrap">Projektnr</th>
+                <th style="text-align:left;padding:8px 12px;color:#6E7681;font-weight:500;border-bottom:1px solid #21262D">Projektnamn</th>
+                <th style="text-align:left;padding:8px 0 8px 12px;color:#6E7681;font-weight:500;border-bottom:1px solid #21262D">Status</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    const activeTable = document.getElementById('next-table');
+    if (activeTable) activeTable.innerHTML = buildTable(active);
+
+    const allTable = document.getElementById('next-all-table');
+    if (allTable) {
+        const visible = NEXT_PROJECTS.filter(p => p.status_code !== 1 && p.status_code !== 10);
+        allTable.innerHTML = buildTable(visible);
+    }
+}
+
+</script>
+</body>
+</html>

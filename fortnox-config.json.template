@@ -1,0 +1,7 @@
+{
+  "client_id": "DITT_CLIENT_ID",
+  "client_secret": "DITT_CLIENT_SECRET",
+  "access_token": "INITIAL_TOKEN_EFTER_OAUTH",
+  "refresh_token": "INITIAL_REFRESH_TOKEN",
+  "token_expires": "2026-01-01T00:00:00"
+}

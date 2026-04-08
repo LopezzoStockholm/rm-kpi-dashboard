@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM Entreprenad och Fasad — Launchpad</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 20px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+
+        .header-date {
+            font-size: 14px;
+            color: #8b949e;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .header-links a {
+            font-size: 13px;
+            color: #58a6ff;
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .header-links a:hover {
+            border-color: #58a6ff;
+            background-color: rgba(88, 166, 255, 0.1);
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 12px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .kpi-card:hover {
+            border-color: #58a6ff;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #58a6ff;
+            margin-bottom: 8px;
+        }
+
+        .kpi-detail {
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        /* Actions */
+        .actions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .action-item {
+            background-color: #161b22;
+            border-left: 3px solid;
+            border-radius: 4px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .action-item.critical {
+            border-left-color: #f85149;
+            background-color: rgba(248, 81, 73, 0.05);
+        }
+
+        .action-item.warning {
+            border-left-color: #d29922;
+            background-color: rgba(210, 153, 34, 0.05);
+        }
+
+        .action-item.info {
+            border-left-color: #58a6ff;
+            background-color: rgba(88, 166, 255, 0.05);
+        }
+
+        .action-item:hover {
+            border-color: #30363d;
+        }
+
+        .action-text {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .action-link {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 12px;
+            color: #8b949e;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .action-link:hover {
+            color: #58a6ff;
+            background-color: #30363d;
+        }
+
+        /* Tasks */
+        .tasks-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #3fb950;
+        }
+
+        .task-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .task-title {
+            font-size: 13px;
+            color: #c9d1d9;
+            font-weight: 500;
+        }
+
+        .task-item input[type="checkbox"]:checked ~ .task-content .task-title {
+            color: #8b949e;
+            text-decoration: line-through;
+        }
+
+        .task-meta {
+            font-size: 11px;
+            color: #8b949e;
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .add-task-btn {
+            background-color: #238636;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 12px;
+        }
+
+        .add-task-btn:hover {
+            background-color: #2ea043;
+        }
+
+        .add-task-form {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .add-task-form.visible {
+            display: block;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: #8b949e;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .form-actions button {
+            flex: 1;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .form-actions .submit {
+            background-color: #238636;
+            color: #fff;
+        }
+
+        .form-actions .submit:hover {
+            background-color: #2ea043;
+        }
+
+        .form-actions .cancel {
+            background-color: #30363d;
+            color: #c9d1d9;
+        }
+
+        .form-actions .cancel:hover {
+            background-color: #3d444d;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            border-bottom: 1px solid #30363d;
+            padding: 12px;
+            color: #c9d1d9;
+        }
+
+        tr:hover {
+            background-color: rgba(88, 166, 255, 0.05);
+        }
+
+        .tb1-positive {
+            color: #3fb950;
+            font-weight: 600;
+        }
+
+        .tb1-negative {
+            color: #f85149;
+            font-weight: 600;
+        }
+
+        /* Stage badges */
+        .stage-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stage-INKOMMIT { background-color: #8b949e; color: #0d1117; }
+        .stage-KALKYL { background-color: #58a6ff; color: #0d1117; }
+        .stage-OFFERT_SKICKAD { background-color: #d29922; color: #0d1117; }
+        .stage-FORHANDLING { background-color: #f0883e; color: #0d1117; }
+        .stage-KONTRAKTERAT { background-color: #3fb950; color: #0d1117; }
+        .stage-LEVERANS { background-color: #a371f7; color: #0d1117; }
+        .stage-FAKTURERAT { background-color: #56d364; color: #0d1117; }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #8b949e;
+            border: 1px solid #30363d;
+            margin-left: 6px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 16px 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #8b949e;
+            margin-top: 40px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-links {
+                flex-direction: column;
+            }
+
+            .kpi-value {
+                font-size: 24px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        /* Link styling */
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div>
+                <div class="header-title">RM Entreprenad och Fasad — Daniel Lopez</div>
+                <div class="header-date" id="currentDate"></div>
+            </div>
+            <div class="header-links">
+                <a href="http://161.35.79.92:3001" target="_blank">Twenty CRM</a>
+                <a href="https://project.next-tech.com/301821/client/" target="_blank">Next</a>
+                <a href="https://apps2.fortnox.se" target="_blank">Fortnox</a>
+                <a href="https://dashboard.rmef.se" target="_blank">Dashboard</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- KPI Section -->
+        <section>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Pipeline (viktat)</div>
+                    <div class="kpi-value" id="kpi-pipeline">78,4 Mkr</div>
+                    <div class="kpi-detail">av 212 Mkr totalt</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">TB1 denna månad</div>
+                    <div class="kpi-value" id="kpi-tb1" style="color: #3fb950;">2,1 Mkr</div>
+                    <div class="kpi-detail">Marginal 13,1%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Kundfordringar</div>
+                    <div class="kpi-value" id="kpi-receivables">1,9 Mkr</div>
+                    <div class="kpi-detail">Riskviktat: 1,4 Mkr</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Leverantörsskulder</div>
+                    <div class="kpi-value" id="kpi-payables">1,5 Mkr</div>
+                    <div class="kpi-detail">Aktuell likviditet OK</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions Section -->
+        <section>
+            <div class="section-title">Kräver åtgärd</div>
+            <div class="actions-list" id="actions-list"></div>
+        </section>
+
+        <!-- Tasks Section -->
+        <section>
+            <div class="section-title">Mina uppgifter</div>
+            <div class="tasks-container" id="tasks-container"></div>
+            <button class="add-task-btn" onclick="toggleAddTaskForm()">+ Lägg till uppgift</button>
+            <div class="add-task-form" id="add-task-form">
+                <div class="form-group">
+                    <label>Uppgift</label>
+                    <input type="text" id="task-title-input" placeholder="Beskrivning av uppgift">
+                </div>
+                <div class="form-group">
+                    <label>Förfallodatum (valfritt)</label>
+                    <input type="date" id="task-date-input">
+                </div>
+                <div class="form-actions">
+                    <button class="submit" onclick="addTask()">Lägg till</button>
+                    <button class="cancel" onclick="toggleAddTaskForm()">Avbryt</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section>
+            <div class="section-title">Projektöversikt</div>
+            <div class="table-wrapper">
+                <table id="projects-table">
+                    <thead>
+                        <tr>
+                            <th>Projekt</th>
+                            <th>Projektledare</th>
+                            <th>Intäkter</th>
+                            <th>Kostnader</th>
+                            <th>TB1</th>
+                            <th>Fakturor K/L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projects-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Top Deals Section -->
+        <section>
+            <div class="section-title">Topp 5 pipeline</div>
+            <div class="table-wrapper">
+                <table id="deals-table">
+                    <thead>
+                        <tr>
+                            <th>Affär</th>
+                            <th>Scen</th>
+                            <th>Värde</th>
+                            <th>Viktat värde</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deals-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div>Senast uppdaterad: <span id="last-updated"></span> — Launchpad v1.0</div>
+    </footer>
+
+    <script>
+        const TOKEN = "daniel-vd-2026";
+        const API_BASE = "";
+        const FORTNOX_APP = "https://apps2.fortnox.se";
+        const FORTNOX_APP_ID = "2bd638f7823044a78a46f397eee7f8b9";
+        const TWENTY_BASE = "http://161.35.79.92:3001";
+
+        let TASKS = [];
+
+        // ---- helpers ----
+        function fmt(amount) {
+            const abs = Math.abs(amount);
+            const sign = amount < 0 ? "-" : "";
+            if (abs >= 1000000) return sign + (abs / 1000000).toFixed(1).replace(".", ",") + " Mkr";
+            if (abs >= 1000) return sign + Math.round(abs / 1000) + " tkr";
+            return sign + Math.round(abs).toLocaleString("sv-SE") + " kr";
+        }
+
+        function daysBetween(dateStr) {
+            const d = new Date(dateStr);
+            const now = new Date();
+            return Math.floor((now - d) / 86400000);
+        }
+
+        function getCurrentDate() {
+            const s = new Date().toLocaleDateString("sv-SE", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        async function apiFetch(path) {
+            const res = await fetch(API_BASE + path, {headers: {"X-Portal-Token": TOKEN}});
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+            return res.json();
+        }
+
+        // ---- init ----
+        async function init() {
+            document.getElementById("currentDate").textContent = getCurrentDate();
+            document.getElementById("last-updated").textContent = new Date().toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"});
+
+            try {
+                const [kpis, actions, tasks, projects, deals] = await Promise.all([
+                    apiFetch("/api/kpis"),
+                    apiFetch("/api/actions"),
+                    apiFetch("/api/tasks"),
+                    apiFetch("/api/projects"),
+                    apiFetch("/api/deals"),
+                ]);
+                renderKPIs(kpis);
+                renderActions(actions);
+                TASKS = (tasks.tasks || []).map(t => ({id: t.id, title: t.title, done: t.status === "DONE", due: t.dueAt, deal: t.deal_names || ""}));
+                renderTasks();
+                renderProjects(projects.projects || []);
+                renderDeals((deals.deals || []).slice(0, 5));
+            } catch (e) {
+                console.error("API error:", e);
+                document.getElementById("actions-list").innerHTML = '<div class="action-item critical"><div class="action-text">Kunde inte ladda data: ' + e.message + '</div></div>';
+            }
+        }
+
+        // ---- KPIs ----
+        function renderKPIs(k) {
+            document.getElementById("kpi-pipeline").textContent = fmt(k.pipeline_weighted);
+            document.querySelector("#kpi-pipeline + .kpi-detail").textContent = "av " + fmt(k.pipeline_total) + " totalt (" + k.deal_count + " affarer)";
+
+            const tb1El = document.getElementById("kpi-tb1");
+            tb1El.textContent = fmt(k.tb1);
+            tb1El.style.color = k.tb1 >= 0 ? "#3fb950" : "#f85149";
+            document.querySelector("#kpi-tb1 + .kpi-detail").textContent = "Marginal " + k.tb1_margin + "%";
+
+            document.getElementById("kpi-receivables").textContent = fmt(k.receivables);
+            document.getElementById("kpi-payables").textContent = fmt(k.payables);
+        }
+
+        // ---- actions ----
+        function renderActions(data) {
+            const list = document.getElementById("actions-list");
+            list.innerHTML = "";
+            const items = [];
+
+            (data.overdue_invoices || []).forEach(inv => {
+                const days = daysBetween(inv.due_date);
+                const severity = days > 60 ? "critical" : "warning";
+                const daysText = days > 30 ? Math.round(days/30) + " man" : days + " dgr";
+                items.push({severity, text: `Faktura ${inv.fortnox_id} ${inv.customer_name} — forfall ${daysText}, ${fmt(inv.balance)}`, link: FORTNOX_APP + "/app/" + FORTNOX_APP_ID + "/kf/invoice/" + inv.fortnox_id});
+            });
+
+            (data.overdue_supplier_invoices || []).forEach(inv => {
+                const days = daysBetween(inv.due_date);
+                if (days > 30) {
+                    items.push({severity: "warning", text: `Lev.faktura ${inv.fortnox_id} ${inv.supplier_name} — forfall ${Math.round(days/30)} man, ${fmt(inv.balance)}`, link: FORTNOX_APP + "/app/" + FORTNOX_APP_ID + "/lf/supplierinvoice/" + inv.fortnox_id});
+                }
+            });
+
+            (data.deals_in_forhandling || []).forEach(d => {
+                items.push({severity: "info", text: `${d.name} ${fmt(d.calculated_value)} — i Forhandling`, link: TWENTY_BASE + "/object/opportunity/" + d.id});
+            });
+
+            (data.negative_tb1_projects || []).forEach(p => {
+                items.push({severity: "warning", text: `${p.project_name}: TB1 ${fmt(p.tb1)} (${p.project_leader})`, link: "https://dashboard.rmef.se"});
+            });
+
+            items.sort((a,b) => {const ord = {critical:0,warning:1,info:2}; return (ord[a.severity]||9) - (ord[b.severity]||9);});
+
+            items.forEach(action => {
+                const item = document.createElement("div");
+                item.className = "action-item " + action.severity;
+                item.innerHTML = '<div class="action-text">' + action.text + '</div><a href="' + action.link + '" target="_blank" class="action-link" title="Oppna">&#x2197;</a>';
+                list.appendChild(item);
+            });
+
+            if (items.length === 0) {
+                list.innerHTML = '<div class="action-item info"><div class="action-text">Inga akuta atgarder just nu</div></div>';
+            }
+        }
+
+        // ---- tasks ----
+        function renderTasks() {
+            const c = document.getElementById("tasks-container");
+            c.innerHTML = "";
+            TASKS.forEach(task => {
+                const item = document.createElement("div");
+                item.className = "task-item" + (task.done ? " completed" : "");
+                let meta = "";
+                if (task.due) meta += "Forfallodatum: " + new Date(task.due).toLocaleDateString("sv-SE");
+                if (task.deal) meta += (meta ? " | " : "") + task.deal;
+                item.innerHTML = '<input type="checkbox" ' + (task.done ? "checked" : "") + ' onchange="toggleTask(\'' + task.id + '\')">' +
+                    '<div class="task-content"><div class="task-title">' + task.title + '</div>' +
+                    (meta ? '<div class="task-meta">' + meta + '</div>' : '') + '</div>';
+                c.appendChild(item);
+            });
+            if (TASKS.length === 0) {
+                c.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">Inga uppgifter</div>';
+            }
+        }
+
+        async function toggleTask(taskId) {
+            const task = TASKS.find(t => t.id === taskId);
+            if (!task) return;
+            if (!task.done) {
+                try {
+                    await fetch(API_BASE + "/api/task/done", {
+                        method: "POST",
+                        headers: {"Content-Type":"application/json","X-Portal-Token":TOKEN},
+                        body: JSON.stringify({task_id: taskId})
+                    });
+                    task.done = true;
+                } catch(e) { console.error(e); }
+            }
+            renderTasks();
+        }
+
+        function toggleAddTaskForm() {
+            const form = document.getElementById("add-task-form");
+            form.classList.toggle("visible");
+            if (form.classList.contains("visible")) document.getElementById("task-title-input").focus();
+        }
+
+        async function addTask() {
+            const title = document.getElementById("task-title-input").value.trim();
+            const dateStr = document.getElementById("task-date-input").value;
+            if (!title) return;
+
+            try {
+                const res = await fetch(API_BASE + "/api/task/create", {
+                    method: "POST",
+                    headers: {"Content-Type":"application/json","X-Portal-Token":TOKEN},
+                    body: JSON.stringify({title, due: dateStr || null})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    TASKS.push({id: data.task.id, title: data.task.title, done: false, due: dateStr || null, deal: ""});
+                    document.getElementById("task-title-input").value = "";
+                    document.getElementById("task-date-input").value = "";
+                    toggleAddTaskForm();
+                    renderTasks();
+                }
+            } catch(e) { console.error(e); alert("Kunde inte skapa uppgift"); }
+        }
+
+        // ---- projects ----
+        function renderProjects(projects) {
+            const tbody = document.getElementById("projects-tbody");
+            tbody.innerHTML = "";
+            projects.forEach(p => {
+                const row = document.createElement("tr");
+                const tb1 = p.tb1 || 0;
+                const revenue = p.revenue || 0;
+                const costs = p.costs || 0;
+                const margin = revenue > 0 ? ((tb1 / revenue) * 100).toFixed(1) : (tb1 < 0 ? "neg" : "0");
+                const cls = tb1 >= 0 ? "tb1-positive" : "tb1-negative";
+                row.innerHTML = '<td><a href="https://project.next-tech.com/301821/client/" target="_blank">' + (p.group_name||"Okant") + '</a></td>' +
+                    '<td>' + (p.leaders||"-") + '</td>' +
+                    '<td>' + fmt(revenue) + '</td>' +
+                    '<td>' + fmt(costs) + '</td>' +
+                    '<td class="' + cls + '">' + fmt(tb1) + ' (' + margin + '%)</td>' +
+                    '<td>' + (p.invoices||0) + '/' + (p.supplier_invoices||0) + '</td>';
+                tbody.appendChild(row);
+            });
+        }
+
+        // ---- deals ----
+        function renderDeals(deals) {
+            const tbody = document.getElementById("deals-tbody");
+            tbody.innerHTML = "";
+            deals.forEach(d => {
+                const row = document.createElement("tr");
+                const stage = d.stage || "OKANT";
+                row.innerHTML = '<td><a href="' + TWENTY_BASE + '/object/opportunity/' + d.id + '" target="_blank">' + (d.name||"Okand") + '</a></td>' +
+                    '<td><span class="stage-badge stage-' + stage + '">' + stage.replace("_"," ") + '</span></td>' +
+                    '<td>' + fmt(d.estimated_value || 0) + '</td>' +
+                    '<td>' + fmt(d.calculated_value || 0) + '</td>';
+                tbody.appendChild(row);
+            });
+        }
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>

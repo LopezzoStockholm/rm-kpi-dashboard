@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RM Bolagsstyrning</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav a {
+      color: #8b949e;
+      text-decoration: none;
+      padding: 16px 16px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    nav a:first-child {
+      color: #f0f6fc;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 16px 24px 16px 0;
+      border-right: 1px solid #30363d;
+      margin-right: 8px;
+    }
+
+    nav a.active {
+      color: #f0f6fc;
+      border-bottom-color: #3b82f6;
+    }
+
+    nav a:not(:first-child):hover {
+      color: #f0f6fc;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 24px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .kpi-label {
+      color: #8b949e;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      color: #f0f6fc;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .kpi-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .kpi-meta-label {
+      color: #8b949e;
+    }
+
+    .kpi-trend {
+      font-weight: 600;
+    }
+
+    .trend-positive { color: #10b981; }
+    .trend-warning { color: #f59e0b; }
+    .trend-alert { color: #ef4444; }
+
+    .kpi-highlight {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .highlight-green { background: #10b981; }
+    .highlight-warning { background: #f59e0b; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin: 32px 0 16px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .chart-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 32px;
+      height: 350px;
+      position: relative;
+    }
+
+    .chart-title {
+      color: #f0f6fc;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: calc(100% - 35px);
+    }
+
+    .tabs {
+      display: flex;
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 12px 16px;
+      background: transparent;
+      color: #8b949e;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-right: 1px solid #30363d;
+      transition: all 0.2s;
+    }
+
+    .tab-button:last-child {
+      border-right: none;
+    }
+
+    .tab-button.active {
+      background: #0d1117;
+      color: #f0f6fc;
+      border-bottom: 2px solid #3b82f6;
+    }
+
+    .tab-button:hover {
+      color: #f0f6fc;
+    }
+
+    .table-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .table-header {
+      background: #161b22;
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .table-header h3 {
+      color: #f0f6fc;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #161b22;
+      color: #8b949e;
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    tbody td {
+      padding: 12px 20px;
+      border-bottom: 1px solid #30363d;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+
+    tbody tr:hover {
+      background: #0d1117;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    .status-bankrupt {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .risk-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .risk-content {
+      flex: 1;
+    }
+
+    .risk-title {
+      color: #f0f6fc;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .risk-description {
+      color: #8b949e;
+      font-size: 12px;
+    }
+
+    .risk-level {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .risk-critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .risk-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+
+    .risk-info {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    footer {
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      padding: 16px;
+      text-align: center;
+      color: #8b949e;
+      font-size: 11px;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">RM Entreprenad och Fasad</a>
+    <a href="index.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Oversikt</a>
+    <a href="ekonomi.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Ekonomi</a>
+    <a href="drift.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Drift &amp; Projekt</a>
+    <a href="fastighet.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Fastighet</a>
+    <a href="bolagsstyrning.html" class="active" style="padding:16px 16px;color:#f0f6fc;text-decoration:none;border-bottom:2px solid #3b82f6;">Bolagsstyrning</a>
+    <a href="personal.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Min sida</a>
+  </nav>
+
+  <div class="container">
+    <h1 class="page-title">Bolagsstyrning & Koncernöversikt</h1>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-highlight highlight-green"></div>
+        <div class="kpi-label">Aktiva bolag</div>
+        <div class="kpi-value">9</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">RM: 5 | NKP: 4</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-highlight highlight-green"></div>
+        <div class="kpi-label">Koncernomsattning YTD</div>
+        <div class="kpi-value">24.8 MSEK</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">RM 18.2 | NKP 6.6</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Kassaposition koncern</div>
+        <div class="kpi-value">2.1 MSEK</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">RM 1.4 | NKP 0.7</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-highlight highlight-warning"></div>
+        <div class="kpi-label">Bolag under bevakning</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">RE, NKP-koncernen</span>
+          <span class="kpi-trend trend-warning">Risk</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Skuldsattningsgrad</div>
+        <div class="kpi-value">68%</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">Koncern totalt</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Omsattning per Bolag</h2>
+
+    <div class="chart-card">
+      <div class="chart-title">Finansiell fordelning</div>
+      <div class="chart-container">
+        <canvas id="chartRevenue"></canvas>
+      </div>
+    </div>
+
+    <h2 class="section-title">Bolagsstruktur</h2>
+
+    <div class="tabs">
+      <button class="tab-button active" onclick="switchTab('alla')">Alla</button>
+      <button class="tab-button" onclick="switchTab('rm')">RM-koncernen</button>
+      <button class="tab-button" onclick="switchTab('nkp')">NKP-koncernen</button>
+    </div>
+
+    <div id="alla" class="tab-content active table-card">
+      <div class="table-header">
+        <h3>Alla Bolag</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bolag</th>
+            <th>Koncern</th>
+            <th>Roll</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lopezzo Holding AB</td>
+            <td>RM</td>
+            <td>Moderbolag</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Lopez Invest & Consulting AB</td>
+            <td>RM</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Boeno Markforadling AB</td>
+            <td>RM</td>
+            <td>Markutveckling</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Roslag Fastighetsutveckling AB</td>
+            <td>RM</td>
+            <td>Fastigheter</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>RM Entreprenad och Fasad</td>
+            <td>RM</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Rosersberg Entreprenad AB</td>
+            <td>RM</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-bankrupt">Konkurs</span></td>
+          </tr>
+          <tr>
+            <td>NKMMB Holding AB</td>
+            <td>NKP</td>
+            <td>Moderbolag</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>NKMMB Forvaltning AB</td>
+            <td>NKP</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>NKP 1 AB</td>
+            <td>NKP</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Nordklippan Fastigheter AB</td>
+            <td>NKP</td>
+            <td>Fastigheter</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="rm" class="tab-content table-card">
+      <div class="table-header">
+        <h3>RM-koncernen</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bolag</th>
+            <th>Roll</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lopezzo Holding AB</td>
+            <td>Moderbolag</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Lopez Invest & Consulting AB</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Boeno Markforadling AB</td>
+            <td>Markutveckling</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Roslag Fastighetsutveckling AB</td>
+            <td>Fastigheter</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>RM Entreprenad och Fasad</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Rosersberg Entreprenad AB</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-bankrupt">Konkurs</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="nkp" class="tab-content table-card">
+      <div class="table-header">
+        <h3>NKP-koncernen</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bolag</th>
+            <th>Roll</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>NKMMB Holding AB</td>
+            <td>Moderbolag</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>NKMMB Forvaltning AB</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>NKP 1 AB</td>
+            <td>Operativt</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+          <tr>
+            <td>Nordklippan Fastigheter AB</td>
+            <td>Fastigheter</td>
+            <td><span class="status-badge status-active">Aktivt</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="section-title">Koncernrisker</h2>
+
+    <div class="risk-card">
+      <div class="risk-content">
+        <div class="risk-title">Rosersberg Entreprenad — Konkurs</div>
+        <div class="risk-description">Juridisk process pagaende</div>
+      </div>
+      <span class="risk-level risk-critical">Kritisk</span>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-content">
+        <div class="risk-title">NKP-koncernen — Transaktionsplan</div>
+        <div class="risk-description">Fas 2 startar Q2 2026</div>
+      </div>
+      <span class="risk-level risk-critical">Kritisk</span>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-content">
+        <div class="risk-title">Narstaendetransaktioner RM/NKP</div>
+        <div class="risk-description">Strukturering pagaende</div>
+      </div>
+      <span class="risk-level risk-warning">Varning</span>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-content">
+        <div class="risk-title">3:12-regler — Arlig review</div>
+        <div class="risk-description">Skatteplanering alla koncerner</div>
+      </div>
+      <span class="risk-level risk-info">Info</span>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-content">
+        <div class="risk-title">Kapitalbehov NKP</div>
+        <div class="risk-description">Omfinansieringsplan under arbete</div>
+      </div>
+      <span class="risk-level risk-info">Info</span>
+    </div>
+
+    <h2 class="section-title">Styrelsuppgifter</h2>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Aktuella Uppgifter</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Uppgift</th>
+            <th>Koncern</th>
+            <th>Ansvarig</th>
+            <th>Deadline</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Arsredovisning LH 2025</td>
+            <td>RM</td>
+            <td>Daniel</td>
+            <td>30 april 2026</td>
+            <td><span class="status-badge status-active">Pagar</span></td>
+          </tr>
+          <tr>
+            <td>Skatteutjamning 3:12</td>
+            <td>RM</td>
+            <td>Revisor</td>
+            <td>15 maj 2026</td>
+            <td><span class="status-badge status-active">Planerad</span></td>
+          </tr>
+          <tr>
+            <td>Kapitalstruktur-review</td>
+            <td>Alla</td>
+            <td>Daniel</td>
+            <td>15 april 2026</td>
+            <td><span class="status-badge status-active">Pagar</span></td>
+          </tr>
+          <tr>
+            <td>Styrelsemote NKMMB</td>
+            <td>NKP</td>
+            <td>Daniel</td>
+            <td>10 april 2026</td>
+            <td><span class="status-badge status-active">Inplanerat</span></td>
+          </tr>
+          <tr>
+            <td>Transaktionsplan NKP1 fas 2</td>
+            <td>NKP</td>
+            <td>Daniel / Helena</td>
+            <td>1 maj 2026</td>
+            <td><span class="status-badge status-active">Pagar</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <p>RM Bolagsstyrning — 25 mars 2026</p>
+  </footer>
+
+  <script>
+    function switchTab(tabName) {
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(content => content.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons.forEach(button => button.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    // Revenue by company
+    new Chart(document.getElementById('chartRevenue'), {
+      type: 'bar',
+      data: {
+        labels: ['RM Entreprenad och Fasad', 'NKP 1 AB', 'NKMMB Forvaltning', 'Boeno Markforadling', 'Lopez Invest', 'Nordklippan Fastigheter', 'Roslag Fastighetsutveckling'],
+        datasets: [{
+          label: 'Omsattning YTD (MSEK)',
+          data: [15.7, 3.8, 2.1, 1.2, 0.8, 0.7, 0.3],
+          backgroundColor: ['#3b82f6', '#8b5cf6', '#8b5cf6', '#3b82f6', '#3b82f6', '#8b5cf6', '#3b82f6'],
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#8b949e', font: { size: 11 } }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#30363d', drawBorder: false },
+            ticks: { color: '#8b949e', font: { size: 11 } }
+          },
+          y: {
+            grid: { color: '#30363d', drawBorder: false },
+            ticks: { color: '#8b949e', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

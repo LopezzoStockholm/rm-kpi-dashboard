@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl gnupg lsb-release libpq-dev gcc && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends docker-ce-cli && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir fastapi "uvicorn[standard]" psycopg2-binary reportlab
+
+COPY portal_api.py rm_data.py ata_router.py scaling_router.py meeting_router.py productivity_router.py finance_router.py pipeline_project_router.py ata_approval.py ata_pdf_archive.py simulation_router.py simulation_engine.py sim_ccc.py sim_project.py sim_capacity.py sim_financing.py time_router.py project_chain_router.py task_hub_router.py ./
+
+EXPOSE 8090
+
+CMD ["uvicorn", "portal_api:app", "--host", "0.0.0.0", "--port", "8090", "--workers", "2"]

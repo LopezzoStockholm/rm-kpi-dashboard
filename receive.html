@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>RM Prospekteringsagent — Resultat</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0D1117; color: #c9d1d9;
+    padding: 40px; max-width: 800px; margin: 0 auto;
+}
+h1 { color: #58a6ff; font-size: 1.3em; margin-bottom: 20px; }
+.stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin-bottom: 20px;
+}
+.stat {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 16px; text-align: center;
+}
+.stat .val { font-size: 2em; font-weight: 700; color: #58a6ff; }
+.stat .lbl { font-size: 0.75em; color: #8b949e; margin-top: 4px; }
+.log {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 16px; font-family: 'SF Mono', monospace; font-size: 0.85em;
+    max-height: 400px; overflow-y: auto; line-height: 1.6;
+}
+.ok { color: #3fb950; } .warn { color: #d29922; } .err { color: #f85149; } .info { color: #8b949e; }
+</style>
+</head>
+<body>
+<h1>RM Prospekteringsagent — Resultat</h1>
+<div class="stats">
+    <div class="stat"><div class="val" id="s1">-</div><div class="lbl">Mottagna</div></div>
+    <div class="stat"><div class="val" id="s2" style="color:#3fb950">-</div><div class="lbl">Nya leads</div></div>
+    <div class="stat"><div class="val" id="s3" style="color:#d29922">-</div><div class="lbl">Dubbletter</div></div>
+    <div class="stat"><div class="val" id="s4" style="color:#f85149">-</div><div class="lbl">Fel</div></div>
+</div>
+<div class="log" id="log"></div>
+
+<script>
+const API_KEY = 'rm-combify-2026';
+const logEl = document.getElementById('log');
+
+function log(msg, cls) {
+    logEl.innerHTML += `<div class="${cls||'info'}">${new Date().toLocaleTimeString('sv-SE')} ${msg}</div>`;
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function process() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) {
+        log('Ingen data mottagen. Kör bookmarkleten på map.combify.com först.', 'warn');
+        return;
+    }
+
+    let leads;
+    try {
+        leads = JSON.parse(decodeURIComponent(escape(atob(hash))));
+    } catch(e) {
+        log('Kunde inte avkoda leads-data: ' + e.message, 'err');
+        return;
+    }
+
+    log(`Mottog ${leads.length} leads från Combify relay`, 'ok');
+    document.getElementById('s1').textContent = leads.length;
+
+    // Show top leads
+    const topLeads = leads.slice(0, 5);
+    for (const l of topLeads) {
+        const valM = (l.value / 1000000).toFixed(1);
+        log(`  ${l.name} (${valM} Mkr)`, 'info');
+    }
+    if (leads.length > 5) log(`  ... och ${leads.length - 5} till`, 'info');
+
+    // Post to local API (same origin = no CORS/mixed content issue)
+    log('Skickar till Twenty CRM...', 'info');
+    try {
+        const resp = await fetch('/api/leads', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Api-Key': API_KEY,
+            },
+            body: JSON.stringify({ leads }),
+        });
+
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const result = await resp.json();
+
+        document.getElementById('s2').textContent = result.created;
+        document.getElementById('s3').textContent = result.duplicates;
+        document.getElementById('s4').textContent = result.errors;
+
+        log(`Klart — ${result.created} nya leads skapade i Twenty CRM`, 'ok');
+        if (result.duplicates > 0) log(`${result.duplicates} dubbletter ignorerade`, 'warn');
+        if (result.errors > 0) log(`${result.errors} fel`, 'err');
+        if (result.created > 0) log('Dashboard uppdateras automatiskt', 'ok');
+
+    } catch(e) {
+        log('Kunde inte skicka till servern: ' + e.message, 'err');
+    }
+
+    // Clear hash to prevent re-processing on refresh
+    history.replaceState(null, '', '/receive');
+}
+
+process();
+</script>
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0D1117; color: #E6EDF3; line-height: 1.5; padding: 24px; }
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        /* HEADER */
+        .header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .header h1 { font-size: 24px; font-weight: 700; }
+        .header-links { display: flex; gap: 12px; font-size: 12px; }
+        .header-links a { color: #58A6FF; text-decoration: none; padding: 4px 10px; border: 1px solid #21262D; border-radius: 4px; }
+        .header-links a:hover { border-color: #58A6FF; }
+
+        /* KPI ROW */
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .kpi { background: #161B22; border: 1px solid #21262D; border-radius: 8px; padding: 16px; cursor: pointer; transition: border-color 0.2s; }
+        .kpi:hover { border-color: #30363D; }
+        .kpi-label { font-size: 11px; font-weight: 600; color: #8B949E; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .kpi-value { font-size: 22px; font-weight: 700; color: #58A6FF; }
+        .kpi-sub { font-size: 11px; color: #8B949E; margin-top: 4px; }
+
+        /* SECTION */
+        .section { margin-bottom: 20px; }
+        .section-head { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+
+        /* CARD */
+        .card { background: #161B22; border: 1px solid #21262D; border-radius: 8px; padding: 16px; }
+
+        /* TABLE */
+        .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .tbl thead { border-bottom: 2px solid #21262D; }
+        .tbl th { padding: 8px 10px; text-align: left; font-weight: 600; color: #8B949E; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; white-space: nowrap; }
+        .tbl td { padding: 8px 10px; border-bottom: 1px solid #161B22; color: #C9D1D9; }
+        .tbl tr:hover td { background: #0D1117; }
+        .tbl .r { text-align: right; }
+        .tbl .mono { font-variant-numeric: tabular-nums; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+
+        /* CHART */
+        .chart-box { position: relative; height: 320px; }
+
+        /* FORECAST TOGGLES */
+        .fw-btn { padding: 4px 12px; border: 1px solid #21262D; border-radius: 4px; background: #0D1117; color: #8B949E; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .fw-btn.active { background: #58A6FF; color: #0D1117; border-color: #58A6FF; }
+
+        /* GRID */
+        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 1000px) { .g2 { grid-template-columns: 1fr; } }
+        @media (max-width: 700px) { .kpi-row { grid-template-columns: 1fr 1fr; } body { padding: 12px; } }
+
+        /* FILTER BTNS */
+        .filter-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+        .fbtn { padding: 3px 10px; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; opacity: 0.5; }
+        .fbtn.active { opacity: 1; }
+
+        /* COLORS */
+        .green { color: #3FB950; } .red { color: #F85149; } .orange { color: #F97316; } .gold { color: #D29922; } .blue { color: #58A6FF; } .muted { color: #8B949E; }
+
+        .footer { text-align: center; padding-top: 16px; margin-top: 16px; border-top: 1px solid #21262D; color: #8B949E; font-size: 11px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <h1>RM Entreprenad och Fasad</h1>
+        <div class="header-links">
+            <a href="https://crm.rmef.se" target="_blank">CRM</a>
+            <a id="fnx-link" href="#" target="_blank" style="display:none">Fortnox</a>
+        </div>
+    </div>
+
+    <!-- 1. KPI RAD -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- 2. KASSAFLÖDE -->
+    <div class="section" id="forecast-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div class="section-head" style="margin-bottom:0">Kassaflödesprognos <span id="forecast-alert" class="badge" style="display:none"></span></div>
+            <div style="display:flex;gap:6px">
+                <button class="fw-btn active" onclick="setForecast(8)">8v</button>
+                <button class="fw-btn" onclick="setForecast(26)">26v</button>
+                <button class="fw-btn" onclick="setForecast(52)">52v</button>
+            </div>
+        </div>
+        <div class="card">
+            <div id="bank-row" style="display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px">
+                <span class="muted">Kassa (1930):</span>
+                <span id="bank-val" style="font-size:16px;font-weight:700"></span>
+                <span id="bank-date" class="muted" style="font-size:11px"></span>
+                <span style="flex:1"></span>
+                <span id="forecast-summary" class="muted" style="font-size:11px;text-align:right"></span>
+            </div>
+            <div class="chart-box"><canvas id="chart-forecast"></canvas></div>
+        </div>
+    </div>
+
+    <!-- 3. PROJEKT (CRM + Next Unified) -->
+    <div class="section">
+        <div class="section-head">Projekt <span class="badge" style="background:rgba(136,98,255,0.15);color:#8862FF" id="proj-count"></span></div>
+        <div class="card">
+            <div class="filter-row" id="proj-filters">
+                <button class="fbtn active" style="background:rgba(136,98,255,0.15);color:#8862FF" onclick="filterProj('all')">Alla</button>
+                <button class="fbtn" style="background:rgba(63,185,80,0.15);color:#3FB950" onclick="filterProj('active')">Pågående</button>
+                <button class="fbtn" style="background:rgba(210,153,34,0.15);color:#D29922" onclick="filterProj('bid')">Anbud</button>
+                <button class="fbtn" style="background:rgba(248,81,73,0.15);color:#F85149" onclick="filterProj('risk')">TB &lt; 20%</button>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="tbl">
+                    <thead><tr>
+                        <th>Nr</th><th>Projekt</th><th>Företag</th><th>CRM</th><th>Next</th>
+                        <th class="r">Budget</th><th class="r">Bokfört</th><th class="r">TB%</th><th class="r">Prognos</th><th>PL</th>
+                    </tr></thead>
+                    <tbody id="proj-tbody"></tbody>
+                </table>
+            </div>
+            <div id="proj-empty" class="muted" style="text-align:center;padding:16px;display:none">Ingen kopplad projektdata</div>
+        </div>
+    </div>
+
+    <!-- 4. PIPELINE (deals utan Next-koppling) -->
+    <div class="section">
+        <div class="section-head">Pipeline <span class="badge" style="background:rgba(88,166,255,0.15);color:#58A6FF" id="pipe-count"></span></div>
+        <div class="card">
+            <div style="overflow-x:auto">
+                <table class="tbl">
+                    <thead><tr>
+                        <th>Deal</th><th>Steg</th><th>Typ</th><th>Företag</th><th class="r">Uppskattat</th><th class="r">Viktat</th>
+                    </tr></thead>
+                    <tbody id="pipe-tbody"></tbody>
+                </table>
+            </div>
+            <div id="pipe-empty" class="muted" style="text-align:center;padding:16px;display:none">Inga deals i pipeline</div>
+        </div>
+    </div>
+
+    <!-- 5. ATT GÖRA (Planner) -->
+    <div class="section" id="planner-section" style="display:none">
+        <div class="section-head">Att göra <span class="badge" style="background:rgba(88,166,255,0.15);color:#58A6FF" id="task-count"></span></div>
+        <div class="card">
+            <div style="overflow-x:auto">
+                <table class="tbl">
+                    <thead><tr><th>Uppgift</th><th>Plan</th><th>Ansvarig</th><th>Förfaller</th><th>Status</th></tr></thead>
+                    <tbody id="task-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">RM Entreprenad och Fasad &mdash; Genererad <span id="gen-time"></span></div>
+</div>
+
+<!-- ═══ DATA (injiceras av generate_dashboard.py) ═══ -->
+<script>
+const DEALS = [];
+const HITRATE_MATRIX = {
+};
+const FORTNOX = {
+};
+const PLANNER = [];
+const NEXT_PROJECTS = [];
+const NEXT_WORKORDERS = [];
+const NEXT_ECONOMY = [];
+const CRM_NEXT_UNIFIED = [];
+
+// ═══ HELPERS ═══
+const fmt = n => { if (n === null || n === undefined) return '—'; const a = Math.abs(n); if (a >= 1e6) return (n/1e6).toFixed(1)+' Mkr'; if (a >= 1e3) return Math.round(n/1e3)+' tkr'; return Math.round(n)+' kr'; };
+const fmtShort = n => { if (n >= 1e6) return (n/1e6).toFixed(1)+'M'; if (n >= 1e3) return Math.round(n/1e3)+'k'; return Math.round(n); };
+
+const STAGE_LABELS = {INKOMMIT:'Inkommit',KALKYL:'Kalkyl',OFFERT_SKICKAD:'Offert skickad',FORHANDLING:'Förhandling',KONTRAKTERAT:'Kontrakterat',LEVERANS:'Leverans',FAKTURERAT:'Fakturerat'};
+const STAGE_COLORS = {INKOMMIT:'#8B949E',KALKYL:'#D29922',OFFERT_SKICKAD:'#58A6FF',FORHANDLING:'#D2A8FF',KONTRAKTERAT:'#3FB950',LEVERANS:'#3FB950',FAKTURERAT:'#3FB950'};
+const TYPE_LABELS = {intern:'Intern',varm:'Varm',styrd:'Styrd',service:'Service',kall:'Kall'};
+const TYPE_COLORS = {intern:'#3FB950',varm:'#F97316',styrd:'#58A6FF',service:'#D29922',kall:'#F85149'};
+
+// ═══ 1. KPI RAD ═══
+function renderKPIs() {
+    const f = FORTNOX;
+    const row = document.getElementById('kpi-row');
+    if (!f || !f.has_data) { row.innerHTML = '<div class="kpi"><div class="kpi-label">Väntar på data</div></div>'; return; }
+
+    const fnxBase = f.app_id ? 'https://apps2.fortnox.se/app/' + f.app_id : '';
+    if (fnxBase) { const btn = document.getElementById('fnx-link'); btn.href = fnxBase; btn.style.display = 'inline-block'; }
+
+    const bank = f.bank_balance;
+    const bankColor = bank >= 0 ? '#3FB950' : '#F85149';
+    const tb1Color = (f.tb1||0) >= 0 ? '#3FB950' : '#F85149';
+    const overdueRecv = f.overdue_real || 0;
+    const active = CRM_NEXT_UNIFIED.filter(p => p.next_status && p.next_status.includes('Pågående')).length;
+    const bids = CRM_NEXT_UNIFIED.filter(p => p.next_status && p.next_status.includes('Anbud')).length;
+
+    // Weighted pipeline
+    const deals = DEALS || [];
+    const weighted = deals.reduce((s,d) => s + d.estimated_value * (d.hit_rate||25)/100, 0);
+
+    row.innerHTML = `
+        <div class="kpi" onclick="window.open('${fnxBase}','_blank')">
+            <div class="kpi-label">Kassa</div>
+            <div class="kpi-value" style="color:${bankColor}">${bank !== null ? fmt(bank) : '—'}</div>
+            <div class="kpi-sub">${f.bank_balance_date || ''}</div>
+        </div>
+        <div class="kpi" onclick="window.open('${fnxBase}/kf/invoicelist','_blank')">
+            <div class="kpi-label">Fordringar</div>
+            <div class="kpi-value">${fmt(f.receivables||0)}</div>
+            <div class="kpi-sub">${overdueRecv > 0 ? '<span class="red">Förfallna: '+fmt(overdueRecv)+'</span>' : 'Inga förfallna'}</div>
+        </div>
+        <div class="kpi" onclick="window.open('${fnxBase}/lf/sinvoicelist','_blank')">
+            <div class="kpi-label">Skulder</div>
+            <div class="kpi-value orange">${fmt(f.payables||0)}</div>
+            <div class="kpi-sub">${(f.si_overdue_unlabeled_count||0) > 0 ? '<span class="red">Förfallna: '+fmt(f.si_overdue_unlabeled_total||0)+'</span>' : 'Inga förfallna'}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">TB1 (12 mån)</div>
+            <div class="kpi-value" style="color:${tb1Color}">${(f.tb1_margin||0).toFixed(1)}%</div>
+            <div class="kpi-sub">${fmt(f.tb1||0)}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Projekt</div>
+            <div class="kpi-value green">${active}</div>
+            <div class="kpi-sub">${bids} anbud</div>
+        </div>
+        <div class="kpi" onclick="window.open('https://crm.rmef.se/objects/opportunities','_blank')">
+            <div class="kpi-label">Pipeline (viktat)</div>
+            <div class="kpi-value blue">${fmt(weighted)}</div>
+            <div class="kpi-sub">${deals.length} deals</div>
+        </div>
+    `;
+}
+
+// ═══ 2. KASSAFLÖDE ═══
+let forecastChart = null;
+function renderForecast(numWeeks) {
+    numWeeks = numWeeks || 8;
+    const f = FORTNOX;
+    if (!f || !f.has_data || !f.forecast_weeks) return;
+
+    const weeks = f.forecast_weeks.slice(0, numWeeks);
+    if (!weeks.length) return;
+
+    // Bank display
+    const bv = document.getElementById('bank-val');
+    if (f.bank_balance !== null && f.bank_balance !== undefined) {
+        bv.textContent = fmt(f.bank_balance);
+        bv.style.color = f.bank_balance >= 0 ? '#3FB950' : '#F85149';
+        document.getElementById('bank-date').textContent = f.bank_balance_date ? 'per ' + f.bank_balance_date : '';
+    }
+
+    const labels = weeks.map(w => w.label);
+    const inData = weeks.map(w => w.inbetalningar_viktat || w.inbetalningar);
+    const utData = weeks.map(w => -(w.utbetalningar_justerat || w.utbetalningar));
+
+    let startBalance = (f.bank_balance !== null) ? f.bank_balance : 0;
+    let cumulative = [], running = startBalance;
+    for (let i = 0; i < weeks.length; i++) {
+        running += (weeks[i].inbetalningar_viktat || weeks[i].inbetalningar) - (weeks[i].utbetalningar_justerat || weeks[i].utbetalningar);
+        cumulative.push(running);
+    }
+
+    // Alert
+    const alertEl = document.getElementById('forecast-alert');
+    const minCash = Math.min(...cumulative);
+    if (cumulative.some(v => v < 0)) {
+        alertEl.style.display = 'inline-block'; alertEl.style.background = '#F85149'; alertEl.style.color = '#fff'; alertEl.textContent = 'Negativt kassaflöde';
+    } else if (minCash < 200000) {
+        alertEl.style.display = 'inline-block'; alertEl.style.background = '#D29922'; alertEl.style.color = '#0D1117'; alertEl.textContent = 'Uppmärksamhet';
+    } else { alertEl.style.display = 'none'; }
+
+    // Summary
+    const totalIn = weeks.reduce((s,w) => s + (w.inbetalningar_viktat || w.inbetalningar), 0);
+    const totalUt = weeks.reduce((s,w) => s + (w.utbetalningar_justerat || w.utbetalningar), 0);
+    const netto = totalIn - totalUt;
+    document.getElementById('forecast-summary').innerHTML =
+        'In: <span class="green">' + fmt(totalIn) + '</span> · Ut: <span class="red">' + fmt(totalUt) + '</span> · Netto: <span style="color:' + (netto>=0?'#3FB950':'#F85149') + '">' + fmt(netto) + '</span>';
+
+    // Toggle buttons
+    document.querySelectorAll('.fw-btn').forEach(b => b.classList.toggle('active', parseInt(b.textContent) === numWeeks || b.textContent === numWeeks+'v'));
+
+    if (forecastChart) forecastChart.destroy();
+    forecastChart = new Chart(document.getElementById('chart-forecast'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Inbetalningar', data: inData, backgroundColor: 'rgba(63,185,80,0.7)', borderRadius: 3, order: 2 },
+                { label: 'Utbetalningar', data: utData, backgroundColor: 'rgba(248,81,73,0.55)', borderRadius: 3, order: 2 },
+                { label: 'Kumulativ kassa', data: cumulative, type: 'line', borderColor: '#58A6FF', borderWidth: 2, pointRadius: 2, pointBackgroundColor: '#58A6FF', fill: false, tension: 0.3, order: 1 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { usePointStyle: true, padding: 16, color: '#8B949E', font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(Math.abs(ctx.parsed.y)) } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#8B949E', font: { size: 10 } } },
+                y: { grid: { color: '#21262D' }, ticks: { color: '#8B949E', callback: v => fmtShort(Math.abs(v)) } }
+            }
+        },
+        plugins: [{
+            id: 'zeroLine',
+            afterDraw(chart) {
+                const y0 = chart.scales.y.getPixelForValue(0);
+                const ctx = chart.ctx; ctx.save();
+                ctx.setLineDash([6,4]); ctx.strokeStyle = 'rgba(248,81,73,0.4)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(chart.chartArea.left, y0); ctx.lineTo(chart.chartArea.right, y0); ctx.stroke(); ctx.restore();
+            }
+        }]
+    });
+}
+function setForecast(n) {
+    document.querySelectorAll('.fw-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    renderForecast(n);
+}
+
+// ═══ 3. PROJEKT (CRM + Next Unified) ═══
+let projData = [];
+function renderProjects() {
+    projData = CRM_NEXT_UNIFIED || [];
+    if (!projData.length) { document.getElementById('proj-empty').style.display = 'block'; return; }
+    document.getElementById('proj-count').textContent = projData.length + ' st';
+    filterProj('all');
+}
+
+function filterProj(filter) {
+    let d = projData;
+    if (filter === 'active') d = projData.filter(p => p.next_status && p.next_status.includes('Pågående'));
+    if (filter === 'bid') d = projData.filter(p => p.next_status && (p.next_status.includes('Anbud') || p.crm_stage === 'KALKYL'));
+    if (filter === 'risk') d = projData.filter(p => { const tb = parseFloat(p.contribution_margin_pct); return tb > 0 && tb < 20; });
+
+    const tbody = document.getElementById('proj-tbody');
+    tbody.innerHTML = '';
+    d.forEach(p => {
+        const tb = parseFloat(p.contribution_margin_pct) || 0;
+        const tbColor = tb === 0 ? '#8B949E' : tb >= 20 ? '#3FB950' : tb >= 10 ? '#D29922' : '#F85149';
+        const crmLabel = STAGE_LABELS[p.crm_stage] || p.crm_stage || '—';
+        const sc = STAGE_COLORS[p.crm_stage] || '#8B949E';
+        tbody.innerHTML += `<tr>
+            <td><strong>${p.next_project_no||'—'}</strong></td>
+            <td>${p.deal_name||'—'}</td>
+            <td class="muted">${p.company_name||'—'}</td>
+            <td><span class="tag" style="background:${sc}22;color:${sc}">${crmLabel}</span></td>
+            <td><span class="tag" style="background:rgba(139,148,158,0.15);color:#8B949E">${p.next_status||'—'}</span></td>
+            <td class="r mono">${fmt(parseFloat(p.budget_revenue)||0)}</td>
+            <td class="r mono">${fmt(parseFloat(p.booked_revenue)||0)}</td>
+            <td class="r mono" style="color:${tbColor}"><strong>${tb > 0 ? tb.toFixed(1)+'%' : '—'}</strong></td>
+            <td class="r mono">${fmt(parseFloat(p.forecast)||0)}</td>
+            <td class="muted" style="font-size:11px">${p.project_manager||'—'}</td>
+        </tr>`;
+    });
+
+    // Update filter button state
+    document.querySelectorAll('#proj-filters .fbtn').forEach(b => b.classList.remove('active'));
+    const idx = {all:0, active:1, bid:2, risk:3}[filter] || 0;
+    document.querySelectorAll('#proj-filters .fbtn')[idx].classList.add('active');
+}
+
+// ═══ 4. PIPELINE (deals utan Next-koppling) ═══
+function renderPipeline() {
+    // Show deals that don't have a nextProjectNo — these are pure pipeline
+    const allDeals = DEALS || [];
+    const unifiedNos = new Set((CRM_NEXT_UNIFIED||[]).map(p => p.deal_name));
+
+    // Filter: deals not in unified + not test/demo + has value
+    const pipeline = allDeals.filter(d =>
+        !unifiedNos.has(d.name) &&
+        !d.name.startsWith('test_') &&
+        d.name !== '' &&
+        d.stage !== 'fakturerat'
+    ).sort((a,b) => b.estimated_value - a.estimated_value);
+
+    const tbody = document.getElementById('pipe-tbody');
+    const empty = document.getElementById('pipe-empty');
+
+    if (!pipeline.length) { empty.style.display = 'block'; return; }
+    document.getElementById('pipe-count').textContent = pipeline.length + ' deals · ' + fmt(pipeline.reduce((s,d) => s + d.estimated_value, 0));
+
+    tbody.innerHTML = '';
+    pipeline.forEach(d => {
+        const w = d.estimated_value * (d.hit_rate||25) / 100;
+        const stageLabel = STAGE_LABELS[d.stage.toUpperCase()] || d.stage;
+        const sc = STAGE_COLORS[d.stage.toUpperCase()] || '#8B949E';
+        const tc = TYPE_COLORS[d.deal_type] || '#8B949E';
+        const tl = TYPE_LABELS[d.deal_type] || d.deal_type || '—';
+        const link = d.twenty_id ? `<a href="https://crm.rmef.se/object/opportunity/${d.twenty_id}" target="_blank" style="color:#58A6FF;text-decoration:none">${d.name}</a>` : d.name;
+
+        tbody.innerHTML += `<tr>
+            <td>${link}</td>
+            <td><span class="tag" style="background:${sc}22;color:${sc}">${stageLabel}</span></td>
+            <td><span class="tag" style="background:${tc}22;color:${tc}">${tl}</span></td>
+            <td class="muted">${d.customer || '—'}</td>
+            <td class="r mono">${fmt(d.estimated_value)}</td>
+            <td class="r mono" style="color:${w >= d.estimated_value*0.5 ? '#3FB950' : '#8B949E'}">${fmt(w)}</td>
+        </tr>`;
+    });
+}
+
+// ═══ 5. PLANNER ═══
+function renderPlanner() {
+    if (!PLANNER || !PLANNER.length) return;
+    document.getElementById('planner-section').style.display = 'block';
+
+    const active = PLANNER.filter(t => t.percent_complete < 100);
+    document.getElementById('task-count').textContent = active.length + ' öppna';
+
+    const tbody = document.getElementById('task-tbody');
+    tbody.innerHTML = '';
+    active.forEach(t => {
+        const pct = t.percent_complete || 0;
+        const statusTag = pct === 0 ? '<span class="tag" style="background:rgba(139,148,158,0.15);color:#8B949E">Ej startad</span>'
+            : pct === 50 ? '<span class="tag" style="background:rgba(88,166,255,0.15);color:#58A6FF">Pågår</span>'
+            : '<span class="tag" style="background:rgba(63,185,80,0.15);color:#3FB950">' + pct + '%</span>';
+        const due = t.due_date ? t.due_date.substring(0,10) : '—';
+        const overdue = t.due_date && new Date(t.due_date) < new Date() && pct < 100;
+
+        tbody.innerHTML += `<tr>
+            <td>${t.title}</td>
+            <td class="muted" style="font-size:11px">${t.plan_name||'—'}</td>
+            <td class="muted" style="font-size:11px">${t.assignee_name||'—'}</td>
+            <td style="font-size:11px;${overdue?'color:#F85149;font-weight:600':''}">${due}</td>
+            <td>${statusTag}</td>
+        </tr>`;
+    });
+}
+
+// ═══ LABEL API (for Fortnox invoice labels) ═══
+function setCustomerLabel(id, label) {
+    fetch('/api/label/customer/' + id, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label}) });
+}
+function setSupplierLabel(id, label) {
+    fetch('/api/label/supplier/' + id, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label}) });
+}
+
+// ═══ INIT ═══
+document.getElementById('gen-time').textContent = new Date().toLocaleString('sv-SE');
+renderKPIs();
+renderForecast(8);
+renderProjects();
+renderPipeline();
+renderPlanner();
+</script>
+</body>
+</html>

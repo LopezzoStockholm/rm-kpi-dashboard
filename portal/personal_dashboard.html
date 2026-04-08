@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM Entreprenad och Fasad - Personlig Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #1a3a52;
+            --color-primary-dark: #0d1f2d;
+            --color-accent: #d97f2c;
+            --color-success: #2ecc71;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+            --color-bg-light: #f8f9fa;
+            --color-text-dark: #2c3e50;
+            --color-text-light: #7f8c8d;
+            --color-border: #ecf0f1;
+            --color-white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--color-bg-light);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: var(--color-white);
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-person {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-white);
+        }
+
+        .person-info h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .person-info p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .company-name {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+
+        .quarter-info {
+            text-align: right;
+        }
+
+        .quarter-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .week-progress {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* PROGRESS BAR */
+        .progress-container {
+            margin-top: 16px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            height: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-accent);
+            border-radius: 12px;
+            transition: width 0.3s ease;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* GRID LAYOUT */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .grid-full {
+            grid-column: 1 / -1;
+        }
+
+        /* CARD */
+        .card {
+            background-color: var(--color-white);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-icon {
+            font-size: 18px;
+        }
+
+        /* ROCKS SECTION */
+        .rocks-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .rock {
+            background-color: var(--color-white);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--color-primary);
+            position: relative;
+        }
+
+        .rock.primary {
+            border-left-width: 6px;
+            background-color: #f0f8ff;
+        }
+
+        .rock-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .rock-badge.on_track {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .rock-badge.at_risk {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .rock-badge.off_track {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .rock-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--color-text-dark);
+            padding-right: 80px;
+        }
+
+        .rock-description {
+            font-size: 12px;
+            color: var(--color-text-light);
+            margin-bottom: 12px;
+        }
+
+        .rock-progress-bar {
+            background-color: var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+            height: 6px;
+            margin-bottom: 8px;
+        }
+
+        .rock-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .rock.on_track .rock-progress-fill {
+            background-color: var(--color-success);
+        }
+
+        .rock.at_risk .rock-progress-fill {
+            background-color: var(--color-warning);
+        }
+
+        .rock.off_track .rock-progress-fill {
+            background-color: var(--color-danger);
+        }
+
+        .rock-progress-text {
+            font-size: 11px;
+            color: var(--color-text-light);
+            text-align: right;
+        }
+
+        /* KPI SECTION */
+        .kpis-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi {
+            background-color: var(--color-white);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .kpi-name {
+            font-size: 12px;
+            color: var(--color-text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-text-dark);
+        }
+
+        .kpi-unit {
+            font-size: 12px;
+            color: var(--color-text-light);
+            margin-left: 4px;
+        }
+
+        .kpi-target {
+            font-size: 12px;
+            color: var(--color-text-light);
+            margin-bottom: 12px;
+        }
+
+        .kpi-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+            margin-left: 8px;
+        }
+
+        .kpi-indicator.positive {
+            background-color: var(--color-success);
+        }
+
+        .kpi-indicator.negative {
+            background-color: var(--color-danger);
+        }
+
+        .kpi-chart-container {
+            position: relative;
+            height: 40px;
+            margin-top: 12px;
+        }
+
+        /* TASKS SECTION */
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .tasks-table thead {
+            background-color: var(--color-bg-light);
+        }
+
+        .tasks-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .tasks-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 13px;
+        }
+
+        .tasks-table tbody tr:hover {
+            background-color: var(--color-bg-light);
+        }
+
+        .task-title {
+            font-weight: 500;
+            color: var(--color-text-dark);
+        }
+
+        .task-assignee {
+            font-size: 12px;
+            color: var(--color-text-light);
+        }
+
+        .task-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .task-status.in_progress {
+            background-color: #cfe9ff;
+            color: #0c5fa0;
+        }
+
+        .task-status.up_next {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .task-status.backlog {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        .task-due {
+            font-size: 12px;
+            color: var(--color-text-light);
+        }
+
+        .task-due.overdue {
+            color: var(--color-danger);
+            font-weight: 600;
+        }
+
+        .task-due.today {
+            color: var(--color-warning);
+            font-weight: 600;
+        }
+
+        /* BLOCKERS SECTION */
+        .blockers-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .blocker {
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .blocker.high {
+            background-color: #fadbd8;
+            border-left-color: var(--color-danger);
+        }
+
+        .blocker.medium {
+            background-color: #fdebd0;
+            border-left-color: var(--color-warning);
+        }
+
+        .blocker-text {
+            flex: 1;
+        }
+
+        .blocker-escalate {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+            margin-left: 12px;
+        }
+
+        .blocker-escalate:hover {
+            background-color: var(--color-primary-dark);
+        }
+
+        /* WEEKLY PULSE SECTION */
+        .pulse-checklist {
+            margin-top: 12px;
+        }
+
+        .pulse-item {
+            margin-bottom: 16px;
+        }
+
+        .pulse-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .pulse-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13px;
+            color: var(--color-text-dark);
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .pulse-textarea:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px rgba(217, 127, 44, 0.1);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .quarter-info {
+                text-align: left;
+                width: 100%;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tasks-table {
+                font-size: 12px;
+            }
+
+            .tasks-table th,
+            .tasks-table td {
+                padding: 8px;
+            }
+
+            .kpi-value {
+                font-size: 24px;
+            }
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: 16px;
+            color: var(--color-text-light);
+            font-size: 12px;
+            margin-top: 24px;
+            border-top: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-top">
+        <div class="header-person">
+            <div class="avatar" id="avatar"></div>
+            <div class="person-info">
+                <div class="company-name">RM Entreprenad och Fasad</div>
+                <h1 id="personName"></h1>
+                <p id="personRole"></p>
+            </div>
+        </div>
+        <div class="quarter-info">
+            <div class="quarter-title" id="quarterName"></div>
+            <div class="week-progress" id="weekProgress"></div>
+        </div>
+    </div>
+    <div class="progress-container">
+        <div class="progress-bar" id="quarterProgressBar"></div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+    <!-- ROCKS SECTION -->
+    <div class="grid grid-full">
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">🎯</span>
+                Kvartalets Rocks
+            </div>
+            <div class="rocks-container" id="rocksContainer"></div>
+        </div>
+    </div>
+
+    <!-- KPIs SECTION -->
+    <div class="grid grid-full">
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">📊</span>
+                Personliga KPI:er
+            </div>
+            <div class="kpis-container" id="kpisContainer"></div>
+        </div>
+    </div>
+
+    <!-- TWO-COLUMN LAYOUT -->
+    <div class="grid">
+        <!-- TASKS SECTION -->
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">✓</span>
+                Mina Uppgifter
+            </div>
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>Uppgift</th>
+                        <th>Plan</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksContainer"></tbody>
+            </table>
+            <div style="font-size: 11px; color: var(--color-text-light); margin-top: 12px; font-style: italic;">
+                💡 API-integration: GET /api/planner/tasks/{token} för real-time uppdateringar
+            </div>
+        </div>
+
+        <!-- BLOCKERS SECTION -->
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">⚠️</span>
+                Blockeringar
+            </div>
+            <div class="blockers-list" id="blockersContainer"></div>
+            <div style="font-size: 11px; color: var(--color-text-light); margin-top: 12px; font-style: italic;">
+                💡 POST /api/blockers/{token}/escalate för eskalering
+            </div>
+        </div>
+    </div>
+
+    <!-- WEEKLY PULSE -->
+    <div class="grid grid-full">
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">📋</span>
+                Veckopuls
+            </div>
+            <div class="pulse-checklist">
+                <div class="pulse-item">
+                    <label class="pulse-label">✓ Vad gick bra denna vecka?</label>
+                    <textarea class="pulse-textarea" id="pulseGood" placeholder="Skriv här..."></textarea>
+                </div>
+                <div class="pulse-item">
+                    <label class="pulse-label">✗ Vad fastnade? (blockeringar, ineffektivitet)</label>
+                    <textarea class="pulse-textarea" id="pulseBlocked" placeholder="Skriv här..."></textarea>
+                </div>
+                <div class="pulse-item">
+                    <label class="pulse-label">→ Fokus nästa vecka</label>
+                    <textarea class="pulse-textarea" id="pulseFocus" placeholder="Skriv här..."></textarea>
+                </div>
+            </div>
+            <div style="font-size: 11px; color: var(--color-text-light); margin-top: 12px; font-style: italic;">
+                💡 Veckopulsen sparas temporärt (in-memory). För persistent lagring: POST /api/pulse/{token}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>RM Entreprenad och Fasad | Scaling Up Personal Dashboard | Uppdaterad: <span id="lastUpdate"></span></p>
+    <p style="margin-top: 8px; color: #aaa;">💡 Byt person: uppdatera CONFIG-objektet längst upp i script-sektionen</p>
+</div>
+
+<!-- SCRIPTS -->
+<script>
+/**
+ * CONFIGURATION
+ *
+ * Byt person genom att uppdatera CONFIG nedan.
+ * Varje person kan ha sitt eget kvartal, rocks, KPIs och tasks.
+ *
+ * EXEMPEL FÖR OLIKA ROLLER:
+ * - VD (Daniel Lopez): Se CONFIG nedan
+ * - Projektledare: Se comments för exempel
+ * - Säljchef: Se comments för exempel
+ */
+
+const CONFIG = {
+    person: {
+        name: "Daniel Lopez",
+        role: "VD",
+        initials: "DL",
+        token: "daniel-vd-2026"
+        // API-integration: Authorization: Bearer {token} i alla requests
+    },
+    quarter: {
+        name: "Q1 2026",
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-03-31"),
+        totalWeeks: 13
+    },
+    rocks: [
+        {
+            id: 1,
+            title: "Bygg portal och dashboards för hela bolaget",
+            description: "Systemarkitektur, dataflöden, personliga vyer",
+            status: "on_track",
+            progress: 65,
+            isPrimary: true
+        },
+        {
+            id: 2,
+            title: "Säkra 3 nya projekt i pipeline > 5 MSEK",
+            description: "Pipeline weighted value > 15 MSEK",
+            status: "on_track",
+            progress: 40,
+            isPrimary: false
+        },
+        {
+            id: 3,
+            title: "Implementera ÄTA-process i alla aktiva projekt",
+            description: "Skriftlig order INNAN utförande, 100% compliance",
+            status: "at_risk",
+            progress: 25,
+            isPrimary: false
+        },
+        {
+            id: 4,
+            title: "Kassaflödesoptimering — 30 dagars leverantörsbetalning",
+            description: "Inget betalas innan kund betalt",
+            status: "on_track",
+            progress: 70,
+            isPrimary: false
+        }
+    ],
+    kpis: [
+        {
+            id: 1,
+            name: "Omsättning YTD",
+            value: 15.7,
+            target: 16.7,
+            unit: "MSEK",
+            trend: [12.1, 13.4, 14.2, 15.0, 15.7]
+        },
+        {
+            id: 2,
+            name: "Täckningsbidrag",
+            value: 22,
+            target: 25,
+            unit: "%",
+            trend: [18, 20, 21, 23, 22]
+        },
+        {
+            id: 3,
+            name: "Pipeline weighted",
+            value: 8.2,
+            target: 15,
+            unit: "MSEK",
+            trend: [5.0, 6.1, 7.3, 7.8, 8.2]
+        }
+    ],
+    tasks: [
+        {
+            id: 1,
+            title: "Kolla nya lokaler",
+            plan: "LG Actions",
+            assignee: "Jan Norlin",
+            dueDate: new Date("2026-03-28"),
+            status: "in_progress"
+        },
+        {
+            id: 2,
+            title: "Koda 82 kundfakturor med projektnummer",
+            plan: "RM Ekonomi & Styrning",
+            assignee: "Mikael Millares",
+            dueDate: new Date("2026-03-31"),
+            status: "up_next"
+        },
+        {
+            id: 3,
+            title: "Granska anbud Signalisten fasadrenovering",
+            plan: "Sälj & Affärsutveckling",
+            assignee: "Mattias Bylund",
+            dueDate: new Date("2026-03-26"),
+            status: "in_progress"
+        },
+        {
+            id: 4,
+            title: "Slutbesiktning Projekt 2401",
+            plan: "Projekt RMEF",
+            assignee: "Patrik Svensson",
+            dueDate: new Date("2026-03-25"),
+            status: "in_progress"
+        },
+        {
+            id: 5,
+            title: "Uppdatera TE-avtal Grimvägen",
+            plan: "Fastighetsutveckling",
+            assignee: "Daniel Lopez",
+            dueDate: new Date("2026-04-01"),
+            status: "backlog"
+        },
+        {
+            id: 6,
+            title: "KMA-revision intern",
+            plan: "RM Drift & Projekt",
+            assignee: "Erik Bylund",
+            dueDate: new Date("2026-04-05"),
+            status: "up_next"
+        }
+    ],
+    blockers: [
+        {
+            id: 1,
+            text: "API-nyckel från Next Tech saknas — blockerar projektekonomisk vy",
+            severity: "high"
+        },
+        {
+            id: 2,
+            text: "Mikael har inte börjat koda de 82 fakturorna",
+            severity: "medium"
+        }
+    ]
+};
+
+/* ============================================================
+   STATE & UTILITIES
+   ============================================================ */
+
+let appState = {
+    pulseData: {
+        good: "",
+        blocked: "",
+        focus: ""
+    }
+};
+
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+}
+
+function getDateDifference(date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    return Math.floor((target - today) / (1000 * 60 * 60 * 24));
+}
+
+function getCurrentWeek() {
+    const now = new Date();
+    const start = CONFIG.quarter.startDate;
+    const weekNumber = Math.floor((now - start) / (7 * 24 * 60 * 60 * 1000)) + 1;
+    return Math.max(1, Math.min(weekNumber, CONFIG.quarter.totalWeeks));
+}
+
+function getQuarterProgress() {
+    const now = new Date();
+    const start = CONFIG.quarter.startDate;
+    const end = CONFIG.quarter.endDate;
+    const progress = ((now - start) / (end - start)) * 100;
+    return Math.max(0, Math.min(100, progress));
+}
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+
+function init() {
+    renderHeader();
+    renderRocks();
+    renderKPIs();
+    renderTasks();
+    renderBlockers();
+    setupPulse();
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('sv-SE');
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+function renderHeader() {
+    document.getElementById('avatar').textContent = CONFIG.person.initials;
+    document.getElementById('personName').textContent = CONFIG.person.name;
+    document.getElementById('personRole').textContent = CONFIG.person.role;
+    document.getElementById('quarterName').textContent = CONFIG.quarter.name;
+
+    const week = getCurrentWeek();
+    document.getElementById('weekProgress').textContent = `Vecka ${week} av ${CONFIG.quarter.totalWeeks}`;
+
+    const progress = getQuarterProgress();
+    document.getElementById('quarterProgressBar').style.width = progress + '%';
+}
+
+/* ============================================================
+   ROCKS
+   ============================================================ */
+
+function renderRocks() {
+    const container = document.getElementById('rocksContainer');
+    container.innerHTML = '';
+
+    CONFIG.rocks.forEach(rock => {
+        const rockEl = document.createElement('div');
+        rockEl.className = `rock ${rock.status} ${rock.isPrimary ? 'primary' : ''}`;
+
+        const badgeText = rock.status === 'on_track' ? 'På väg' :
+                         rock.status === 'at_risk' ? 'Risk' : 'Avvikelse';
+
+        rockEl.innerHTML = `
+            <div class="rock-badge ${rock.status}">${badgeText}</div>
+            <div class="rock-title">${rock.isPrimary ? '⭐ ' : ''}${rock.title}</div>
+            <div class="rock-description">${rock.description}</div>
+            <div class="rock-progress-bar">
+                <div class="rock-progress-fill" style="width: ${rock.progress}%"></div>
+            </div>
+            <div class="rock-progress-text">${rock.progress}% klart</div>
+        `;
+        container.appendChild(rockEl);
+    });
+}
+
+/* ============================================================
+   KPIs
+   ============================================================ */
+
+let kpiCharts = {};
+
+function renderKPIs() {
+    const container = document.getElementById('kpisContainer');
+    container.innerHTML = '';
+
+    CONFIG.kpis.forEach(kpi => {
+        const isPositive = kpi.value >= kpi.target;
+        const diff = Math.abs(kpi.value - kpi.target).toFixed(1);
+
+        const kpiEl = document.createElement('div');
+        kpiEl.className = 'kpi';
+
+        kpiEl.innerHTML = `
+            <div class="kpi-header">
+                <span class="kpi-name">${kpi.name}</span>
+                <span class="kpi-indicator ${isPositive ? 'positive' : 'negative'}"></span>
+            </div>
+            <div>
+                <span class="kpi-value">${kpi.value}</span>
+                <span class="kpi-unit">${kpi.unit}</span>
+            </div>
+            <div class="kpi-target">
+                Mål: <strong>${kpi.target}${kpi.unit}</strong>
+                <span style="color: ${isPositive ? '#2ecc71' : '#e74c3c'};">
+                    ${isPositive ? '+' : '-'}${diff}
+                </span>
+            </div>
+            <div class="kpi-chart-container">
+                <canvas id="chart-${kpi.id}"></canvas>
+            </div>
+        `;
+
+        container.appendChild(kpiEl);
+
+        // Render sparkline chart
+        setTimeout(() => {
+            const ctx = document.getElementById(`chart-${kpi.id}`);
+            if (ctx) {
+                kpiCharts[kpi.id] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['', '', '', '', ''],
+                        datasets: [{
+                            label: kpi.name,
+                            data: kpi.trend,
+                            borderColor: isPositive ? '#2ecc71' : '#e74c3c',
+                            backgroundColor: isPositive ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { display: false },
+                            x: { display: false }
+                        }
+                    }
+                });
+            }
+        }, 100);
+    });
+}
+
+/* ============================================================
+   TASKS
+   ============================================================ */
+
+function renderTasks() {
+    const container = document.getElementById('tasksContainer');
+    container.innerHTML = '';
+
+    // Sort by due date
+    const sortedTasks = [...CONFIG.tasks].sort((a, b) => a.dueDate - b.dueDate);
+
+    sortedTasks.forEach(task => {
+        const daysUntil = getDateDifference(task.dueDate);
+        let dueClass = '';
+        let dueText = formatDate(task.dueDate);
+
+        if (daysUntil < 0) {
+            dueClass = 'overdue';
+            dueText += ' (FÖRSENAD)';
+        } else if (daysUntil === 0) {
+            dueClass = 'today';
+            dueText += ' (IDAG)';
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="task-title">${task.title}</td>
+            <td style="font-size: 12px; color: var(--color-text-light);">${task.plan}</td>
+            <td class="task-due ${dueClass}">${dueText}</td>
+            <td>
+                <span class="task-status ${task.status}">
+                    ${task.status === 'in_progress' ? 'Pågår' :
+                      task.status === 'up_next' ? 'Nästa' : 'Backlog'}
+                </span>
+            </td>
+        `;
+        container.appendChild(row);
+    });
+}
+
+/* ============================================================
+   BLOCKERS
+   ============================================================ */
+
+function renderBlockers() {
+    const container = document.getElementById('blockersContainer');
+    container.innerHTML = '';
+
+    CONFIG.blockers.forEach(blocker => {
+        const blockerEl = document.createElement('div');
+        blockerEl.className = `blocker ${blocker.severity}`;
+
+        blockerEl.innerHTML = `
+            <div class="blocker-text">${blocker.text}</div>
+            <button class="blocker-escalate" onclick="escalateBlocker(${blocker.id})">Eskalera</button>
+        `;
+        container.appendChild(blockerEl);
+    });
+}
+
+function escalateBlocker(blockerId) {
+    alert(`Eskalering av blocker ${blockerId}...\n\nAPI-integration: POST /api/blockers/${CONFIG.person.token}/escalate\nBody: { blockerId: ${blockerId} }`);
+    // TODO: POST /api/blockers/{token}/escalate
+}
+
+/* ============================================================
+   WEEKLY PULSE
+   ============================================================ */
+
+function setupPulse() {
+    const goodEl = document.getElementById('pulseGood');
+    const blockedEl = document.getElementById('pulseBlocked');
+    const focusEl = document.getElementById('pulseFocus');
+
+    goodEl.value = appState.pulseData.good;
+    blockedEl.value = appState.pulseData.blocked;
+    focusEl.value = appState.pulseData.focus;
+
+    goodEl.addEventListener('input', (e) => {
+        appState.pulseData.good = e.target.value;
+    });
+
+    blockedEl.addEventListener('input', (e) => {
+        appState.pulseData.blocked = e.target.value;
+    });
+
+    focusEl.addEventListener('input', (e) => {
+        appState.pulseData.focus = e.target.value;
+    });
+}
+
+/* ============================================================
+   API INTEGRATION COMMENTS
+   ============================================================ */
+
+/*
+INTEGRATION-GUIDE FÖR API
+
+1. ROCKS & KPIs (GET /api/scaling-up/{token}/quarter)
+   Hämta kvartal, rocks och KPIs från backend
+
+   fetch(`/api/scaling-up/${CONFIG.person.token}/quarter`, {
+       headers: { Authorization: `Bearer ${CONFIG.person.token}` }
+   })
+   .then(r => r.json())
+   .then(data => {
+       CONFIG.rocks = data.rocks;
+       CONFIG.kpis = data.kpis;
+       renderRocks();
+       renderKPIs();
+   })
+
+2. TASKS (GET /api/planner/{token}/tasks)
+   Hämta från Microsoft Planner eller egen task-databas
+
+   fetch(`/api/planner/${CONFIG.person.token}/tasks`, {
+       headers: { Authorization: `Bearer ${CONFIG.person.token}` }
+   })
+   .then(r => r.json())
+   .then(data => {
+       CONFIG.tasks = data.tasks;
+       renderTasks();
+   })
+
+3. BLOCKERS (GET /api/blockers/{token})
+   Hämta aktiva blockeringar
+
+   fetch(`/api/blockers/${CONFIG.person.token}`, {
+       headers: { Authorization: `Bearer ${CONFIG.person.token}` }
+   })
+   .then(r => r.json())
+   .then(data => {
+       CONFIG.blockers = data.blockers;
+       renderBlockers();
+   })
+
+4. WEEKLY PULSE (POST /api/pulse/{token})
+   Spara veckopuls till backend
+
+   function savePulse() {
+       fetch(`/api/pulse/${CONFIG.person.token}`, {
+           method: 'POST',
+           headers: {
+               'Authorization': `Bearer ${CONFIG.person.token}`,
+               'Content-Type': 'application/json'
+           },
+           body: JSON.stringify({
+               week: getCurrentWeek(),
+               good: appState.pulseData.good,
+               blocked: appState.pulseData.blocked,
+               focus: appState.pulseData.focus
+           })
+       })
+   }
+
+5. AUTO-REFRESH (Optional)
+   Uppdatera dashboard varje minut
+
+   setInterval(() => {
+       // Call alla fetch-funktioner ovan
+   }, 60000);
+*/
+
+/* ============================================================
+   START
+   ============================================================ */
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+
+</body>
+</html>

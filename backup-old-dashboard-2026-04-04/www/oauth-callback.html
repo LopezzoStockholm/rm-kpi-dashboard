@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Fortnox OAuth Callback</title>
+<style>body{font-family:Inter,sans-serif;background:#0D1117;color:#E6EDF3;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.box{background:#161B22;border:1px solid #21262D;border-radius:8px;padding:40px;max-width:500px;text-align:center}h1{color:#3FB950;margin-bottom:16px}.code{background:#0D1117;border:1px solid #21262D;border-radius:4px;padding:12px 20px;font-family:monospace;font-size:18px;color:#58A6FF;margin:16px 0;word-break:break-all}p{color:#8B949E;font-size:14px}</style>
+</head>
+<body>
+<div class="box">
+<h1>Fortnox auktoriserad</h1>
+<p>Kopiera denna kod och klistra in i terminalen:</p>
+<div class="code" id="code">Laddar...</div>
+<p>Stäng sedan denna flik.</p>
+</div>
+<script>
+const params = new URLSearchParams(window.location.search);
+const code = params.get("code");
+document.getElementById("code").textContent = code || "Ingen kod hittades";
+</script>
+</body>
+</html>

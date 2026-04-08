@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM Entreprenad och Fasad — Pipeline Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-primary: #f0f2f5;
+            --bg-card: #ffffff;
+            --bg-header: #0f172a;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-on-dark: #f1f5f9;
+            --positive: #16a34a;
+            --negative: #dc2626;
+            --accent: #2563eb;
+            --gap: 16px;
+            --radius: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .dashboard { max-width: 1440px; margin: 0 auto; padding: var(--gap); }
+
+        /* Header */
+        .header {
+            background: var(--bg-header);
+            color: var(--text-on-dark);
+            padding: 20px 28px;
+            border-radius: var(--radius);
+            margin-bottom: var(--gap);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+        .header .subtitle { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .filter-group { display: flex; align-items: center; gap: 6px; }
+        .filter-group label { font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-group select {
+            padding: 7px 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+            background: rgba(255,255,255,0.08); color: #fff; font-size: 13px; cursor: pointer;
+        }
+        .filter-group select option { background: #1e293b; color: #fff; }
+
+        /* KPI cards */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .kpi-card:nth-child(1)::before { background: #2563eb; }
+        .kpi-card:nth-child(2)::before { background: #16a34a; }
+        .kpi-card:nth-child(3)::before { background: #d97706; }
+        .kpi-card:nth-child(4)::before { background: #7c3aed; }
+        .kpi-card:nth-child(5)::before { background: #0891b2; }
+        .kpi-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+        .kpi-value { font-size: 28px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+        .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Charts */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .chart-container h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
+        .chart-container canvas { max-height: 300px; }
+        .chart-full { grid-column: 1 / -1; }
+
+        /* Hitrate matrix */
+        .matrix-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            margin-bottom: var(--gap);
+        }
+        .matrix-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+        .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .matrix-table th {
+            text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0;
+            color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .matrix-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; text-align: right; }
+        .matrix-table td:first-child { text-align: left; font-weight: 600; text-transform: capitalize; }
+        .matrix-table tr:hover td { background: #f8fafc; }
+        .hr-cell { border-radius: 4px; padding: 4px 8px; font-weight: 600; font-size: 12px; display: inline-block; min-width: 48px; text-align: center; }
+        .hr-high { background: #dcfce7; color: #166534; }
+        .hr-mid { background: #fef3c7; color: #92400e; }
+        .hr-low { background: #fee2e2; color: #991b1b; }
+
+        /* Deal table */
+        .table-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            overflow-x: auto;
+            margin-bottom: var(--gap);
+        }
+        .table-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+        .deal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .deal-table thead th {
+            text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0;
+            color: var(--text-secondary); font-weight: 600; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; cursor: pointer; user-select: none;
+        }
+        .deal-table thead th:hover { color: var(--text-primary); background: #f8fafc; }
+        .deal-table tbody td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+        .deal-table tbody tr:hover td { background: #f8fafc; }
+        .stage-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .stage-inkommit { background: #e0e7ff; color: #3730a3; }
+        .stage-kalkyl { background: #fef3c7; color: #92400e; }
+        .stage-offert_skickad { background: #fed7aa; color: #9a3412; }
+        .stage-forhandling { background: #dbeafe; color: #1e40af; }
+        .stage-kontrakterat { background: #dcfce7; color: #166534; }
+        .stage-leverans { background: #d1fae5; color: #065f46; }
+        .stage-fakturerat { background: #bbf7d0; color: #14532d; }
+        .type-badge {
+            display: inline-block; padding: 3px 8px; border-radius: 4px;
+            font-size: 11px; font-weight: 500;
+        }
+        .type-kall { background: #e0f2fe; color: #075985; }
+        .type-varm { background: #fef3c7; color: #92400e; }
+        .type-styrd { background: #ede9fe; color: #5b21b6; }
+        .type-service { background: #dcfce7; color: #166534; }
+        .type-intern { background: #f1f5f9; color: #475569; }
+        .text-right { text-align: right; }
+        .font-mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+        /* Footer */
+        .footer {
+            text-align: center; padding: 12px; color: var(--text-secondary); font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+            .chart-row { grid-template-columns: 1fr; }
+        }
+        @media print {
+            body { background: #fff; }
+            .filters { display: none; }
+            .chart-container, .kpi-card { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <h1>RM Entreprenad och Fasad</h1>
+            <div class="subtitle">Pipeline Dashboard — realtidsdata fr&aring;n Twenty CRM</div>
+        </div>
+        <div class="filters">
+            <div class="filter-group">
+                <label>Steg</label>
+                <select id="filter-stage" onchange="dashboard.applyFilters()">
+                    <option value="all">Alla steg</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Typ</label>
+                <select id="filter-type" onchange="dashboard.applyFilters()">
+                    <option value="all">Alla typer</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">Totalt pipelinev&auml;rde</div>
+            <div class="kpi-value" id="kpi-total">—</div>
+            <div class="kpi-sub" id="kpi-total-sub"></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Viktat v&auml;rde</div>
+            <div class="kpi-value" id="kpi-weighted">—</div>
+            <div class="kpi-sub" id="kpi-weighted-sub"></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Antal deals</div>
+            <div class="kpi-value" id="kpi-count">—</div>
+            <div class="kpi-sub" id="kpi-count-sub"></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Snitt hitrate</div>
+            <div class="kpi-value" id="kpi-hitrate">—</div>
+            <div class="kpi-sub" id="kpi-hitrate-sub"></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">St&ouml;rsta deal</div>
+            <div class="kpi-value" id="kpi-largest">—</div>
+            <div class="kpi-sub" id="kpi-largest-sub"></div>
+        </div>
+    </div>
+
+    <!-- Charts row 1 -->
+    <div class="chart-row">
+        <div class="chart-container">
+            <h3>Pipelinev&auml;rde per steg</h3>
+            <canvas id="chart-stage-value"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Viktat v&auml;rde per steg</h3>
+            <canvas id="chart-stage-weighted"></canvas>
+        </div>
+    </div>
+
+    <!-- Charts row 2 -->
+    <div class="chart-row">
+        <div class="chart-container">
+            <h3>F&ouml;rdelning per aff&auml;rstyp</h3>
+            <canvas id="chart-type-dist"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Antal deals per steg</h3>
+            <canvas id="chart-stage-count"></canvas>
+        </div>
+    </div>
+
+    <!-- Stacked bar: stage x type -->
+    <div class="chart-row">
+        <div class="chart-container chart-full">
+            <h3>Pipelinev&auml;rde per steg och aff&auml;rstyp (MSEK)</h3>
+            <canvas id="chart-stacked"></canvas>
+        </div>
+    </div>
+
+    <!-- Hitrate matrix -->
+    <div class="matrix-section">
+        <h3>Hitrate-matris (% sannolikhet)</h3>
+        <div id="hitrate-matrix"></div>
+    </div>
+
+    <!-- Deal table -->
+    <div class="table-section">
+        <h3>Alla deals</h3>
+        <div id="deal-table"></div>
+    </div>
+
+    <div class="footer">
+        Data synkad fr&aring;n Twenty CRM var 15:e minut &middot; <span id="data-date"></span>
+    </div>
+</div>
+
+<script>
+// ─── Embedded data ────────────────────────────────────────
+const DEALS = [
+{"name":"Rocmore Signalisten Solna","stage":"forhandling","deal_type":"styrd","estimated_value":40000000,"calculated_value":0,"hit_rate":90},
+{"name":"LSS G17 Gruppen","stage":"offert_skickad","deal_type":"varm","estimated_value":14686531,"calculated_value":0,"hit_rate":25},
+{"name":"Hässelby Berså","stage":"kalkyl","deal_type":"kall","estimated_value":11312562,"calculated_value":0,"hit_rate":10},
+{"name":"Villa Träkvista","stage":"kalkyl","deal_type":"kall","estimated_value":10000000,"calculated_value":0,"hit_rate":10},
+{"name":"Grimvägen 12","stage":"forhandling","deal_type":"intern","estimated_value":9000000,"calculated_value":0,"hit_rate":100},
+{"name":"Värmdö","stage":"kalkyl","deal_type":"kall","estimated_value":7731180,"calculated_value":0,"hit_rate":10},
+{"name":"Grimvagen NKP Sydost 7 MSEK","stage":"forhandling","deal_type":"intern","estimated_value":7000000,"calculated_value":0,"hit_rate":100},
+{"name":"Järfälla Grimvägen Et 1 Stomkomp","stage":"kalkyl","deal_type":"intern","estimated_value":5750000,"calculated_value":0,"hit_rate":95},
+{"name":"Lappkärrsberget brandväg","stage":"kalkyl","deal_type":"styrd","estimated_value":4914100,"calculated_value":0,"hit_rate":60},
+{"name":"Grus/Transport","stage":"kalkyl","deal_type":"kall","estimated_value":3500000,"calculated_value":0,"hit_rate":10},
+{"name":"Utfackningsväggar","stage":"kalkyl","deal_type":"styrd","estimated_value":3000000,"calculated_value":0,"hit_rate":60},
+{"name":"Balder Haninge","stage":"kalkyl","deal_type":"styrd","estimated_value":3000000,"calculated_value":0,"hit_rate":60},
+{"name":"Campus Et 2","stage":"offert_skickad","deal_type":"varm","estimated_value":2000000,"calculated_value":0,"hit_rate":25},
+{"name":"Tureberg 25:45","stage":"kalkyl","deal_type":"kall","estimated_value":2000000,"calculated_value":0,"hit_rate":10},
+{"name":"Kungens Kurva","stage":"kalkyl","deal_type":"kall","estimated_value":1500000,"calculated_value":0,"hit_rate":10},
+{"name":"RAM Solna Lekplats Bagartorp","stage":"kalkyl","deal_type":"styrd","estimated_value":1225400,"calculated_value":0,"hit_rate":60},
+{"name":"Nedre egilsvägen","stage":"kalkyl","deal_type":"kall","estimated_value":1200000,"calculated_value":0,"hit_rate":10},
+{"name":"Oljeavskiljare","stage":"kalkyl","deal_type":"kall","estimated_value":525200,"calculated_value":0,"hit_rate":10},
+{"name":"STC Gym","stage":"kalkyl","deal_type":"service","estimated_value":500000,"calculated_value":0,"hit_rate":85},
+{"name":"Järfälla Grimvägen Et 1 Betong","stage":"forhandling","deal_type":"intern","estimated_value":400000,"calculated_value":0,"hit_rate":100},
+{"name":"Rouletten","stage":"forhandling","deal_type":"varm","estimated_value":325000,"calculated_value":0,"hit_rate":70},
+{"name":"Björklövsstigen 3","stage":"kalkyl","deal_type":"kall","estimated_value":264500,"calculated_value":0,"hit_rate":10},
+{"name":"Järfälla Grimvägen Et 1 Mark","stage":"forhandling","deal_type":"intern","estimated_value":260295,"calculated_value":0,"hit_rate":100},
+{"name":"Källargolv","stage":"forhandling","deal_type":"kall","estimated_value":250000,"calculated_value":0,"hit_rate":50},
+{"name":"Brf Vakna","stage":"forhandling","deal_type":"service","estimated_value":125000,"calculated_value":0,"hit_rate":95},
+{"name":"Gipsentreprenad","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"2 st tysta hytter","stage":"forhandling","deal_type":"service","estimated_value":0,"calculated_value":0,"hit_rate":95},
+{"name":"Utbyggnad stall","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"VA Håbo","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"Karlholmstrand","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"Karlholm projekt","stage":"kalkyl","deal_type":"kall","estimated_value":0,"calculated_value":0,"hit_rate":10},
+{"name":"Tätskikt balkonger","stage":"forhandling","deal_type":"service","estimated_value":0,"calculated_value":0,"hit_rate":95}
+];
+
+const HITRATE_MATRIX = {
+    intern:  {inkommit:90, kalkyl:95, offert_skickad:100, forhandling:100, kontrakterat:100, leverans:100, fakturerat:100},
+    kall:    {inkommit:5,  kalkyl:10, offert_skickad:20,  forhandling:50,  kontrakterat:100, leverans:100, fakturerat:100},
+    varm:    {inkommit:15, kalkyl:30, offert_skickad:50,  forhandling:70,  kontrakterat:100, leverans:100, fakturerat:100},
+    styrd:   {inkommit:40, kalkyl:60, offert_skickad:80,  forhandling:90,  kontrakterat:100, leverans:100, fakturerat:100},
+    service: {inkommit:70, kalkyl:85, offert_skickad:95,  forhandling:95,  kontrakterat:100, leverans:100, fakturerat:100}
+};
+
+const STAGE_ORDER = ['inkommit','kalkyl','offert_skickad','forhandling','kontrakterat','leverans','fakturerat'];
+const STAGE_LABELS = {'inkommit':'Inkommit','kalkyl':'Kalkyl','offert_skickad':'Offert skickad','forhandling':'Förhandling','kontrakterat':'Kontrakterat','leverans':'Leverans','fakturerat':'Fakturerat'};
+const TYPE_LABELS = {'kall':'Kall','varm':'Varm','styrd':'Styrd','service':'Service','intern':'Intern'};
+const TYPE_COLORS = {'kall':'#3b82f6','varm':'#f59e0b','styrd':'#8b5cf6','service':'#10b981','intern':'#64748b'};
+const STAGE_COLORS = ['#818cf8','#fbbf24','#fb923c','#60a5fa','#34d399','#2dd4bf','#a3e635'];
+
+// ─── Helpers ──────────────────────────────────────────────
+function fmt(v) {
+    if (v >= 1e6) return (v/1e6).toFixed(1).replace('.0','') + ' Mkr';
+    if (v >= 1e3) return Math.round(v/1e3) + ' tkr';
+    return v.toLocaleString('sv-SE') + ' kr';
+}
+function fmtM(v) { return (v/1e6).toFixed(1).replace('.0',''); }
+
+// ─── Dashboard class ──────────────────────────────────────
+class Dashboard {
+    constructor(data) {
+        this.rawData = data;
+        this.filteredData = data;
+        this.charts = {};
+        this.sortCol = 'estimated_value';
+        this.sortDir = 'desc';
+        this.init();
+    }
+
+    init() {
+        this.populateFilters();
+        this.renderKPIs();
+        this.renderCharts();
+        this.renderHitrateMatrix();
+        this.renderTable();
+        document.getElementById('data-date').textContent = new Date().toLocaleString('sv-SE');
+    }
+
+    populateFilters() {
+        const stageSelect = document.getElementById('filter-stage');
+        STAGE_ORDER.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = STAGE_LABELS[s];
+            stageSelect.appendChild(opt);
+        });
+        const typeSelect = document.getElementById('filter-type');
+        Object.keys(TYPE_LABELS).forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t; opt.textContent = TYPE_LABELS[t];
+            typeSelect.appendChild(opt);
+        });
+    }
+
+    applyFilters() {
+        const stage = document.getElementById('filter-stage').value;
+        const type = document.getElementById('filter-type').value;
+        this.filteredData = this.rawData.filter(d => {
+            if (stage !== 'all' && d.stage !== stage) return false;
+            if (type !== 'all' && d.deal_type !== type) return false;
+            return true;
+        });
+        this.renderKPIs();
+        this.updateCharts();
+        this.renderTable();
+    }
+
+    renderKPIs() {
+        const d = this.filteredData;
+        const total = d.reduce((s,r) => s + r.estimated_value, 0);
+        const weighted = d.reduce((s,r) => s + r.estimated_value * r.hit_rate / 100, 0);
+        const count = d.length;
+        const avgHr = count ? d.reduce((s,r) => s + r.hit_rate, 0) / count : 0;
+        const largest = d.length ? d.reduce((a,b) => a.estimated_value > b.estimated_value ? a : b) : null;
+
+        document.getElementById('kpi-total').textContent = fmt(total);
+        document.getElementById('kpi-total-sub').textContent = count + ' deals i pipeline';
+        document.getElementById('kpi-weighted').textContent = fmt(weighted);
+        document.getElementById('kpi-weighted-sub').textContent = 'Justerat med hitrate';
+        document.getElementById('kpi-count').textContent = count;
+        document.getElementById('kpi-count-sub').textContent = d.filter(r=>r.estimated_value>0).length + ' med värde';
+        document.getElementById('kpi-hitrate').textContent = avgHr.toFixed(0) + '%';
+        document.getElementById('kpi-hitrate-sub').textContent = 'Genomsnittlig sannolikhet';
+        document.getElementById('kpi-largest').textContent = largest ? fmt(largest.estimated_value) : '—';
+        document.getElementById('kpi-largest-sub').textContent = largest ? largest.name : '';
+    }
+
+    renderCharts() {
+        this.charts.stageValue = this.createStageValueChart();
+        this.charts.stageWeighted = this.createStageWeightedChart();
+        this.charts.typeDist = this.createTypeDistChart();
+        this.charts.stageCount = this.createStageCountChart();
+        this.charts.stacked = this.createStackedChart();
+    }
+
+    updateCharts() {
+        // Destroy and recreate (simpler with filtered data)
+        Object.values(this.charts).forEach(c => c.destroy());
+        this.renderCharts();
+    }
+
+    aggByStage() {
+        const agg = {};
+        STAGE_ORDER.forEach(s => agg[s] = {value:0, weighted:0, count:0});
+        this.filteredData.forEach(d => {
+            if (agg[d.stage]) {
+                agg[d.stage].value += d.estimated_value;
+                agg[d.stage].weighted += d.estimated_value * d.hit_rate / 100;
+                agg[d.stage].count++;
+            }
+        });
+        return agg;
+    }
+
+    aggByType() {
+        const agg = {};
+        Object.keys(TYPE_LABELS).forEach(t => agg[t] = {value:0, weighted:0, count:0});
+        this.filteredData.forEach(d => {
+            if (agg[d.deal_type]) {
+                agg[d.deal_type].value += d.estimated_value;
+                agg[d.deal_type].weighted += d.estimated_value * d.hit_rate / 100;
+                agg[d.deal_type].count++;
+            }
+        });
+        return agg;
+    }
+
+    createStageValueChart() {
+        const agg = this.aggByStage();
+        const labels = STAGE_ORDER.map(s => STAGE_LABELS[s]);
+        const data = STAGE_ORDER.map(s => agg[s].value / 1e6);
+        return new Chart(document.getElementById('chart-stage-value'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data, backgroundColor: STAGE_COLORS.map(c => c + 'cc'),
+                    borderColor: STAGE_COLORS, borderWidth: 1, borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: {display:false}, tooltip: { callbacks: { label: ctx => fmt(ctx.parsed.y * 1e6) }}},
+                scales: { y: { beginAtZero:true, ticks: { callback: v => v + ' M' }}, x: { grid: {display:false} }}
+            }
+        });
+    }
+
+    createStageWeightedChart() {
+        const agg = this.aggByStage();
+        const labels = STAGE_ORDER.map(s => STAGE_LABELS[s]);
+        const dataEst = STAGE_ORDER.map(s => agg[s].value / 1e6);
+        const dataW = STAGE_ORDER.map(s => agg[s].weighted / 1e6);
+        return new Chart(document.getElementById('chart-stage-weighted'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Uppskattat', data: dataEst, backgroundColor: '#e2e8f0', borderRadius: 4 },
+                    { label: 'Viktat', data: dataW, backgroundColor: '#2563ebcc', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position:'top', labels:{usePointStyle:true,padding:16}}, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y * 1e6) }}},
+                scales: { y: { beginAtZero:true, ticks: { callback: v => v + ' M' }}, x: { grid: {display:false} }}
+            }
+        });
+    }
+
+    createTypeDistChart() {
+        const agg = this.aggByType();
+        const types = Object.keys(TYPE_LABELS).filter(t => agg[t].value > 0);
+        return new Chart(document.getElementById('chart-type-dist'), {
+            type: 'doughnut',
+            data: {
+                labels: types.map(t => TYPE_LABELS[t]),
+                datasets: [{ data: types.map(t => agg[t].value), backgroundColor: types.map(t => TYPE_COLORS[t] + 'cc'), borderColor: '#fff', borderWidth: 2 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                plugins: {
+                    legend: { position:'right', labels:{usePointStyle:true,padding:12}},
+                    tooltip: { callbacks: { label: ctx => { const tot = ctx.dataset.data.reduce((a,b)=>a+b,0); return ctx.label + ': ' + fmt(ctx.parsed) + ' (' + ((ctx.parsed/tot)*100).toFixed(0) + '%)'; }}}
+                }
+            }
+        });
+    }
+
+    createStageCountChart() {
+        const agg = this.aggByStage();
+        const labels = STAGE_ORDER.map(s => STAGE_LABELS[s]);
+        const data = STAGE_ORDER.map(s => agg[s].count);
+        return new Chart(document.getElementById('chart-stage-count'), {
+            type: 'bar',
+            data: { labels, datasets: [{ data, backgroundColor: STAGE_COLORS.map(c => c + '99'), borderRadius: 4 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: {display:false} },
+                scales: { y: { beginAtZero:true, ticks:{stepSize:1}}, x: {grid:{display:false}} }
+            }
+        });
+    }
+
+    createStackedChart() {
+        const types = Object.keys(TYPE_LABELS);
+        const datasets = types.map(t => {
+            const data = STAGE_ORDER.map(s => {
+                return this.filteredData.filter(d => d.stage === s && d.deal_type === t).reduce((sum,d) => sum + d.estimated_value, 0) / 1e6;
+            });
+            return { label: TYPE_LABELS[t], data, backgroundColor: TYPE_COLORS[t] + 'cc', borderRadius: 2 };
+        });
+        return new Chart(document.getElementById('chart-stacked'), {
+            type: 'bar',
+            data: { labels: STAGE_ORDER.map(s => STAGE_LABELS[s]), datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position:'top', labels:{usePointStyle:true,padding:16}}, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y * 1e6) }}},
+                scales: { x: {stacked:true, grid:{display:false}}, y: {stacked:true, beginAtZero:true, ticks:{callback: v => v + ' M'}} }
+            }
+        });
+    }
+
+    renderHitrateMatrix() {
+        const types = Object.keys(TYPE_LABELS);
+        let html = '<table class="matrix-table"><thead><tr><th>Affärstyp</th>';
+        STAGE_ORDER.forEach(s => html += '<th>' + STAGE_LABELS[s] + '</th>');
+        html += '</tr></thead><tbody>';
+        types.forEach(t => {
+            html += '<tr><td>' + TYPE_LABELS[t] + '</td>';
+            STAGE_ORDER.forEach(s => {
+                const hr = HITRATE_MATRIX[t]?.[s] || 0;
+                const cls = hr >= 80 ? 'hr-high' : hr >= 40 ? 'hr-mid' : 'hr-low';
+                html += '<td><span class="hr-cell ' + cls + '">' + hr + '%</span></td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        document.getElementById('hitrate-matrix').innerHTML = html;
+    }
+
+    renderTable() {
+        const d = [...this.filteredData].sort((a,b) => {
+            const av = a[this.sortCol], bv = b[this.sortCol];
+            const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+            return this.sortDir === 'asc' ? cmp : -cmp;
+        });
+        const cols = [
+            {field:'name', label:'Projekt', format: null},
+            {field:'stage', label:'Steg', format:'stage'},
+            {field:'deal_type', label:'Typ', format:'type'},
+            {field:'estimated_value', label:'Uppskattat värde', format:'currency'},
+            {field:'hit_rate', label:'Hitrate', format:'percent'},
+            {field:'weighted', label:'Viktat värde', format:'currency'}
+        ];
+        let html = '<table class="deal-table"><thead><tr>';
+        cols.forEach(c => {
+            const arrow = this.sortCol === c.field ? (this.sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+            html += '<th onclick="dashboard.sortTable(\'' + c.field + '\')">' + c.label + arrow + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+        d.forEach(row => {
+            const w = row.estimated_value * row.hit_rate / 100;
+            html += '<tr>';
+            html += '<td>' + row.name + '</td>';
+            html += '<td><span class="stage-badge stage-' + row.stage + '">' + (STAGE_LABELS[row.stage]||row.stage) + '</span></td>';
+            html += '<td><span class="type-badge type-' + row.deal_type + '">' + (TYPE_LABELS[row.deal_type]||row.deal_type) + '</span></td>';
+            html += '<td class="text-right font-mono">' + fmt(row.estimated_value) + '</td>';
+            html += '<td class="text-right font-mono">' + row.hit_rate + '%</td>';
+            html += '<td class="text-right font-mono">' + fmt(w) + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        document.getElementById('deal-table').innerHTML = html;
+    }
+
+    sortTable(field) {
+        if (field === 'weighted') {
+            // Sort by computed weighted value
+            this.sortCol = 'estimated_value';
+            this.filteredData.forEach(d => d._weighted = d.estimated_value * d.hit_rate / 100);
+            this.sortCol = '_weighted';
+        } else {
+            if (this.sortCol === field) {
+                this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortCol = field;
+                this.sortDir = 'desc';
+            }
+        }
+        this.renderTable();
+    }
+}
+
+// ─── Init ─────────────────────────────────────────────────
+const dashboard = new Dashboard(DEALS);
+</script>
+</body>
+</html>

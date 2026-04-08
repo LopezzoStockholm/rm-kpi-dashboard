@@ -1,0 +1,272 @@
+"""
+Simuleringsmodell: Finansiering & lånekapacitet.
+Beräknar max belåning baserat på kassaflöde, skuldsättningsgrad och DSCR.
+Monte Carlo på intäktsvariation och räntekostnad.
+"""
+
+import random
+import statistics
+from rm_data import query_dicts
+from simulation_engine import (
+    SimModel, ParamDef, SimResult, MCResult,
+    register_model, build_histogram, percentile, now_iso,
+)
+
+
+class FinancingModel(SimModel):
+    name = "financing"
+    display_name = "Finansiering & lånekapacitet"
+    description = "Skuldsättningsgrad, DSCR, max belåning och ränteexponering"
+    category = "finans"
+
+    # ------------------------------------------------------------------
+    # Baseline
+    # ------------------------------------------------------------------
+
+    def _financials(self, company_code: str) -> dict:
+        """Hämtar årssiffror från Fortnox."""
+        rows = query_dicts("""
+            SELECT
+                COALESCE(SUM(fi.total), 0) as annual_revenue,
+                COALESCE((SELECT SUM(total) FROM fortnox_supplier_invoice
+                          WHERE invoice_date > NOW() - INTERVAL '365 days'), 0) as annual_costs,
+                COALESCE((SELECT SUM(total_cost) FROM fortnox_salary_monthly
+                          WHERE year_month >= TO_CHAR(NOW() - INTERVAL '365 days', 'YYYY-MM')), 0) as annual_salary
+            FROM fortnox_invoice fi
+            WHERE fi.invoice_date > NOW() - INTERVAL '365 days'
+        """)
+        if rows:
+            rev = float(rows[0]["annual_revenue"] or 0)
+            costs = float(rows[0]["annual_costs"] or 0)
+            salary = float(rows[0]["annual_salary"] or 0)
+            return {
+                "annual_revenue": rev,
+                "annual_costs": costs,
+                "annual_salary": salary,
+                "ebitda": rev - costs - salary,
+            }
+        return {"annual_revenue": 0, "annual_costs": 0, "annual_salary": 0, "ebitda": 0}
+
+    def _recurring_costs(self, company_code: str) -> float:
+        """Summa fasta månadskostnader."""
+        rows = query_dicts("""
+            SELECT COALESCE(SUM(monthly_amount), 0) as monthly
+            FROM recurring_cost
+            WHERE active = true
+        """)
+        return float(rows[0]["monthly"]) * 12 if rows else 0
+
+    def _bank_balance(self, company_code: str) -> float:
+        """Senaste banksaldo."""
+        rows = query_dicts("""
+            SELECT balance FROM bank_balance
+            ORDER BY updated_at DESC LIMIT 1
+        """)
+        return float(rows[0]["balance"]) if rows else 0
+
+    # ------------------------------------------------------------------
+    # Interface
+    # ------------------------------------------------------------------
+
+    def fetch_baseline(self, company_code: str = "RM") -> dict:
+        fin = self._financials(company_code)
+        recurring = self._recurring_costs(company_code)
+        bank = self._bank_balance(company_code)
+
+        ebitda = fin["ebitda"]
+        rev = fin["annual_revenue"]
+
+        # Antagande: nuvarande räntenivå 6%, befintlig skuld 0 (kan byggas ut)
+        current_debt = 0  # Ska läsas från revers/lån-tabell om den finns
+        interest_rate = 6.0
+        loan_term_years = 10
+
+        # DSCR-baserad max belåning
+        # DSCR = EBITDA / annual_debt_service >= 1.25
+        # annual_debt_service = lån * (ränta + amortering)
+        # amortering = lån / löptid
+        target_dscr = 1.25
+        annual_pmt_rate = (interest_rate / 100) + (1 / loan_term_years)
+        max_debt_dscr = (ebitda / (target_dscr * annual_pmt_rate)) if annual_pmt_rate > 0 and ebitda > 0 else 0
+
+        # Bankens tumregel: max 3-4x EBITDA
+        max_debt_multiple = ebitda * 3.5
+
+        # Konservativ: minsta av de två
+        max_debt = min(max_debt_dscr, max_debt_multiple) if ebitda > 0 else 0
+
+        # Skuldsättningsgrad (debt / equity approximation)
+        equity_approx = bank + ebitda  # Förenklat
+        debt_ratio = current_debt / equity_approx if equity_approx > 0 else 0
+
+        # Annual debt service
+        annual_service = current_debt * annual_pmt_rate
+        dscr = ebitda / annual_service if annual_service > 0 else 99
+
+        return {
+            "annual_revenue": round(rev),
+            "ebitda": round(ebitda),
+            "recurring_annual": round(recurring),
+            "bank_balance": round(bank),
+            "current_debt": round(current_debt),
+            "interest_rate": interest_rate,
+            "loan_term_years": loan_term_years,
+            "max_debt_dscr": round(max_debt_dscr),
+            "max_debt_multiple": round(max_debt_multiple),
+            "max_debt": round(max_debt),
+            "debt_ratio": round(debt_ratio, 2),
+            "dscr": round(dscr, 2),
+            "free_capacity": round(max_debt - current_debt),
+            "samples": {
+                "revenue_months": 12,
+            }
+        }
+
+    def parameters(self, company_code: str = "RM") -> list:
+        baseline = self.fetch_baseline(company_code)
+        return [
+            ParamDef("interest_rate", "Räntenivå", "pct", baseline["interest_rate"],
+                     2, 12, 0.5, "%",
+                     f"Genomsnittlig ränta på skuld. Nuvarande: {baseline['interest_rate']}%"),
+            ParamDef("ebitda_delta_pct", "EBITDA-förändring", "pct", 0,
+                     -30, 50, 5, "%",
+                     f"Förändring i EBITDA. Nuvarande: {baseline['ebitda']/1000:.0f} tkr"),
+            ParamDef("new_debt", "Ny skuld", "int", 0,
+                     0, 10000000, 500000, "SEK",
+                     "Belopp ny belåning att simulera"),
+            ParamDef("loan_term_years", "Löptid", "int", baseline["loan_term_years"],
+                     3, 25, 1, "år",
+                     f"Lånets amorteringstid"),
+        ]
+
+    def compute(self, inputs: dict, company_code: str = "RM") -> SimResult:
+        baseline = self.fetch_baseline(company_code)
+
+        rate = float(inputs.get("interest_rate", baseline["interest_rate"]))
+        ebitda_pct = float(inputs.get("ebitda_delta_pct", 0))
+        new_debt = float(inputs.get("new_debt", 0))
+        term = int(inputs.get("loan_term_years", baseline["loan_term_years"]))
+
+        # Justerade värden
+        adj_ebitda = baseline["ebitda"] * (1 + ebitda_pct / 100)
+        adj_debt = baseline["current_debt"] + new_debt
+        annual_pmt_rate = (rate / 100) + (1 / term)
+        adj_annual_service = adj_debt * annual_pmt_rate
+        adj_dscr = adj_ebitda / adj_annual_service if adj_annual_service > 0 else 99
+
+        # Max debt vid justerat EBITDA
+        target_dscr = 1.25
+        adj_max_dscr = (adj_ebitda / (target_dscr * annual_pmt_rate)) if annual_pmt_rate > 0 and adj_ebitda > 0 else 0
+        adj_max_multiple = adj_ebitda * 3.5
+        adj_max_debt = min(adj_max_dscr, adj_max_multiple) if adj_ebitda > 0 else 0
+        adj_free = adj_max_debt - adj_debt
+
+        # Warnings
+        warnings = []
+        if adj_dscr < 1.25 and adj_debt > 0:
+            warnings.append(f"DSCR {adj_dscr:.2f} under gränsvärde 1.25 — banken godkänner normalt inte detta")
+        if adj_dscr < 1.0 and adj_debt > 0:
+            warnings.append(f"DSCR {adj_dscr:.2f} — kassaflödet täcker inte ränta + amortering")
+        if rate > 8:
+            warnings.append(f"Ränta {rate}% är högre än normalt för byggbranschen")
+        if adj_free < 0:
+            warnings.append(f"Skulden överskrider max kapacitet med {abs(adj_free)/1e3:.0f} tkr")
+
+        # Impact
+        parts = []
+        if new_debt > 0:
+            parts.append(f"Ny skuld {new_debt/1e3:.0f} tkr")
+            parts.append(f"DSCR {adj_dscr:.2f}")
+            if adj_free >= 0:
+                parts.append(f"kvar {adj_free/1e3:.0f} tkr i lånekapacitet")
+            else:
+                parts.append(f"överskrider kapacitet med {abs(adj_free)/1e3:.0f} tkr")
+        else:
+            parts.append(f"Max belåning {adj_max_debt/1e6:.1f} MSEK vid {rate}% ränta")
+        impact = ", ".join(parts)
+
+        return SimResult(
+            model="financing",
+            timestamp=now_iso(),
+            baseline={
+                "ebitda": baseline["ebitda"],
+                "current_debt": baseline["current_debt"],
+                "max_debt": baseline["max_debt"],
+                "dscr": baseline["dscr"],
+                "interest_rate": baseline["interest_rate"],
+                "free_capacity": baseline["free_capacity"],
+            },
+            adjusted={
+                "ebitda": round(adj_ebitda),
+                "current_debt": round(adj_debt),
+                "max_debt": round(adj_max_debt),
+                "dscr": round(adj_dscr, 2),
+                "interest_rate": rate,
+                "free_capacity": round(adj_free),
+                "annual_debt_service": round(adj_annual_service),
+            },
+            delta={
+                "max_debt": {"abs": round(adj_max_debt - baseline["max_debt"])},
+                "dscr": {"abs": round(adj_dscr - baseline["dscr"], 2)},
+                "free_capacity": {"abs": round(adj_free - baseline["free_capacity"])},
+            },
+            impact_summary=impact,
+            details={
+                "annual_pmt_rate": round(annual_pmt_rate * 100, 1),
+                "target_dscr": target_dscr,
+                "loan_term_years": term,
+            },
+            warnings=warnings,
+        )
+
+    def monte_carlo(self, inputs: dict, iterations: int = 10000,
+                    company_code: str = "RM") -> MCResult:
+        baseline = self.fetch_baseline(company_code)
+
+        ebitda = baseline["ebitda"]
+        rate = baseline["interest_rate"]
+        term = baseline["loan_term_years"]
+
+        ebitda_std = float(inputs.get("ebitda_std", max(abs(ebitda) * 0.15, 50000)))
+        rate_std = float(inputs.get("rate_std", 1.0))
+
+        max_debt_values = []
+        target_dscr = 1.25
+
+        for _ in range(iterations):
+            sim_ebitda = random.gauss(ebitda, ebitda_std)
+            sim_rate = max(1, random.gauss(rate, rate_std))
+            annual_pmt_rate = (sim_rate / 100) + (1 / term)
+            sim_max_dscr = (sim_ebitda / (target_dscr * annual_pmt_rate)) if annual_pmt_rate > 0 and sim_ebitda > 0 else 0
+            sim_max_mult = sim_ebitda * 3.5
+            sim_max = min(sim_max_dscr, sim_max_mult) if sim_ebitda > 0 else 0
+            max_debt_values.append(max(0, sim_max))
+
+        warnings = []
+        if ebitda < 500000:
+            warnings.append("EBITDA under 500 tkr — lånekapacitet begränsad oavsett scenario")
+
+        mean_max = round(sum(max_debt_values) / len(max_debt_values))
+
+        return MCResult(
+            model="financing",
+            timestamp=now_iso(),
+            iterations=iterations,
+            metric="max_debt",
+            mean=mean_max,
+            std=round(float(statistics.stdev(max_debt_values)) if len(max_debt_values) > 1 else 0),
+            p10=round(percentile(max_debt_values, 10)),
+            p25=round(percentile(max_debt_values, 25)),
+            p50=round(percentile(max_debt_values, 50)),
+            p75=round(percentile(max_debt_values, 75)),
+            p90=round(percentile(max_debt_values, 90)),
+            histogram=build_histogram(max_debt_values, bins=20),
+            baseline_value=baseline["max_debt"],
+            impact_summary=f"Max belåning: P10={percentile(max_debt_values,10)/1e6:.1f} MSEK, P50={percentile(max_debt_values,50)/1e6:.1f} MSEK, P90={percentile(max_debt_values,90)/1e6:.1f} MSEK",
+            warnings=warnings,
+        )
+
+
+# Registrera vid import
+_financing = FinancingModel()
+register_model(_financing)

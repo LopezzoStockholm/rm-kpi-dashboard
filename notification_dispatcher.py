@@ -1,0 +1,781 @@
+#!/usr/bin/env python3
+"""
+notification_dispatcher.py — RM Dashboard Fas 4
+Läser nudge_queue, resolverar notification_policy per nudge, respekterar
+cooldown + quiet-hours, skickar via rätt kanal, loggar i notification_log.
+
+Körs via cron:
+    2-59/15 * * * *  cd /opt/rm-infra && python3 notification_dispatcher.py --batch=50
+"""
+
+import argparse
+import json
+import logging
+import os
+import sys
+import traceback
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+sys.path.insert(0, '/opt/rm-infra')
+from rm_data import get_conn, query_dicts, query_one, execute
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
+log = logging.getLogger('notif-dispatcher')
+
+DASHBOARD_BASE = os.environ.get('RM_DASHBOARD_URL', 'https://dashboard.rmef.se')
+MAX_ATTEMPTS = 3
+BACKOFF_MINUTES = [5, 30, 120]  # per attempt
+
+
+# ============================================================
+# Lookup-helpers
+# ============================================================
+
+def get_owner_context(owner: str) -> dict:
+    """Slår upp portal_user-raden för owner (via planner_email/email/owner_alias).
+    Returnerar dict eller None."""
+    rows = query_dicts("""
+        SELECT id, username, display_name, role, email, planner_email, owner_alias,
+               phone, teams_user_id, timezone, manager_email
+        FROM portal_user
+        WHERE active = true
+          AND (planner_email ILIKE %s OR email ILIKE %s OR owner_alias ILIKE %s
+               OR username ILIKE %s OR display_name ILIKE %s)
+        LIMIT 1
+    """, (owner, owner, owner, owner, owner))
+    return rows[0] if rows else None
+
+
+def get_company_for_activity(ka_id: int) -> str:
+    """Hämtar company — ingen kolumn på key_activity idag, fallback 'rmef'."""
+    return 'rmef'
+
+
+def resolve_policy(owner_ctx: dict, company: str, trigger: str):
+    """Cascade: user > role > company > system. Returns list of policies (one per channel)."""
+    owner_val = (owner_ctx.get('planner_email') or owner_ctx.get('email')
+                 or owner_ctx.get('username') or '') if owner_ctx else ''
+    role_val = owner_ctx.get('role') if owner_ctx else ''
+    rows = query_dicts("""
+        SELECT * FROM get_notification_policy(%s, %s, %s, %s)
+    """, (owner_val, role_val, company, trigger))
+    return rows  # list of dicts, one per channel
+
+
+# ============================================================
+# Quiet hours / cooldown
+# ============================================================
+
+def in_quiet_hours(policy: dict, tz_name: str) -> bool:
+    """quiet_hours_start=20, quiet_hours_end=7 → tyst 20:00-07:00 (wraps midnight)."""
+    qs = policy.get('quiet_hours_start')
+    qe = policy.get('quiet_hours_end')
+    if qs is None or qe is None:
+        return False
+    try:
+        tz = ZoneInfo(tz_name or 'Europe/Stockholm')
+    except Exception:
+        tz = ZoneInfo('Europe/Stockholm')
+    hour = datetime.now(tz).hour
+    if qs == qe:
+        return False
+    if qs < qe:
+        return qs <= hour < qe
+    # Wrap: t.ex. 20-7 → timmar 20,21,22,23,0,1,...,6
+    return hour >= qs or hour < qe
+
+
+def next_quiet_end(policy: dict, tz_name: str) -> datetime:
+    """Returnerar UTC-tidpunkt för nästa quiet_hours_end."""
+    qe = policy.get('quiet_hours_end') or 7
+    try:
+        tz = ZoneInfo(tz_name or 'Europe/Stockholm')
+    except Exception:
+        tz = ZoneInfo('Europe/Stockholm')
+    now_local = datetime.now(tz)
+    candidate = now_local.replace(hour=qe, minute=0, second=0, microsecond=0)
+    if candidate <= now_local:
+        candidate += timedelta(days=1)
+    return candidate.astimezone(timezone.utc)
+
+
+def in_cooldown(owner: str, trigger: str, cooldown_hours: int, channel: str = None) -> bool:
+    if not cooldown_hours or cooldown_hours <= 0:
+        return False
+    if channel:
+        rows = query_dicts("""
+            SELECT max(sent_at) AS last
+            FROM notification_log
+            WHERE owner = %s AND trigger_event = %s AND channel = %s AND status = 'sent'
+        """, (owner, trigger, channel))
+    else:
+        rows = query_dicts("""
+            SELECT max(sent_at) AS last
+            FROM notification_log
+            WHERE owner = %s AND trigger_event = %s AND status = 'sent'
+        """, (owner, trigger))
+    last = rows[0]['last'] if rows else None
+    if not last:
+        return False
+    delta = datetime.now(timezone.utc) - last
+    return delta < timedelta(hours=cooldown_hours)
+
+
+# ============================================================
+# Recipient-resolution
+# ============================================================
+
+def resolve_recipient(policy: dict, owner_ctx: dict, channel: str) -> list[str]:
+    """Returnerar lista av recipient-strängar (kan bli fan-out för role)."""
+    mode = policy.get('recipient_mode', 'owner')
+
+    def channel_addr(ctx: dict) -> str | None:
+        if not ctx:
+            return None
+        if channel == 'whatsapp':
+            return ctx.get('phone')
+        if channel == 'teams':
+            return ctx.get('teams_user_id')
+        if channel == 'email':
+            return ctx.get('email')
+        if channel == 'dashboard_only':
+            return (ctx.get('planner_email') or ctx.get('email')
+                    or ctx.get('username'))
+        return None
+
+    if mode == 'owner':
+        addr = channel_addr(owner_ctx)
+        return [addr] if addr else []
+
+    if mode == 'manager':
+        mgr = owner_ctx.get('manager_email') if owner_ctx else None
+        if not mgr:
+            return []
+        rows = query_dicts("""
+            SELECT id, username, display_name, role, email, planner_email,
+                   phone, teams_user_id
+            FROM portal_user WHERE active=true AND email=%s LIMIT 1
+        """, (mgr,))
+        if rows:
+            addr = channel_addr(rows[0])
+            return [addr] if addr else []
+        return []
+
+    if mode == 'role':
+        role = policy.get('recipient_value')
+        if not role:
+            return []
+        rows = query_dicts("""
+            SELECT email, planner_email, username, phone, teams_user_id
+            FROM portal_user WHERE active=true AND role=%s
+        """, (role,))
+        return [a for a in (channel_addr(r) for r in rows) if a]
+
+    if mode == 'specific':
+        val = policy.get('recipient_value')
+        return [val] if val else []
+
+    if mode == 'external':
+        # recipient_value = external_recipient.id
+        val = policy.get('recipient_value')
+        if not val:
+            return []
+        try:
+            ext_id = int(val)
+        except (TypeError, ValueError):
+            return []
+        rows = query_dicts("""
+            SELECT name, email, phone FROM external_recipient
+            WHERE id=%s AND active=true AND opt_out=false
+        """, (ext_id,))
+        if not rows:
+            return []
+        ctx = rows[0]
+        if channel == 'whatsapp':
+            return [ctx['phone']] if ctx.get('phone') else []
+        if channel == 'email':
+            return [ctx['email']] if ctx.get('email') else []
+        return []
+
+    if mode == 'external_role':
+        # recipient_value = role (t.ex. 'kommun', 'leverantor', 'ue', 'kund')
+        role = policy.get('recipient_value')
+        if not role:
+            return []
+        rows = query_dicts("""
+            SELECT email, phone FROM external_recipient
+            WHERE role=%s AND active=true AND opt_out=false
+        """, (role,))
+        out = []
+        for r in rows:
+            if channel == 'whatsapp' and r.get('phone'):
+                out.append(r['phone'])
+            elif channel == 'email' and r.get('email'):
+                out.append(r['email'])
+        return out
+
+    return []
+
+
+# ============================================================
+# Message rendering
+# ============================================================
+
+def build_link(nudge: dict, owner_ctx: dict) -> str:
+    owner = (owner_ctx.get('planner_email') or owner_ctx.get('username')
+             or '') if owner_ctx else ''
+    ntype = nudge.get('nudge_type', '')
+    if ntype.startswith('weekly_'):
+        week = nudge.get('iso_week', '')
+        return f"{DASHBOARD_BASE}/admin/meeting?week={week}"
+    return f"{DASHBOARD_BASE}/admin/hit-rate?owner={owner}"
+
+
+def render_message(template: str, nudge: dict, owner_ctx: dict,
+                   extra: dict) -> str:
+    placeholders = {
+        'owner': nudge.get('owner', ''),
+        'activity_name': extra.get('activity_name', '(aktivitet)'),
+        'hit_pct': extra.get('hit_pct', ''),
+        'window_weeks': extra.get('window_weeks', ''),
+        'consecutive_red': extra.get('consecutive_red', ''),
+        'threshold_green': extra.get('threshold_green', ''),
+        'threshold_yellow': extra.get('threshold_yellow', ''),
+        'target_name': extra.get('target_name', ''),
+        'target': extra.get('target', ''),
+        'actual': extra.get('actual', ''),
+        'blocker_text': extra.get('blocker_text', ''),
+        'owner_name': (owner_ctx or {}).get('display_name', nudge.get('owner', '')),
+        'week': nudge.get('iso_week', ''),
+        'activity_count': extra.get('activity_count', ''),
+        'completed': extra.get('completed', ''),
+        'total': extra.get('total', ''),
+        'blockers_text': extra.get('blockers_text', 'Inga blockers'),
+        'link': build_link(nudge, owner_ctx),
+    }
+    try:
+        return (template or '').format(**placeholders)
+    except KeyError as e:
+        log.warning(f"Template missing placeholder {e}: {template}")
+        return template or ''
+
+
+def enrich_nudge_data(nudge: dict) -> dict:
+    """Plockar aktivitetsnamn + sparade tröskelvärden + metrik från nudge.message eller DB."""
+    extra = {}
+    ka_id = nudge.get('key_activity_id')
+    if ka_id:
+        rows = query_dicts("""
+            SELECT title FROM key_activity WHERE id=%s
+        """, (ka_id,))
+        if rows:
+            extra['activity_name'] = rows[0]['title']
+    # Parse nudge.message — weekly kompaktformat eller JSON
+    msg = nudge.get('message') or ''
+    ntype = nudge.get('nudge_type', '')
+
+    # weekly_commit: message = antal aktiviteter (int)
+    if ntype == 'weekly_commit':
+        extra['activity_count'] = msg.strip() or '0'
+    # weekly_reminder: message = "completed/total"
+    elif ntype == 'weekly_reminder' and '/' in msg:
+        parts = msg.split('/')
+        extra['completed'] = parts[0]
+        extra['total'] = parts[1] if len(parts) > 1 else ''
+    # weekly_summary: message = "done/total|pct|blockers"
+    elif ntype == 'weekly_summary' and '|' in msg:
+        segs = msg.split('|')
+        if '/' in segs[0]:
+            d, t = segs[0].split('/')
+            extra['completed'] = d
+            extra['total'] = t
+        extra['hit_pct'] = segs[1] if len(segs) > 1 else ''
+        blocker_count = segs[2] if len(segs) > 2 else '0'
+        try:
+            bc = int(blocker_count)
+        except ValueError:
+            bc = 0
+        extra['blockers_text'] = f'{bc} blocker(s)' if bc > 0 else 'Inga blockers'
+    elif msg.startswith('{'):
+        try:
+            data = json.loads(msg)
+            extra.update(data)
+        except Exception:
+            pass
+    return extra
+
+
+# ============================================================
+# Kanal-adaptrar
+# ============================================================
+
+def dispatch_dashboard_only(recipient: str, message: str, nudge: dict,
+                            extra: dict) -> str:
+    """INSERT i dashboard_notification. Returnerar id som channel_message_id."""
+    severity = 'critical' if nudge.get('nudge_type') == 'red_streak' else (
+        'warning' if nudge.get('nudge_type') in ('at_risk', 'target_missed')
+        else 'info')
+    title = extra.get('activity_name') or nudge.get('nudge_type') or 'RM notis'
+    link = build_link(nudge, {'planner_email': recipient})
+    row_id = execute("""
+        INSERT INTO dashboard_notification
+          (owner, trigger_event, title, body, link, severity)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (recipient, nudge.get('nudge_type'), title, message, link, severity),
+    returning=True)
+    return f"dash:{row_id}"
+
+
+def dispatch_whatsapp(recipient: str, message: str, nudge: dict,
+                      extra: dict) -> str:
+    """WhatsApp Cloud API — hybrid dispatcher.
+
+    Flow:
+      1) Normalisera mottagarnummer till wa_id (ta bort +, mellanslag).
+      2) Kolla whatsapp_conversation_window — om senaste inkommande meddelande
+         fran wa_id < 24h → skicka free-form text.
+      3) Annars → skicka via godkand UTILITY/notification-template.
+         Hamtar default template fran whatsapp_template WHERE is_default=true
+         AND status='APPROVED'. Om ingen default APPROVED finns,
+         fallback till forsta APPROVED med param_count=1 annars param_count=0.
+    """
+    import requests, re as _re
+    # Läs från config-fil (konsistent med webhook-koden)
+    import json as _json
+    _wa_cfg_path = '/opt/rm-infra/whatsapp-meta-config.json'
+    token = os.environ.get('WHATSAPP_TOKEN', '')
+    phone_id = os.environ.get('WHATSAPP_PHONE_ID', '')
+    if not token or not phone_id:
+        try:
+            with open(_wa_cfg_path) as _f:
+                _wa_cfg = _json.load(_f)
+            token = token or _wa_cfg.get('access_token', '')
+            phone_id = phone_id or _wa_cfg.get('phone_number_id', '')
+        except Exception:
+            pass
+    if not token or not phone_id:
+        raise RuntimeError("WHATSAPP_TOKEN/PHONE_ID saknas (varken env eller config)")
+
+    wa_id = _re.sub(r"[^0-9]", "", recipient or "")
+    if not wa_id:
+        raise RuntimeError(f"Ogiltigt WA-mottagarnummer: {recipient!r}")
+
+    # 1) Avgor om vi ar innanfor 24h-fonstret
+    within_window = False
+    try:
+        rows = query_dicts("""
+            SELECT 1 FROM whatsapp_conversation_window
+            WHERE wa_id = %s
+              AND last_inbound_at > now() - interval '24 hours'
+        """, (wa_id,))
+        within_window = bool(rows)
+    except Exception as e:
+        log.warning(f"Kunde inte kolla WA-fonster: {e}")
+
+    url = f"https://graph.facebook.com/v20.0/{phone_id}/messages"
+    headers = {"Authorization": f"Bearer {token}",
+               "Content-Type": "application/json"}
+
+    if within_window:
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": wa_id,
+            "type": "text",
+            "text": {"body": message[:4096]},
+        }
+    else:
+        # Hamta default template
+        tpl = None
+        try:
+            rows = query_dicts("""
+                SELECT name, language, param_count FROM whatsapp_template
+                WHERE status = 'APPROVED' AND is_default = true
+                LIMIT 1
+            """)
+            if rows:
+                tpl = rows[0]
+            else:
+                # Fallback till forsta APPROVED med param_count=1
+                rows = query_dicts("""
+                    SELECT name, language, param_count FROM whatsapp_template
+                    WHERE status = 'APPROVED'
+                    ORDER BY param_count DESC, name
+                    LIMIT 1
+                """)
+                if rows:
+                    tpl = rows[0]
+        except Exception as e:
+            log.warning(f"Kunde inte hamta template-konfig: {e}")
+
+        if not tpl:
+            raise RuntimeError(
+                "Ingen APPROVED WhatsApp-template hittades i whatsapp_template. "
+                "Kan ej skicka utanfor 24h-fonstret.")
+
+        tpl_components = []
+        if tpl["param_count"] and tpl["param_count"] > 0:
+            # Parametriserad template: injicera meddelandet som {{1}}
+            tpl_components = [{
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": message[:1024]}
+                ]
+            }]
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": wa_id,
+            "type": "template",
+            "template": {
+                "name": tpl["name"],
+                "language": {"code": tpl["language"]},
+            }
+        }
+        if tpl_components:
+            payload["template"]["components"] = tpl_components
+
+    r = requests.post(url, headers=headers, json=payload, timeout=15)
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"WhatsApp send {r.status_code}: {r.text[:300]} "
+            f"(within_window={within_window})")
+    data = r.json()
+    msg_id = data.get('messages', [{}])[0].get('id', '')
+    return f"{'wa_text' if within_window else 'wa_tpl'}:{msg_id}"
+
+
+
+_graph_token_cache = {"token": None, "expires": 0}
+
+
+def _graph_token() -> str:
+    """Hämtar Microsoft Graph access-token via samma Azure-app som planner_sync."""
+    import time
+    import requests
+    if _graph_token_cache["token"] and _graph_token_cache["expires"] > time.time() + 60:
+        return _graph_token_cache["token"]
+    with open('/opt/rm-infra/planner-config.json') as f:
+        cfg = json.load(f)
+    url = f"https://login.microsoftonline.com/{cfg['tenant_id']}/oauth2/v2.0/token"
+    r = requests.post(url, data={
+        "grant_type": "client_credentials",
+        "client_id": cfg["client_id"],
+        "client_secret": cfg["client_secret"],
+        "scope": "https://graph.microsoft.com/.default",
+    }, timeout=15)
+    r.raise_for_status()
+    j = r.json()
+    _graph_token_cache["token"] = j["access_token"]
+    _graph_token_cache["expires"] = time.time() + j.get("expires_in", 3600)
+    return j["access_token"]
+
+
+_graph_mail_cache = {"token": None, "expires": 0}
+
+def _graph_mail_token() -> str:
+    """Hämtar Graph-token via RM Portal API-appen (har Mail.Send permission)."""
+    import time
+    import requests
+    if _graph_mail_cache["token"] and _graph_mail_cache["expires"] > time.time() + 60:
+        return _graph_mail_cache["token"]
+    cfg_path = '/opt/rm-infra/graph-mail-config.json'
+    try:
+        with open(cfg_path) as f:
+            cfg = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(f"Saknar {cfg_path}")
+    url = f"https://login.microsoftonline.com/{cfg['tenant_id']}/oauth2/v2.0/token"
+    r = requests.post(url, data={
+        "grant_type": "client_credentials",
+        "client_id": cfg["client_id"],
+        "client_secret": cfg["client_secret"],
+        "scope": "https://graph.microsoft.com/.default",
+    }, timeout=15)
+    r.raise_for_status()
+    j = r.json()
+    _graph_mail_cache["token"] = j["access_token"]
+    _graph_mail_cache["expires"] = time.time() + j.get("expires_in", 3600)
+    return j["access_token"]
+
+
+def dispatch_email(recipient: str, message: str, nudge: dict,
+                   extra: dict) -> str:
+    """Skickar mail via Microsoft Graph sendMail från ata@rmef.se."""
+    import requests
+    token = _graph_mail_token()
+    sender = os.environ.get('RM_NOTIFY_SENDER', 'ata@rmef.se')
+    subject = extra.get('activity_name') or nudge.get('nudge_type') or 'RM notis'
+    subject = f"[RM] {subject}"
+    url = f"https://graph.microsoft.com/v1.0/users/{sender}/sendMail"
+    payload = {
+        "message": {
+            "subject": subject,
+            "body": {"contentType": "Text", "content": message},
+            "toRecipients": [{"emailAddress": {"address": recipient}}],
+        },
+        "saveToSentItems": "false",
+    }
+    r = requests.post(url, json=payload,
+                      headers={"Authorization": f"Bearer {token}"}, timeout=15)
+    if r.status_code not in (200, 202):
+        raise RuntimeError(f"Graph sendMail {r.status_code}: {r.text[:200]}")
+    return f"mail:{sender}:{recipient}"
+
+
+def dispatch_teams(recipient: str, message: str, nudge: dict,
+                   extra: dict) -> str:
+    """Skickar Teams-notis via Power Automate webhook till kanal baserat på nudge-typ.
+
+    Routing:
+      - ekonomi-relaterat → Ekonomi-kanalen
+      - ÄTA/projekt → Aktiva Projekt-kanalen
+      - default → Aktiva Projekt-kanalen
+
+    recipient kan vara teams_user_id (loggas men kanalen når alla).
+    """
+    import requests
+
+    # Power Automate webhook URLs per kanal
+    PA_WEBHOOKS = {
+        "aktiva_projekt": "https://prod-179.westeurope.logic.azure.com:443/workflows/cdd9158194534bd6a6c94a65591659f7/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=PLACEHOLDER",
+        "ekonomi": "https://prod-179.westeurope.logic.azure.com:443/workflows/970d873169e84a04927cd23c7e40403b/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=PLACEHOLDER",
+        "anbud_kalkyl": "https://prod-179.westeurope.logic.azure.com:443/workflows/d92e1908f5c54db8832fb36907c1a5ee/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=PLACEHOLDER",
+    }
+
+    # Route to channel based on nudge type
+    nudge_type = nudge.get('nudge_type', '')
+    trigger = extra.get('trigger_event', '')
+    channel_key = "aktiva_projekt"  # default
+    if any(kw in (nudge_type + trigger).lower() for kw in ('ekonomi', 'cashflow', 'faktur', 'budget')):
+        channel_key = "ekonomi"
+
+    webhook_url = PA_WEBHOOKS.get(channel_key, PA_WEBHOOKS["aktiva_projekt"])
+
+    # Try loading full webhook URLs from config
+    try:
+        with open('/opt/rm-infra/config/teams-webhooks.json') as f:
+            hooks = json.load(f)
+        webhook_url = hooks.get(channel_key, webhook_url)
+    except Exception:
+        pass
+
+    activity_name = extra.get('activity_name', nudge_type)
+    owner = extra.get('owner', recipient or '')
+
+    payload = {
+        "title": f"[RM] {activity_name}",
+        "text": message,
+        "owner": owner,
+        "severity": extra.get('severity', 'info'),
+    }
+
+    r = requests.post(webhook_url, json=payload, timeout=15)
+    if r.status_code not in (200, 202):
+        raise RuntimeError(f"Teams webhook {r.status_code}: {r.text[:200]}")
+    return f"teams:pa:{channel_key}"
+
+
+CHANNEL_DISPATCH = {
+    'dashboard_only': dispatch_dashboard_only,
+    'whatsapp': dispatch_whatsapp,
+    'teams': dispatch_teams,
+    'email': dispatch_email,
+}
+
+
+# ============================================================
+# Huvudloop
+# ============================================================
+
+def mark_status(nudge_id: int, status: str, error: str = None,
+                channel_message_id: str = None, policy_id: int = None,
+                increment_attempt: bool = False, reschedule_to=None):
+    sets = ["status=%s", "last_attempt_at=now()"]
+    params = [status]
+    if error is not None:
+        sets.append("error_message=%s")
+        params.append(error)
+    if channel_message_id is not None:
+        sets.append("channel_message_id=%s")
+        params.append(channel_message_id)
+    if policy_id is not None:
+        sets.append("notification_policy_id=%s")
+        params.append(policy_id)
+    if increment_attempt:
+        sets.append("attempts = attempts + 1")
+    if status == 'sent':
+        sets.append("sent_at=now()")
+    if reschedule_to is not None:
+        sets.append("scheduled_at=%s")
+        params.append(reschedule_to)
+    params.append(nudge_id)
+    execute(f"UPDATE nudge_queue SET {', '.join(sets)} WHERE id=%s", tuple(params))
+
+
+def log_notification(nudge_id: int, owner: str, trigger: str, channel: str,
+                     recipient: str, message: str, policy_id: int,
+                     status: str, channel_msg_id: str = None,
+                     error: str = None):
+    execute("""
+        INSERT INTO notification_log
+          (nudge_id, owner, trigger_event, channel, recipient,
+           rendered_message, policy_id, status, channel_message_id, error_message)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (nudge_id, owner, trigger, channel, recipient, message,
+          policy_id, status, channel_msg_id, error))
+
+
+# Mappa nudge_type från sweep → giltig trigger_event i notification_policy
+NUDGE_TYPE_TO_TRIGGER = {
+    'at_risk': 'at_risk',
+    'at_risk_2w': 'red_streak',      # 2v röd i rad = red_streak
+    'red_streak': 'red_streak',
+    'yellow_entered': 'yellow_entered',
+    'target_missed': 'target_missed',
+    'blocker_logged': 'blocker_logged',
+    'weekly_commit': 'weekly_commit',
+    'weekly_reminder': 'weekly_reminder',
+    'weekly_summary': 'weekly_summary',
+}
+
+
+def process_nudge(nudge: dict) -> str:
+    """Hanterar en nudge. Returnerar slutstatus."""
+    nudge_id = nudge['id']
+    owner = nudge['owner']
+    raw_type = nudge['nudge_type']
+    trigger = NUDGE_TYPE_TO_TRIGGER.get(raw_type, raw_type)
+
+    owner_ctx = get_owner_context(owner)
+    if not owner_ctx:
+        log.warning(f"nudge {nudge_id}: ingen portal_user för owner={owner}")
+        mark_status(nudge_id, 'skipped_policy',
+                    error='owner ej hittad i portal_user')
+        return 'skipped_policy'
+
+    company = get_company_for_activity(nudge.get('key_activity_id'))
+    policies = resolve_policy(owner_ctx, company, trigger)
+    if not policies:
+        log.warning(f"nudge {nudge_id}: ingen policy för trigger={trigger}")
+        mark_status(nudge_id, 'skipped_policy',
+                    error=f'ingen policy för {trigger}')
+        return 'skipped_policy'
+
+    tz_name = owner_ctx.get('timezone', 'Europe/Stockholm')
+    extra = enrich_nudge_data(nudge)
+    any_success = False
+    last_msg_id = None
+    last_error = None
+    last_policy_id = policies[0]['id']
+
+    for policy in policies:
+        policy_id = policy['id']
+        last_policy_id = policy_id
+        channel = policy['channel']
+
+        # Quiet-hours → hoppa över denna kanal (logga men fortsätt med nästa)
+        if in_quiet_hours(policy, tz_name):
+            log.info(f"nudge {nudge_id}/{channel}: quiet hours, hoppar över")
+            log_notification(nudge_id, owner, trigger, channel, '',
+                             '', policy_id, 'skipped_quiet')
+            continue
+
+        # Cooldown per kanal
+        if in_cooldown(owner, f"{trigger}:{channel}", policy['cooldown_hours']):
+            log.info(f"nudge {nudge_id}/{channel}: cooldown aktiv")
+            log_notification(nudge_id, owner, trigger, channel, '',
+                             '', policy_id, 'skipped_cooldown')
+            continue
+
+        recipients = resolve_recipient(policy, owner_ctx, channel)
+        if not recipients:
+            log.warning(f"nudge {nudge_id}/{channel}: ingen recipient")
+            continue
+
+        dispatcher_fn = CHANNEL_DISPATCH.get(channel)
+        if not dispatcher_fn:
+            log.warning(f"nudge {nudge_id}/{channel}: okänd kanal")
+            continue
+
+        message = render_message(policy['message_template'], nudge, owner_ctx, extra)
+
+        for recipient in recipients:
+            try:
+                msg_id = dispatcher_fn(recipient, message, nudge, extra)
+                log_notification(nudge_id, owner, trigger, channel, recipient,
+                                 message, policy_id, 'sent', channel_msg_id=msg_id)
+                any_success = True
+                last_msg_id = msg_id
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                log.error(f"nudge {nudge_id}/{channel} → {recipient}: {last_error}")
+                log_notification(nudge_id, owner, trigger, channel, recipient,
+                                 message, policy_id, 'failed', error=last_error)
+
+    if any_success:
+        mark_status(nudge_id, 'sent', policy_id=last_policy_id,
+                    channel_message_id=last_msg_id)
+        return 'sent'
+
+    if not any_success and last_error:
+        attempts = nudge.get('attempts', 0) + 1
+        if attempts >= MAX_ATTEMPTS:
+            mark_status(nudge_id, 'failed', policy_id=last_policy_id,
+                        error=last_error, increment_attempt=True)
+            return 'failed'
+
+        backoff = BACKOFF_MINUTES[min(attempts - 1, len(BACKOFF_MINUTES) - 1)]
+        resched = datetime.now(timezone.utc) + timedelta(minutes=backoff)
+        mark_status(nudge_id, 'retrying', policy_id=last_policy_id,
+                    error=last_error, increment_attempt=True, reschedule_to=resched)
+        return 'retrying'
+
+    # All channels skipped (quiet/cooldown) — reschedule
+    resched = next_quiet_end(policies[0], tz_name) if in_quiet_hours(policies[0], tz_name) else None
+    mark_status(nudge_id, 'pending' if resched else 'skipped_cooldown',
+                policy_id=last_policy_id, reschedule_to=resched,
+                error='alla kanaler hoppades över')
+    return 'skipped_cooldown'
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--batch', type=int, default=50)
+    ap.add_argument('--dry-run', action='store_true')
+    args = ap.parse_args()
+
+    pending = query_dicts("""
+        SELECT *
+        FROM nudge_queue
+        WHERE status IN ('pending', 'retrying')
+          AND (scheduled_at IS NULL OR scheduled_at <= now())
+          AND attempts < %s
+        ORDER BY COALESCE(scheduled_at, created_at)
+        LIMIT %s
+    """, (MAX_ATTEMPTS, args.batch))
+
+    log.info(f"Hittade {len(pending)} nudges att bearbeta")
+    if args.dry_run:
+        for n in pending:
+            log.info(f"DRY: nudge {n['id']} owner={n['owner']} "
+                     f"type={n['nudge_type']}")
+        return
+
+    counts = {}
+    for n in pending:
+        try:
+            status = process_nudge(n)
+        except Exception as e:
+            log.error(f"Oväntat fel nudge {n['id']}: {e}\n{traceback.format_exc()}")
+            status = 'error'
+        counts[status] = counts.get(status, 0) + 1
+
+    log.info(f"Klar. Summering: {counts}")
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RM Ekonomi & Styrning</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav a {
+      color: #8b949e;
+      text-decoration: none;
+      padding: 16px 16px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    nav a:first-child {
+      color: #f0f6fc;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 16px 24px 16px 0;
+      border-right: 1px solid #30363d;
+      margin-right: 8px;
+    }
+
+    nav a.active {
+      color: #f0f6fc;
+      border-bottom-color: #3b82f6;
+    }
+
+    nav a:not(:first-child):hover {
+      color: #f0f6fc;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 24px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .kpi-label {
+      color: #8b949e;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      color: #f0f6fc;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .kpi-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .kpi-meta-label {
+      color: #8b949e;
+    }
+
+    .kpi-trend {
+      font-weight: 600;
+    }
+
+    .trend-positive { color: #10b981; }
+    .trend-negative { color: #ef4444; }
+    .trend-warning { color: #f59e0b; }
+
+    .kpi-highlight {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .highlight-green { background: #10b981; }
+    .highlight-warning { background: #f59e0b; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin: 32px 0 16px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .chart-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 20px;
+      position: relative;
+      height: 320px;
+    }
+
+    .chart-title {
+      color: #f0f6fc;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: calc(100% - 35px);
+    }
+
+    .table-card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .table-header {
+      background: #161b22;
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .table-header h3 {
+      color: #f0f6fc;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #161b22;
+      color: #8b949e;
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    tbody td {
+      padding: 12px 20px;
+      border-bottom: 1px solid #30363d;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+
+    tbody tr:hover {
+      background: #0d1117;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-open {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .status-in-progress {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+    }
+
+    .status-done {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    .lg-section {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+
+    .lg-section h3 {
+      color: #f0f6fc;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .lg-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .lg-item:last-child {
+      border-bottom: none;
+    }
+
+    .lg-label {
+      color: #e2e8f0;
+    }
+
+    .lg-meta {
+      color: #8b949e;
+      font-size: 12px;
+    }
+
+    footer {
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      padding: 16px;
+      text-align: center;
+      color: #8b949e;
+      font-size: 11px;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">RM Entreprenad och Fasad</a>
+    <a href="index.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Oversikt</a>
+    <a href="ekonomi.html" class="active" style="padding:16px 16px;color:#f0f6fc;text-decoration:none;border-bottom:2px solid #3b82f6;">Ekonomi</a>
+    <a href="drift.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Drift &amp; Projekt</a>
+    <a href="fastighet.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Fastighet</a>
+    <a href="bolagsstyrning.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Bolagsstyrning</a>
+    <a href="personal.html" style="padding:16px 16px;color:#8b949e;text-decoration:none;border-bottom:2px solid transparent;">Min sida</a>
+  </nav>
+
+  <div class="container">
+    <h1 class="page-title">Ekonomi & Styrning</h1>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-highlight highlight-green"></div>
+        <div class="kpi-label">Omsattning YTD</div>
+        <div class="kpi-value">15.7 MSEK</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">Mål 16.7</span>
+          <span class="kpi-trend trend-positive">+18%</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-highlight highlight-warning"></div>
+        <div class="kpi-label">Tackningsbidrag</div>
+        <div class="kpi-value">22%</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">Mål 25%</span>
+          <span class="kpi-trend trend-negative">-3%</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Kassaposition</div>
+        <div class="kpi-value">1.4 MSEK</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">Likvid</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Kundfordringar</div>
+        <div class="kpi-value">3.2 MSEK</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">OSL ca 35 dagar</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Leverantorsskulder</div>
+        <div class="kpi-value">2.8 MSEK</div>
+        <div class="kpi-meta">
+          <span class="kpi-meta-label">Okomplett</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Finansiella Trender</h2>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Omsattning Budget vs Utfall</div>
+        <div class="chart-container">
+          <canvas id="chartRevenue"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Kostnadsfordelning</div>
+        <div class="chart-container">
+          <canvas id="chartCosts"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Kassaflode In vs Ut</div>
+        <div class="chart-container">
+          <canvas id="chartCashflow"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Aktuella Uppgifter</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Uppgift</th>
+            <th>Ansvarig</th>
+            <th>Deadline</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Manadsavstamning mars</td>
+            <td>Mikael Millares</td>
+            <td>31 mars 2026</td>
+            <td><span class="status-badge status-done">Pagar</span></td>
+          </tr>
+          <tr>
+            <td>Kvartalsrapport Q1</td>
+            <td>Mikael Millares</td>
+            <td>15 april 2026</td>
+            <td><span class="status-badge status-open">Oppen</span></td>
+          </tr>
+          <tr>
+            <td>Skatteplanering 3:12</td>
+            <td>Daniel Lopez</td>
+            <td>10 april 2026</td>
+            <td><span class="status-badge status-open">Oppen</span></td>
+          </tr>
+          <tr>
+            <td>Budget Q2</td>
+            <td>Mattias Bylund</td>
+            <td>20 april 2026</td>
+            <td><span class="status-badge status-open">Oppen</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="section-title">LG-Åtgärder</h2>
+
+    <div class="lg-section">
+      <div class="lg-item">
+        <div>
+          <div class="lg-label">Ny lokal</div>
+          <div class="lg-meta">Jan utreder alternativ</div>
+        </div>
+        <div class="lg-meta">deadline 28 mars</div>
+      </div>
+      <div class="lg-item">
+        <div>
+          <div class="lg-label">Kassaflodesoptimering implementerad</div>
+        </div>
+        <div class="lg-meta">✓</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>RM Ekonomi & Styrning — 25 mars 2026</p>
+  </footer>
+
+  <script>
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#8b949e', font: { size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#30363d', drawBorder: false },
+          ticks: { color: '#8b949e', font: { size: 11 } }
+        },
+        y: {
+          grid: { color: '#30363d', drawBorder: false },
+          ticks: { color: '#8b949e', font: { size: 11 } }
+        }
+      }
+    };
+
+    // Revenue chart
+    new Chart(document.getElementById('chartRevenue'), {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar'],
+        datasets: [
+          {
+            label: 'Budget',
+            data: [5.0, 5.5, 6.2],
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#8b5cf6'
+          },
+          {
+            label: 'Utfall',
+            data: [4.8, 5.2, 5.7],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#3b82f6'
+          }
+        ]
+      },
+      options: chartOptions
+    });
+
+    // Cost distribution
+    new Chart(document.getElementById('chartCosts'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Material', 'Personal', 'UE', 'Ovrigt'],
+        datasets: [{
+          data: [42, 31, 15, 12],
+          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+          borderColor: '#1a1d27',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#8b949e', font: { size: 11 }, padding: 12 }
+          }
+        }
+      }
+    });
+
+    // Cashflow chart
+    new Chart(document.getElementById('chartCashflow'), {
+      type: 'bar',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar'],
+        datasets: [
+          {
+            label: 'In',
+            data: [4.2, 4.8, 5.1],
+            backgroundColor: '#10b981'
+          },
+          {
+            label: 'Ut',
+            data: [3.8, 4.5, 4.9],
+            backgroundColor: '#ef4444'
+          }
+        ]
+      },
+      options: chartOptions
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rm-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rmadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: rm_central
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rmadmin -d rm_central"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rm-net
+  metabase:
+    image: metabase/metabase:latest
+    container_name: rm-metabase
+    restart: always
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${POSTGRES_USER:-rmadmin}
+      MB_DB_PASS: ${POSTGRES_PASSWORD}
+      MB_DB_HOST: postgres
+      JAVA_TIMEZONE: Europe/Stockholm
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rm-net
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: rm-n8n
+    restart: always
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-rmadmin}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      GENERIC_TIMEZONE: Europe/Stockholm
+    volumes:
+      - n8n_data:/home/node/.n8n
+    ports:
+      - "5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rm-net
+  redis:
+    image: redis:7-alpine
+    container_name: rm-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rm-net
+  twenty:
+    image: twentycrm/twenty:latest
+    container_name: rm-twenty
+    restart: always
+    environment:
+      SERVER_URL: https://crm.rmef.se
+      FRONT_BASE_URL: https://crm.rmef.se
+      PG_DATABASE_URL: postgresql://rmadmin:Rm4x7KoncernDB2026stack@postgres:5432/twenty
+      REDIS_URL: redis://redis:6379
+      APP_SECRET: ${APP_SECRET}
+      SIGN_IN_PREFILLED: "false"
+      IS_SIGN_UP_DISABLED: "false"
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/docker-data
+      AUTH_MICROSOFT_ENABLED: "true"
+      AUTH_MICROSOFT_CLIENT_ID: 3b882b60-c9d8-44ed-bd81-541360045562
+      AUTH_MICROSOFT_CLIENT_SECRET: "${AUTH_MICROSOFT_CLIENT_SECRET}"
+      AUTH_MICROSOFT_TENANT_ID: 1508fbab-5db4-45c6-8c16-9af15443febc
+      AUTH_MICROSOFT_CALLBACK_URL: https://crm.rmef.se/auth/microsoft/redirect
+      AUTH_MICROSOFT_APIS_CALLBACK_URL: https://crm.rmef.se/auth/microsoft-apis/get-access-token
+      MESSAGING_PROVIDER_MICROSOFT_ENABLED: "true"
+      CALENDAR_PROVIDER_MICROSOFT_ENABLED: "true"
+    volumes:
+      - twenty_data:/app/docker-data
+    ports:
+      - "3001:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rm-net
+  twenty-worker:
+    image: twentycrm/twenty:latest
+    container_name: rm-twenty-worker
+    restart: always
+    command: ["node", "dist/queue-worker/queue-worker"]
+    environment:
+      SERVER_URL: https://crm.rmef.se
+      FRONT_BASE_URL: https://crm.rmef.se
+      PG_DATABASE_URL: postgresql://rmadmin:Rm4x7KoncernDB2026stack@postgres:5432/twenty
+      REDIS_URL: redis://redis:6379
+      APP_SECRET: ${APP_SECRET}
+      SIGN_IN_PREFILLED: "false"
+      IS_SIGN_UP_DISABLED: "false"
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/docker-data
+      AUTH_MICROSOFT_ENABLED: "true"
+      AUTH_MICROSOFT_CLIENT_ID: 3b882b60-c9d8-44ed-bd81-541360045562
+      AUTH_MICROSOFT_CLIENT_SECRET: "${AUTH_MICROSOFT_CLIENT_SECRET}"
+      AUTH_MICROSOFT_TENANT_ID: 1508fbab-5db4-45c6-8c16-9af15443febc
+      AUTH_MICROSOFT_CALLBACK_URL: https://crm.rmef.se/auth/microsoft/redirect
+      AUTH_MICROSOFT_APIS_CALLBACK_URL: https://crm.rmef.se/auth/microsoft-apis/get-access-token
+      MESSAGING_PROVIDER_MICROSOFT_ENABLED: "true"
+      CALENDAR_PROVIDER_MICROSOFT_ENABLED: "true"
+    volumes:
+      - twenty_data:/app/docker-data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rm-net
+  rm-portal-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: rm-portal-api
+    restart: always
+    environment:
+      RM_INTERNAL_TOKEN: "rm-internal-2026"
+      RM_DB_HOST: "postgres"
+      RM_DB_PASSWORD: "Rm4x7KoncernDB2026stack"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portal:/opt/rm-infra/portal
+      - ./graph-mail-config.json:/opt/rm-infra/graph-mail-config.json:ro
+      - ./ata-archive:/opt/rm-infra/ata-archive
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rm-net
+
+  rm-dashboard-v2:
+    build:
+      context: /opt/rm-dashboard-app
+      dockerfile: Dockerfile
+    container_name: rm-dashboard-v2
+    restart: always
+    environment:
+      PORTAL_API_URL: "http://rm-portal-api:8090"
+      RM_INTERNAL_TOKEN: "rm-internal-2026"
+      NODE_ENV: production
+    ports:
+      - "3003:3000"
+    depends_on:
+      - rm-portal-api
+    networks:
+      - rm-net
+
+volumes:
+  postgres_data:
+  n8n_data:
+  redis_data:
+  twenty_data:
+networks:
+  rm-net:
+    driver: bridge

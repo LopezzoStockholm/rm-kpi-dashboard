@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>RM Prospekteringsagent — Installera</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0D1117; color: #c9d1d9;
+    padding: 40px; max-width: 800px; margin: 0 auto;
+}
+h1 { color: #58a6ff; font-size: 1.4em; margin-bottom: 8px; }
+.subtitle { color: #8b949e; font-size: 0.9em; margin-bottom: 30px; }
+.step {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 20px; margin-bottom: 16px;
+}
+.step h2 { font-size: 1em; color: #58a6ff; margin-bottom: 10px; }
+.step p { color: #8b949e; line-height: 1.6; }
+.bookmarklet {
+    display: inline-block; background: #238636; color: #fff;
+    padding: 12px 24px; border-radius: 6px; font-size: 1em;
+    text-decoration: none; font-weight: 600; margin: 12px 0;
+}
+.bookmarklet:hover { background: #2ea043; }
+code {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+    padding: 2px 6px; font-size: 0.9em; color: #f0883e;
+}
+</style>
+</head>
+<body>
+
+<h1>RM Prospekteringsagent — Combify relay</h1>
+<p class="subtitle">Hämtar bygglov automatiskt från Combify och skapar leads i Twenty CRM</p>
+
+<div class="step">
+    <h2>Steg 1 — Dra bokmärket till bokmärkesfältet</h2>
+    <p>Dra knappen nedan till ditt bokmärkesfält i Chrome:</p>
+    <p>
+        <a class="bookmarklet" href="javascript:void(function(){var s=document.createElement('script');s.src='https://rm-api.161-35-79-92.nip.io/relay.js?t='+Date.now();document.head.appendChild(s)})()">RM Prospektera</a>
+    </p>
+    <p>Om du inte ser bokmärkesfältet: tryck <code>Ctrl+Shift+B</code> (Windows) eller <code>Cmd+Shift+B</code> (Mac).</p>
+</div>
+
+<div class="step">
+    <h2>Steg 2 — Öppna Combify</h2>
+    <p>Gå till <a href="https://map.combify.com/explore" style="color:#58a6ff">map.combify.com/explore</a> och logga in om du inte redan är det.</p>
+</div>
+
+<div class="step">
+    <h2>Steg 3 — Klicka på bokmärket</h2>
+    <p>När du är inloggad på Combify, klicka på bokmärket <code>RM Prospektera</code>. En panel visas med status och resultat.</p>
+</div>
+
+<div class="step">
+    <h2>Hur det fungerar</h2>
+    <p>Skriptet kör i din webbläsare och hämtar data via Combifys API med din inloggning. Resultaten skickas direkt till RM-servern som skapar leads i Twenty CRM. Kör det dagligen eller när du vill uppdatera pipeline.</p>
+</div>
+
+</body>
+</html>

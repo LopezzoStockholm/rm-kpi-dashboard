@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RM Entreprenad och Fasad - Oversikt</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+    nav {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav a:first-child {
+      color: #f0f6fc;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 16px 24px 16px 0;
+      border-right: 1px solid #30363d;
+      margin-right: 8px;
+    }
+    nav a {
+      padding: 16px;
+      color: #8b949e;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s;
+    }
+    nav a[href="index.html"] { color: #f0f6fc; border-bottom-color: #3b82f6; }
+    nav a:hover { color: #f0f6fc; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .header {
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #f0f6fc;
+    }
+    .header p {
+      color: #8b949e;
+      margin: 4px 0;
+    }
+    .section {
+      margin-bottom: 32px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .card:hover {
+      border-color: #484f58;
+    }
+    .card.clickable {
+      cursor: pointer;
+    }
+    .card.clickable:hover {
+      border-color: #58a6ff;
+      box-shadow: 0 0 8px rgba(58, 130, 255, 0.2);
+    }
+    .kpi-label {
+      color: #8b949e;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 8px;
+    }
+    .kpi-status {
+      font-size: 12px;
+      color: #8b949e;
+    }
+    .status-green { color: #10b981; }
+    .status-yellow { color: #f59e0b; }
+    .status-red { color: #ef4444; }
+    .status-blue { color: #3b82f6; }
+    .traffic-card {
+      display: flex;
+      flex-direction: column;
+    }
+    .traffic-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    .traffic-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 12px;
+    }
+    .traffic-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .traffic-label {
+      color: #8b949e;
+      flex: 1;
+    }
+    .traffic-value {
+      color: #f0f6fc;
+      font-weight: 500;
+    }
+    .traffic-arrow {
+      opacity: 0;
+      margin-left: 8px;
+      color: #3b82f6;
+      transition: opacity 0.2s;
+    }
+    .card.clickable:hover .traffic-arrow {
+      opacity: 1;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1a1d27;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th {
+      background: #0f1117;
+      padding: 12px 16px;
+      text-align: left;
+      color: #8b949e;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #30363d;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #30363d;
+      color: #e2e8f0;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover {
+      background: #0f1117;
+    }
+    .status-paid { color: #10b981; }
+    .status-unpaid { color: #f59e0b; }
+    .status-overdue { color: #ef4444; }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 16px;
+    }
+    .footer {
+      text-align: center;
+      color: #8b949e;
+      padding: 24px;
+      font-size: 12px;
+      border-top: 1px solid #30363d;
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">RM Entreprenad och Fasad</a>
+    <a href="index.html">Oversikt</a>
+    <a href="ekonomi.html">Ekonomi</a>
+    <a href="drift.html">Drift &amp; Projekt</a>
+    <a href="fastighet.html">Fastighet</a>
+    <a href="bolagsstyrning.html">Bolagsstyrning</a>
+    <a href="personal.html">Min sida</a>
+  </nav>
+
+  <div class="container">
+    <div class="header">
+      <h1>RM Entreprenad och Fasad</h1>
+      <p>Ekonomisk oversikt &amp; Pipeline</p>
+      <p>Uppdaterad: <span id="updated-date"></span></p>
+    </div>
+
+    <!-- Omradesstatus -->
+    <div class="section">
+      <div class="section-title">Omradesstatus</div>
+      <div class="grid-4">
+        <div class="card clickable traffic-card" onclick="location.href='ekonomi.html'">
+          <div class="traffic-title">Ekonomi &amp; Styrning</div>
+          <div class="traffic-row">
+            <span class="traffic-label">Omsattning</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>15.7 MSEK</span>
+            <span class="traffic-arrow">→</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">TB</span>
+            <span class="traffic-value"><span class="traffic-dot status-yellow" style="background:#f59e0b;"></span>22%</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">Kassa</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>1.4 MSEK</span>
+          </div>
+        </div>
+
+        <div class="card clickable traffic-card" onclick="location.href='drift.html'">
+          <div class="traffic-title">Drift &amp; Projekt</div>
+          <div class="traffic-row">
+            <span class="traffic-label">Aktiva projekt</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>8</span>
+            <span class="traffic-arrow">→</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">ATA-compliance</span>
+            <span class="traffic-value"><span class="traffic-dot status-red" style="background:#ef4444;"></span>62%</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">Reklamationer</span>
+            <span class="traffic-value"><span class="traffic-dot status-yellow" style="background:#f59e0b;"></span>2</span>
+          </div>
+        </div>
+
+        <div class="card clickable traffic-card" onclick="location.href='fastighet.html'">
+          <div class="traffic-title">Fastighetsut<wbr>veckling</div>
+          <div class="traffic-row">
+            <span class="traffic-label">Markprojekt</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>3</span>
+            <span class="traffic-arrow">→</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">Forhandsbesked</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>1</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">Projektvarde</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>42 MSEK</span>
+          </div>
+        </div>
+
+        <div class="card clickable traffic-card" onclick="location.href='bolagsstyrning.html'">
+          <div class="traffic-title">Bolagsstyrning<wbr> Koncernen</div>
+          <div class="traffic-row">
+            <span class="traffic-label">Bolag</span>
+            <span class="traffic-value"><span class="traffic-dot status-green" style="background:#10b981;"></span>9</span>
+            <span class="traffic-arrow">→</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">Under bevakning</span>
+            <span class="traffic-value"><span class="traffic-dot status-yellow" style="background:#f59e0b;"></span>2</span>
+          </div>
+          <div class="traffic-row">
+            <span class="traffic-label">NKP transaktions<wbr>plan</span>
+            <span class="traffic-value"><span class="traffic-dot status-yellow" style="background:#f59e0b;"></span>Aktiv</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial KPIs -->
+    <div class="section">
+      <div class="section-title">Finansiella KPI</div>
+      <div class="grid-5" id="financial-kpis"></div>
+    </div>
+
+    <!-- Pipeline KPIs -->
+    <div class="section">
+      <div class="section-title">Pipeline KPI</div>
+      <div class="grid-4" id="pipeline-kpis"></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="section">
+      <div class="grid-2">
+        <div class="card">
+          <div style="font-weight:600;color:#f0f6fc;margin-bottom:16px;">Intakter vs Kostnader</div>
+          <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;color:#f0f6fc;margin-bottom:16px;">Kundfordelning</div>
+          <div class="chart-container">
+            <canvas id="customerChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline Charts -->
+    <div class="section">
+      <div class="grid-2">
+        <div class="card">
+          <div style="font-weight:600;color:#f0f6fc;margin-bottom:16px;">Pipelinevarde per steg</div>
+          <div class="chart-container">
+            <canvas id="stageChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;color:#f0f6fc;margin-bottom:16px;">Pipeline per affarstyp</div>
+          <div class="chart-container">
+            <canvas id="typeChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forfallobaserade fakturor -->
+    <div class="section">
+      <div class="section-title">Forfallobaserade fakturor</div>
+      <div class="card">
+        <div style="overflow-x: auto;">
+          <table id="invoices-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 10 Deals -->
+    <div class="section">
+      <div class="section-title">Top 10 Deals</div>
+      <div class="card">
+        <div style="overflow-x: auto;">
+          <table id="deals-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Dashboard för RM Entreprenad och Fasad • Data från Fortnox och Twenty CRM • Uppdaterad dagligen
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA =====
+    const invoices = [{"invoice_date":"2026-04-03","due_date":"2026-04-13","total":138000.00,"balance":138000.00,"status":"unpaid","customer_name":"NKP 1 AB","project_code":""},{"invoice_date":"2026-03-20","due_date":"2026-04-09","total":7356.00,"balance":7356.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-19","due_date":"2026-04-08","total":7356.00,"balance":7356.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-17","due_date":"2026-03-27","total":45000.00,"balance":45000.00,"status":"unpaid","customer_name":"SOS COMPANY AB","project_code":"101"},{"invoice_date":"2026-03-16","due_date":"2026-04-05","total":7356.00,"balance":7356.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-16","due_date":"2026-03-26","total":625000.00,"balance":625000.00,"status":"unpaid","customer_name":"Lista Maskin AB","project_code":""},{"invoice_date":"2026-03-06","due_date":"2026-03-26","total":7356.00,"balance":7356.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-06","due_date":"2026-03-26","total":7356.00,"balance":7356.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-05","due_date":"2026-03-25","total":6188.00,"balance":6188.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-05","due_date":"2026-03-25","total":6188.00,"balance":6188.00,"status":"unpaid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-03","due_date":"2026-03-23","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-02","due_date":"2026-03-22","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":"3050"},{"invoice_date":"2026-03-02","due_date":"2026-03-02","total":274099.00,"balance":0.00,"status":"paid","customer_name":"NKP 1 AB","project_code":""},{"invoice_date":"2026-03-01","due_date":"2026-03-31","total":80500.00,"balance":80500.00,"status":"unpaid","customer_name":"Interntid / Okänd kund","project_code":""},{"invoice_date":"2026-02-26","due_date":"2026-03-28","total":124105.00,"balance":124105.00,"status":"unpaid","customer_name":"Änkan Byggservice AB","project_code":"2081-1"},{"invoice_date":"2026-02-25","due_date":"2026-03-17","total":7356.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-02-20","due_date":"2026-02-20","total":-625000.00,"balance":0.00,"status":"paid","customer_name":"Brogie Aktiebolag","project_code":""},{"invoice_date":"2026-02-20","due_date":"2026-03-12","total":7356.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-02-19","due_date":"2026-03-11","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-02-18","due_date":"2026-03-10","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-02-12","due_date":"2026-03-14","total":134800.00,"balance":134800.00,"status":"overdue","customer_name":"Änkan Byggservice AB","project_code":""},{"invoice_date":"2026-02-10","due_date":"2026-02-20","total":625000.00,"balance":0.00,"status":"paid","customer_name":"Brogie Aktiebolag","project_code":""},{"invoice_date":"2026-02-06","due_date":"2026-02-26","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-02-03","due_date":"2026-02-23","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-02-02","due_date":"2026-02-22","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-01-29","due_date":"2026-02-28","total":39500.00,"balance":0.00,"status":"paid","customer_name":"Änkan Byggservice AB","project_code":""},{"invoice_date":"2026-01-29","due_date":"2026-02-05","total":-49375.00,"balance":0.00,"status":"paid","customer_name":"Änkan Byggservice AB","project_code":""},{"invoice_date":"2026-01-26","due_date":"2026-02-15","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2026-01-26","due_date":"2026-02-05","total":49375.00,"balance":0.00,"status":"paid","customer_name":"Änkan Byggservice AB","project_code":""},{"invoice_date":"2026-01-01","due_date":"2026-01-02","total":500000.00,"balance":0.00,"status":"paid","customer_name":"Sandarne Maskin AB","project_code":""},{"invoice_date":"2026-01-01","due_date":"2026-01-02","total":1125000.00,"balance":0.00,"status":"paid","customer_name":"Sandarne Maskin AB","project_code":""},{"invoice_date":"2025-12-17","due_date":"2025-12-27","total":122000.00,"balance":0.00,"status":"paid","customer_name":"NKP 1 AB","project_code":""},{"invoice_date":"2025-12-10","due_date":"2025-12-10","total":30996.00,"balance":0.00,"status":"paid","customer_name":"Urban Lindskog","project_code":""},{"invoice_date":"2025-12-04","due_date":"2025-12-14","total":145300.00,"balance":0.00,"status":"paid","customer_name":"Änkan Byggservice AB","project_code":""},{"invoice_date":"2025-12-02","due_date":"2025-12-12","total":96661.00,"balance":0.00,"status":"paid","customer_name":"Urban Lindskog","project_code":""},{"invoice_date":"2025-12-01","due_date":"2025-12-21","total":20900.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-348750.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-269719.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":269719.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":500000.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-500000.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":221250.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-221250.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":63125.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-63125.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":564938.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-564938.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":676406.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":-676406.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-11-27","due_date":"2025-11-27","total":348750.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-11-21","due_date":"2025-12-11","total":20900.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2025-11-18","due_date":"2025-12-08","total":6188.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2025-11-17","due_date":"2025-12-07","total":28256.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-10-31","total":-7356.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollsförbundet","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-11-09","total":105790.00,"balance":0.00,"status":"paid","customer_name":"Urban Lindskog","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-10-31","total":-487500.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-10-31","total":-12500.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-10-31","total":-20183.00,"balance":0.00,"status":"paid","customer_name":"Ayvens Sweden AB","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-10-31","total":-193500.00,"balance":0.00,"status":"paid","customer_name":"Consto AB","project_code":""},{"invoice_date":"2025-10-31","due_date":"2025-10-31","total":-34550.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollsförbundet","project_code":""},{"invoice_date":"2025-10-30","due_date":"2025-10-30","total":-12500.00,"balance":-12500.00,"status":"overdue","customer_name":"Vision","project_code":""},{"invoice_date":"2025-10-30","due_date":"2025-10-30","total":487500.00,"balance":0.00,"status":"paid","customer_name":"Vision","project_code":""},{"invoice_date":"2025-10-27","due_date":"2025-10-27","total":187500.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-10-16","due_date":"2025-11-05","total":44138.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2025-10-08","due_date":"2025-10-28","total":39463.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollförbundet","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-24","total":34550.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollsförbundet","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-24","total":102279.00,"balance":102279.00,"status":"overdue","customer_name":"Bruce Grant","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-24","total":114563.00,"balance":0.00,"status":"paid","customer_name":"Anders & Johanna Bylund","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-10-23","total":193500.00,"balance":0.00,"status":"paid","customer_name":"Consto AB","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-24","total":81875.00,"balance":0.00,"status":"paid","customer_name":"Axfood AB","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-24","total":20183.00,"balance":0.00,"status":"paid","customer_name":"Ayvens Sweden AB","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-24","total":460000.00,"balance":0.00,"status":"paid","customer_name":"NKP 1 AB","project_code":""},{"invoice_date":"2025-09-24","due_date":"2025-09-27","total":158345.00,"balance":158345.00,"status":"overdue","customer_name":"Olov Lindgren AB","project_code":"","label":"Bevakas"},{"invoice_date":"2025-09-24","due_date":"2025-10-23","total":431913.00,"balance":431913.00,"status":"overdue","customer_name":"Olov Lindgren AB","project_code":"","label":"Bevakas"},{"invoice_date":"2025-09-24","due_date":"2025-10-14","total":7356.00,"balance":0.00,"status":"paid","customer_name":"Svenska Fotbollsförbundet","project_code":""},{"invoice_date":"2025-09-17","due_date":"2025-09-17","total":-450000.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-09-17","due_date":"2025-09-22","total":425000.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-08-21","due_date":"2025-08-31","total":500000.00,"balance":0.00,"status":"paid","customer_name":"Daniel Lopez","project_code":""},{"invoice_date":"2025-08-19","due_date":"2025-08-24","total":38113.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-08-19","due_date":"2025-08-24","total":325834.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-08-15","due_date":"2025-08-15","total":-363946.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-08-15","due_date":"2025-08-15","total":-55000.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-07-18","due_date":"2025-07-18","total":-12500.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-06-19","due_date":"2025-07-09","total":363946.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-06-19","due_date":"2025-06-19","total":-418946.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-06-19","due_date":"2025-07-09","total":418946.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-06-16","due_date":"2025-07-16","total":55000.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-06-16","due_date":"2025-07-16","total":450000.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-05-30","due_date":"2025-06-29","total":221250.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-05-30","due_date":"2025-07-14","total":487500.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-05-30","due_date":"2025-07-14","total":500000.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-05-30","due_date":"2025-06-29","total":63125.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-04-29","due_date":"2025-05-29","total":564938.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-04-29","due_date":"2025-05-29","total":676406.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-04-27","due_date":"2025-05-17","total":649125.00,"balance":0.00,"status":"paid","customer_name":"Tulia Sikreno 8 AB","project_code":""},{"invoice_date":"2025-04-27","due_date":"2025-05-17","total":3564000.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-04-02","due_date":"2025-04-02","total":1062500.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-04-02","due_date":"2025-04-02","total":143438.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-04-02","due_date":"2025-05-02","total":-168750.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-04-02","due_date":"2025-05-02","total":-1250000.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-04-01","due_date":"2025-05-01","total":348750.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-04-01","due_date":"2025-05-01","total":269719.00,"balance":0.00,"status":"paid","customer_name":"Novier Real Estate AB","project_code":""},{"invoice_date":"2025-03-28","due_date":"2025-04-17","total":875000.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-03-28","due_date":"2025-04-17","total":1250000.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-03-27","due_date":"2025-04-16","total":337000.00,"balance":0.00,"status":"paid","customer_name":"947 Tulia Stockhem 10 AB","project_code":""},{"invoice_date":"2025-02-23","due_date":"2025-03-25","total":0.00,"balance":0.00,"status":"paid","customer_name":"arif","project_code":""}];
+
+    const costs = [{"month":"2025-03","total_cost":1621728.09,"count":56},{"month":"2025-04","total_cost":3062619.02,"count":75},{"month":"2025-05","total_cost":1263435.01,"count":62},{"month":"2025-06","total_cost":888758.06,"count":36},{"month":"2025-07","total_cost":469866.75,"count":37},{"month":"2025-08","total_cost":1209106.24,"count":34},{"month":"2025-09","total_cost":179943.83,"count":38},{"month":"2025-10","total_cost":895449.25,"count":79},{"month":"2025-11","total_cost":1625610.54,"count":87},{"month":"2025-12","total_cost":1046659.04,"count":76},{"month":"2026-01","total_cost":244387.79,"count":34},{"month":"2026-02","total_cost":658934.43,"count":47},{"month":"2026-03","total_cost":941661.74,"count":36}];
+
+    const DEALS = [{"name":"Rocmore Signalisten Solna","stage":"forhandling","deal_type":"styrd","estimated_value":40000000,"hit_rate":90},{"name":"LSS G17 Gruppen","stage":"offert_skickad","deal_type":"varm","estimated_value":14686531,"hit_rate":25},{"name":"Hässelby Berså","stage":"kalkyl","deal_type":"kall","estimated_value":11312562,"hit_rate":10},{"name":"Villa Träkvista","stage":"kalkyl","deal_type":"kall","estimated_value":10000000,"hit_rate":10},{"name":"Grimvägen 12","stage":"forhandling","deal_type":"intern","estimated_value":9000000,"hit_rate":100},{"name":"Värmdö","stage":"kalkyl","deal_type":"kall","estimated_value":7731180,"hit_rate":10},{"name":"Grimvagen NKP Sydost 7 MSEK","stage":"forhandling","deal_type":"intern","estimated_value":7000000,"hit_rate":100},{"name":"Järfälla Grimvägen Et 1 Stomkomp","stage":"kalkyl","deal_type":"intern","estimated_value":5750000,"hit_rate":95},{"name":"Lappkärrsberget brandväg","stage":"kalkyl","deal_type":"styrd","estimated_value":4914100,"hit_rate":60},{"name":"Grus/Transport","stage":"kalkyl","deal_type":"kall","estimated_value":3500000,"hit_rate":10},{"name":"Utfackningsväggar","stage":"kalkyl","deal_type":"styrd","estimated_value":3000000,"hit_rate":60},{"name":"Balder Haninge","stage":"kalkyl","deal_type":"styrd","estimated_value":3000000,"hit_rate":60},{"name":"Campus Et 2","stage":"offert_skickad","deal_type":"varm","estimated_value":2000000,"hit_rate":25},{"name":"Tureberg 25:45","stage":"kalkyl","deal_type":"kall","estimated_value":2000000,"hit_rate":10},{"name":"Kungens Kurva","stage":"kalkyl","deal_type":"kall","estimated_value":1500000,"hit_rate":10},{"name":"RAM Solna Lekplats Bagartorp","stage":"kalkyl","deal_type":"styrd","estimated_value":1225400,"hit_rate":60},{"name":"Nedre egilsvägen","stage":"kalkyl","deal_type":"kall","estimated_value":1200000,"hit_rate":10},{"name":"Oljeavskiljare","stage":"kalkyl","deal_type":"kall","estimated_value":525200,"hit_rate":10},{"name":"STC Gym","stage":"kalkyl","deal_type":"service","estimated_value":500000,"hit_rate":85},{"name":"Järfälla Grimvägen Et 1 Betong","stage":"forhandling","deal_type":"intern","estimated_value":400000,"hit_rate":100},{"name":"Rouletten","stage":"forhandling","deal_type":"varm","estimated_value":325000,"hit_rate":70},{"name":"Björklövsstigen 3","stage":"kalkyl","deal_type":"kall","estimated_value":264500,"hit_rate":10},{"name":"Järfälla Grimvägen Et 1 Mark","stage":"forhandling","deal_type":"intern","estimated_value":260295,"hit_rate":100},{"name":"Källargolv","stage":"forhandling","deal_type":"kall","estimated_value":250000,"hit_rate":50},{"name":"Brf Vakna","stage":"forhandling","deal_type":"service","estimated_value":125000,"hit_rate":95},{"name":"Gipsentreprenad","stage":"kalkyl","deal_type":"kall","estimated_value":0,"hit_rate":10},{"name":"2 st tysta hytter","stage":"forhandling","deal_type":"service","estimated_value":0,"hit_rate":95},{"name":"Utbyggnad stall","stage":"kalkyl","deal_type":"kall","estimated_value":0,"hit_rate":10},{"name":"VA Håbo","stage":"kalkyl","deal_type":"kall","estimated_value":0,"hit_rate":10},{"name":"Karlholmstrand","stage":"kalkyl","deal_type":"kall","estimated_value":0,"hit_rate":10},{"name":"Karlholm projekt","stage":"kalkyl","deal_type":"kall","estimated_value":0,"hit_rate":10},{"name":"Tätskikt balkonger","stage":"forhandling","deal_type":"service","estimated_value":0,"hit_rate":95}];
+
+    const TODAY = new Date('2026-03-25');
+
+    const STAGE_ORDER = ['inkommit','kalkyl','offert_skickad','forhandling','kontrakterat','leverans','fakturerat'];
+    const STAGE_LABELS = {inkommit:'Inkommit',kalkyl:'Kalkyl',offert_skickad:'Offert skickad',forhandling:'Forhandling',kontrakterat:'Kontrakterat',leverans:'Leverans',fakturerat:'Fakturerat'};
+    const TYPE_ORDER = ['intern','varm','styrd','service','kall'];
+    const TYPE_LABELS = {kall:'Kall',varm:'Varm',styrd:'Styrd',service:'Service',intern:'Intern'};
+    const TYPE_COLORS = {kall:'#F85149',varm:'#F97316',styrd:'#58A6FF',service:'#D29922',intern:'#3FB950'};
+
+    // ===== UTILITY FUNCTIONS =====
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', minimumFractionDigits: 0 }).format(value);
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('sv-SE');
+    }
+
+    function daysOverdue(dueDate) {
+      const due = new Date(dueDate);
+      const diff = TODAY - due;
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    }
+
+    function getMonthKey(dateStr) {
+      return dateStr.substring(0, 7);
+    }
+
+    // ===== FORTNOX FUNCTIONS =====
+    function calculateKPIs() {
+      let invoiced = 0, outstanding = 0, overdue = 0;
+      invoices.forEach(inv => {
+        if (inv.total > 0) invoiced += inv.total;
+        if (inv.balance > 0) outstanding += inv.balance;
+        if (inv.balance > 0 && daysOverdue(inv.due_date) > 0) overdue += inv.balance;
+      });
+
+      const totalCosts = costs.reduce((s, c) => s + c.total_cost, 0);
+      const grossMargin = invoiced > 0 ? ((invoiced - totalCosts) / invoiced) * 100 : 0;
+
+      return { invoiced, costs: totalCosts, grossMargin, outstanding, overdue };
+    }
+
+    function renderFinancialKPIs() {
+      const kpis = calculateKPIs();
+      const html = `
+        <div class="card">
+          <div class="kpi-label">Fakturerat</div>
+          <div class="kpi-value" style="color:#10b981;">${formatCurrency(kpis.invoiced)}</div>
+          <div class="kpi-status">Totalt fakturerat</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Kostnader</div>
+          <div class="kpi-value">${formatCurrency(kpis.costs)}</div>
+          <div class="kpi-status">Totalt kostnader</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Bruttomarginal</div>
+          <div class="kpi-value" style="color:#f59e0b;">${kpis.grossMargin.toFixed(1)}%</div>
+          <div class="kpi-status">Av intäkter</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Utestaende</div>
+          <div class="kpi-value">${formatCurrency(kpis.outstanding)}</div>
+          <div class="kpi-status">Fordringar</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Forfallan</div>
+          <div class="kpi-value" style="color:${kpis.overdue > 0 ? '#ef4444' : '#10b981'};">${formatCurrency(kpis.overdue)}</div>
+          <div class="kpi-status">${kpis.overdue > 0 ? 'Bevakas!' : 'OK'}</div>
+        </div>
+      `;
+      document.getElementById('financial-kpis').innerHTML = html;
+    }
+
+    function getMonthlyData() {
+      const monthlyRevenue = {};
+      invoices.forEach(inv => {
+        if (inv.total > 0) {
+          const month = getMonthKey(inv.invoice_date);
+          monthlyRevenue[month] = (monthlyRevenue[month] || 0) + inv.total;
+        }
+      });
+
+      const monthlyCosts = {};
+      costs.forEach(c => {
+        monthlyCosts[c.month] = c.total_cost;
+      });
+
+      const allMonths = Array.from(new Set([...Object.keys(monthlyRevenue), ...Object.keys(monthlyCosts)])).sort();
+      return { months: allMonths, revenue: monthlyRevenue, costs: monthlyCosts };
+    }
+
+    function getCustomerDistribution() {
+      const customers = {};
+      invoices.forEach(inv => {
+        if (inv.total > 0) {
+          customers[inv.customer_name] = (customers[inv.customer_name] || 0) + inv.total;
+        }
+      });
+
+      const sorted = Object.entries(customers).sort((a, b) => b[1] - a[1]);
+      const top = sorted.slice(0, 8);
+      const others = sorted.slice(8).reduce((s, [, v]) => s + v, 0);
+
+      return { top, others };
+    }
+
+    function renderRevenueChart() {
+      const data = getMonthlyData();
+      const labels = data.months.map(m => m.substring(5));
+      const revenueSeries = data.months.map(m => data.revenue[m] || 0);
+      const costSeries = data.months.map(m => data.costs[m] || 0);
+
+      const ctx = document.getElementById('revenueChart').getContext('2d');
+      Chart.defaults.color = '#8b949e';
+      Chart.defaults.borderColor = '#30363d';
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Intakter', data: revenueSeries, backgroundColor: '#10b981', borderColor: '#10b981' },
+            { label: 'Kostnader', data: costSeries, backgroundColor: '#ef4444', borderColor: '#ef4444' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { stacked: false, beginAtZero: true, ticks: { callback: v => (v / 1000000).toFixed(1) + ' M' } } },
+          plugins: { legend: { display: true, labels: { color: '#8b949e' } } }
+        }
+      });
+    }
+
+    function renderCustomerChart() {
+      const dist = getCustomerDistribution();
+      const labels = [...dist.top.map(([name]) => name), 'Övriga'];
+      const data = [...dist.top.map(([, v]) => v), dist.others];
+      const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981', '#f97316', '#58a6ff', '#d29922', '#ec4899'];
+
+      const ctx = document.getElementById('customerChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#8b949e' } } }
+        }
+      });
+    }
+
+    function renderInvoicesTable() {
+      const overdue = invoices.filter(inv => inv.balance > 0).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+      let html = '<thead><tr><th>Kund</th><th>Fakturadatum</th><th>Forfallodatum</th><th>Belopp</th><th>Utestaende</th><th>Status</th><th>Dagar forfallen</th></tr></thead><tbody>';
+      overdue.forEach(inv => {
+        const days = daysOverdue(inv.due_date);
+        const status = days > 0 ? 'Förfallen' : 'Opaid';
+        const statusClass = inv.status === 'paid' ? 'status-paid' : (inv.status === 'overdue' ? 'status-overdue' : 'status-unpaid');
+        html += `<tr><td>${inv.customer_name}</td><td>${formatDate(inv.invoice_date)}</td><td>${formatDate(inv.due_date)}</td><td>${formatCurrency(inv.total)}</td><td>${formatCurrency(inv.balance)}</td><td class="${statusClass}">${status}</td><td>${Math.max(0, days)}</td></tr>`;
+      });
+      html += '</tbody>';
+      document.getElementById('invoices-table').innerHTML = html;
+    }
+
+    // ===== PIPELINE FUNCTIONS =====
+    function calculatePipelineKPIs() {
+      const total = DEALS.reduce((s, d) => s + d.estimated_value, 0);
+      const weighted = DEALS.reduce((s, d) => s + (d.estimated_value * d.hit_rate / 100), 0);
+      const count = DEALS.length;
+      const avgHitrate = DEALS.length > 0 ? DEALS.reduce((s, d) => s + d.hit_rate, 0) / DEALS.length : 0;
+      return { total, weighted, count, avgHitrate };
+    }
+
+    function renderPipelineKPIs() {
+      const kpis = calculatePipelineKPIs();
+      const html = `
+        <div class="card">
+          <div class="kpi-label">Pipeline totalvarde</div>
+          <div class="kpi-value">${formatCurrency(kpis.total)}</div>
+          <div class="kpi-status">Alla deals</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Pipeline viktat</div>
+          <div class="kpi-value" style="color:#3b82f6;">${formatCurrency(kpis.weighted)}</div>
+          <div class="kpi-status">Risk-justerat</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Antal deals</div>
+          <div class="kpi-value">${kpis.count}</div>
+          <div class="kpi-status">Totalt</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Genomsnittlig hitrate</div>
+          <div class="kpi-value">${kpis.avgHitrate.toFixed(0)}%</div>
+          <div class="kpi-status">Vägt snitt</div>
+        </div>
+      `;
+      document.getElementById('pipeline-kpis').innerHTML = html;
+    }
+
+    function renderStageChart() {
+      const byStage = {};
+      STAGE_ORDER.forEach(s => byStage[s] = 0);
+      DEALS.forEach(d => { byStage[d.stage] = (byStage[d.stage] || 0) + d.estimated_value; });
+
+      const labels = STAGE_ORDER.map(s => STAGE_LABELS[s]);
+      const data = STAGE_ORDER.map(s => byStage[s]);
+
+      const ctx = document.getElementById('stageChart').getContext('2d');
+      Chart.defaults.color = '#8b949e';
+      Chart.defaults.borderColor = '#30363d';
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: 'Värde', data, backgroundColor: '#3b82f6', borderColor: '#3b82f6' }]
+        },
+        indexAxis: 'y',
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { beginAtZero: true, ticks: { callback: v => (v / 1000000).toFixed(0) + ' M' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderTypeChart() {
+      const byType = {};
+      TYPE_ORDER.forEach(t => byType[t] = 0);
+      DEALS.forEach(d => { byType[d.deal_type] = (byType[d.deal_type] || 0) + d.estimated_value; });
+
+      const labels = TYPE_ORDER.map(t => TYPE_LABELS[t]);
+      const data = TYPE_ORDER.map(t => byType[t]);
+      const colors = TYPE_ORDER.map(t => TYPE_COLORS[t]);
+
+      const ctx = document.getElementById('typeChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: 'Värde', data, backgroundColor: colors, borderColor: colors }]
+        },
+        indexAxis: 'y',
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { beginAtZero: true, ticks: { callback: v => (v / 1000000).toFixed(0) + ' M' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderTop10Deals() {
+      const sorted = [...DEALS].sort((a, b) => b.estimated_value - a.estimated_value).slice(0, 10);
+      let html = '<thead><tr><th>Namn</th><th>Typ</th><th>Steg</th><th>Estimerat varde</th><th>Hitrate</th><th>Viktat varde</th></tr></thead><tbody>';
+      sorted.forEach(d => {
+        const weighted = d.estimated_value * d.hit_rate / 100;
+        const typeColor = TYPE_COLORS[d.deal_type];
+        html += `<tr><td>${d.name}</td><td><span style="color:${typeColor};">${TYPE_LABELS[d.deal_type]}</span></td><td>${STAGE_LABELS[d.stage]}</td><td>${formatCurrency(d.estimated_value)}</td><td>${d.hit_rate}%</td><td>${formatCurrency(weighted)}</td></tr>`;
+      });
+      html += '</tbody>';
+      document.getElementById('deals-table').innerHTML = html;
+    }
+
+    // ===== INIT =====
+    document.getElementById('updated-date').textContent = formatDate('2026-03-25');
+    renderFinancialKPIs();
+    renderPipelineKPIs();
+    renderRevenueChart();
+    renderCustomerChart();
+    renderStageChart();
+    renderTypeChart();
+    renderInvoicesTable();
+    renderTop10Deals();
+  </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+"""
+Simuleringsmodell: Kapacitet & resursplanering.
+Beräknar hur många projekt bolaget kan hantera givet personalstyrka,
+och identifierar kapacitetstak. Monte Carlo på projektvolym och duration.
+"""
+
+import random
+import statistics
+from rm_data import query_dicts
+from simulation_engine import (
+    SimModel, ParamDef, SimResult, MCResult,
+    register_model, build_histogram, percentile, now_iso,
+)
+
+
+class CapacityModel(SimModel):
+    name = "capacity"
+    display_name = "Kapacitetsplanering"
+    description = "Resurskapacitet, max parallella projekt och tillväxtscenarier"
+    category = "operativt"
+
+    # ------------------------------------------------------------------
+    # Baseline
+    # ------------------------------------------------------------------
+
+    def _team_size(self, company_code: str) -> dict:
+        """Hämtar personalstyrka från portal_user."""
+        rows = query_dicts("""
+            SELECT
+                COUNT(*) as total_users,
+                COUNT(CASE WHEN role IN ('projektledare', 'falt') THEN 1 END) as field_staff,
+                COUNT(CASE WHEN role IN ('vd', 'ekonomi') THEN 1 END) as office_staff
+            FROM portal_user
+            WHERE active = true
+              AND company_code = %s
+        """, (company_code,))
+        if rows:
+            return {
+                "total": int(rows[0]["total_users"] or 0),
+                "field": int(rows[0]["field_staff"] or 0),
+                "office": int(rows[0]["office_staff"] or 0),
+            }
+        return {"total": 0, "field": 0, "office": 0}
+
+    def _active_projects(self, company_code: str) -> dict:
+        """Räknar aktiva projekt och genomsnittlig duration."""
+        rows = query_dicts("""
+            SELECT
+                COUNT(DISTINCT project_code) as active_count
+            FROM fortnox_supplier_invoice
+            WHERE project_code IS NOT NULL AND project_code != ''
+                  AND invoice_date > NOW() - INTERVAL '180 days'
+        """)
+        active = int(rows[0]["active_count"]) if rows else 0
+
+        # Genomsnittlig projektlängd (dagar mellan första och sista faktura)
+        dur_rows = query_dicts("""
+            SELECT AVG(duration) as avg_duration, COUNT(*) as n FROM (
+                SELECT project_code,
+                       MAX(invoice_date) - MIN(invoice_date) as duration
+                FROM fortnox_supplier_invoice
+                WHERE project_code IS NOT NULL AND project_code != ''
+                GROUP BY project_code
+                HAVING COUNT(*) > 1
+            ) sub
+            WHERE duration > 0
+        """, (company_code,))
+        avg_duration = float(dur_rows[0]["avg_duration"]) if dur_rows and dur_rows[0]["avg_duration"] else 90
+
+        return {
+            "active_projects": active,
+            "avg_duration_days": round(avg_duration),
+            "duration_sample": int(dur_rows[0]["n"]) if dur_rows and dur_rows[0]["n"] else 0,
+        }
+
+    def _revenue_per_project(self, company_code: str) -> float:
+        """Genomsnittlig omsättning per projekt."""
+        rows = query_dicts("""
+            SELECT AVG(revenue) as avg_rev
+            FROM project_profitability
+            WHERE revenue > 0 AND project_number != '101'
+              AND company_code = %s
+        """, (company_code,))
+        return float(rows[0]["avg_rev"]) if rows and rows[0]["avg_rev"] else 0
+
+    # ------------------------------------------------------------------
+    # Interface
+    # ------------------------------------------------------------------
+
+    def fetch_baseline(self, company_code: str = "RM") -> dict:
+        team = self._team_size(company_code)
+        projects = self._active_projects(company_code)
+        rev_pp = self._revenue_per_project(company_code)
+
+        field = team["field"]
+        active = projects["active_projects"]
+        duration = projects["avg_duration_days"]
+
+        # Kapacitetsberäkning
+        # Antagande: 1 PL hanterar max 3-4 parallella projekt
+        projects_per_pl = 3
+        max_parallel = field * projects_per_pl if field > 0 else active
+        utilization = round(active / max_parallel * 100, 1) if max_parallel > 0 else 0
+
+        # Årlig kapacitet = max parallella * (365 / snittduration)
+        cycles_per_year = 365 / duration if duration > 0 else 4
+        annual_capacity = round(max_parallel * cycles_per_year)
+        annual_revenue_capacity = annual_capacity * rev_pp
+
+        return {
+            "team_total": team["total"],
+            "field_staff": field,
+            "office_staff": team["office"],
+            "active_projects": active,
+            "avg_duration_days": duration,
+            "projects_per_pl": projects_per_pl,
+            "max_parallel": max_parallel,
+            "utilization_pct": utilization,
+            "annual_capacity": annual_capacity,
+            "annual_revenue_capacity": round(annual_revenue_capacity),
+            "rev_per_project": round(rev_pp),
+            "samples": {
+                "duration": projects["duration_sample"],
+                "projects": active,
+            }
+        }
+
+    def parameters(self, company_code: str = "RM") -> list:
+        baseline = self.fetch_baseline(company_code)
+        return [
+            ParamDef("field_staff_delta", "Fältpersonal +/-", "int", 0,
+                     -3, 5, 1, "personer",
+                     f"Förändring antal PL/fältpersonal. Nuvarande: {baseline['field_staff']}"),
+            ParamDef("projects_per_pl", "Projekt per PL", "int", baseline["projects_per_pl"],
+                     1, 6, 1, "st",
+                     f"Max parallella projekt per projektledare"),
+            ParamDef("duration_delta_days", "Projektlängd +/-", "int", 0,
+                     -60, 60, 5, "dagar",
+                     f"Förändring i snittlängd. Nuvarande: {baseline['avg_duration_days']}d"),
+            ParamDef("rev_per_project_delta_pct", "Intäkt/projekt +/-", "pct", 0,
+                     -30, 50, 5, "%",
+                     f"Förändring av snittintäkt per projekt. Nuvarande: {baseline['rev_per_project']/1000:.0f} tkr"),
+        ]
+
+    def compute(self, inputs: dict, company_code: str = "RM") -> SimResult:
+        baseline = self.fetch_baseline(company_code)
+
+        staff_delta = int(inputs.get("field_staff_delta", 0))
+        ppl = int(inputs.get("projects_per_pl", baseline["projects_per_pl"]))
+        dur_delta = int(inputs.get("duration_delta_days", 0))
+        rev_pct = float(inputs.get("rev_per_project_delta_pct", 0))
+
+        # Justerade värden
+        adj_field = max(0, baseline["field_staff"] + staff_delta)
+        adj_duration = max(30, baseline["avg_duration_days"] + dur_delta)
+        adj_max_parallel = adj_field * ppl
+        adj_cycles = 365 / adj_duration if adj_duration > 0 else 4
+        adj_annual_cap = round(adj_max_parallel * adj_cycles)
+        adj_rev_pp = baseline["rev_per_project"] * (1 + rev_pct / 100)
+        adj_annual_rev_cap = round(adj_annual_cap * adj_rev_pp)
+
+        adj_utilization = round(
+            baseline["active_projects"] / adj_max_parallel * 100, 1
+        ) if adj_max_parallel > 0 else 0
+
+        # Deltas
+        cap_change = adj_annual_cap - baseline["annual_capacity"]
+        rev_cap_change = adj_annual_rev_cap - baseline["annual_revenue_capacity"]
+
+        # Warnings
+        warnings = []
+        if baseline["samples"]["duration"] < 3:
+            warnings.append(f"Projektlängd baseras på {baseline['samples']['duration']} projekt — grov uppskattning")
+        if adj_utilization > 90:
+            warnings.append(f"Beläggning {adj_utilization}% — risk för resurskonflikt och förseningar")
+        if adj_field == 0:
+            warnings.append("Ingen fältpersonal — kapacitet noll")
+
+        # Impact
+        parts = []
+        if abs(cap_change) > 0:
+            direction = "ökar" if cap_change > 0 else "minskar"
+            parts.append(f"Årskapacitet {direction} med {abs(cap_change)} projekt")
+        if abs(rev_cap_change) > 100000:
+            direction = "ökar" if rev_cap_change > 0 else "minskar"
+            parts.append(f"intäktskapacitet {direction} med {abs(rev_cap_change)/1e6:.1f} MSEK")
+        impact = " och ".join(parts) if parts else "Minimal påverkan"
+
+        return SimResult(
+            model="capacity",
+            timestamp=now_iso(),
+            baseline={
+                "field_staff": baseline["field_staff"],
+                "active_projects": baseline["active_projects"],
+                "max_parallel": baseline["max_parallel"],
+                "utilization_pct": baseline["utilization_pct"],
+                "annual_capacity": baseline["annual_capacity"],
+                "annual_revenue_capacity": baseline["annual_revenue_capacity"],
+                "avg_duration_days": baseline["avg_duration_days"],
+            },
+            adjusted={
+                "field_staff": adj_field,
+                "active_projects": baseline["active_projects"],
+                "max_parallel": adj_max_parallel,
+                "utilization_pct": adj_utilization,
+                "annual_capacity": adj_annual_cap,
+                "annual_revenue_capacity": adj_annual_rev_cap,
+                "avg_duration_days": adj_duration,
+            },
+            delta={
+                "annual_capacity": {"abs": cap_change},
+                "annual_revenue_capacity": {"abs": rev_cap_change},
+            },
+            impact_summary=impact,
+            details={
+                "projects_per_pl": ppl,
+                "rev_per_project": round(adj_rev_pp),
+                "cycles_per_year": round(adj_cycles, 1),
+            },
+            warnings=warnings,
+        )
+
+    def monte_carlo(self, inputs: dict, iterations: int = 10000,
+                    company_code: str = "RM") -> MCResult:
+        baseline = self.fetch_baseline(company_code)
+
+        field = baseline["field_staff"]
+        ppl = baseline["projects_per_pl"]
+        duration = baseline["avg_duration_days"]
+        rev_pp = baseline["rev_per_project"]
+
+        dur_std = float(inputs.get("duration_std", max(duration * 0.2, 10)))
+        rev_std = float(inputs.get("rev_std", rev_pp * 0.15))
+
+        annual_rev_values = []
+        for _ in range(iterations):
+            sim_duration = max(30, random.gauss(duration, dur_std))
+            sim_rev_pp = max(0, random.gauss(rev_pp, rev_std))
+            sim_cycles = 365 / sim_duration
+            sim_annual = field * ppl * sim_cycles * sim_rev_pp
+            annual_rev_values.append(sim_annual)
+
+        warnings = []
+        if baseline["samples"]["duration"] < 5:
+            warnings.append(f"Bara {baseline['samples']['duration']} projekt med duration-data — MC-fördelning grov")
+
+        mean_rev = round(sum(annual_rev_values) / len(annual_rev_values))
+
+        return MCResult(
+            model="capacity",
+            timestamp=now_iso(),
+            iterations=iterations,
+            metric="annual_revenue_capacity",
+            mean=mean_rev,
+            std=round(float(statistics.stdev(annual_rev_values)) if len(annual_rev_values) > 1 else 0),
+            p10=round(percentile(annual_rev_values, 10)),
+            p25=round(percentile(annual_rev_values, 25)),
+            p50=round(percentile(annual_rev_values, 50)),
+            p75=round(percentile(annual_rev_values, 75)),
+            p90=round(percentile(annual_rev_values, 90)),
+            histogram=build_histogram(annual_rev_values, bins=20),
+            baseline_value=baseline["annual_revenue_capacity"],
+            impact_summary=f"Intäktskapacitet: P10={percentile(annual_rev_values,10)/1e6:.1f} MSEK, P50={percentile(annual_rev_values,50)/1e6:.1f} MSEK, P90={percentile(annual_rev_values,90)/1e6:.1f} MSEK",
+            warnings=warnings,
+        )
+
+
+# Registrera vid import
+_capacity = CapacityModel()
+register_model(_capacity)

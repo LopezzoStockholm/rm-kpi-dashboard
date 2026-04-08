@@ -1,0 +1,447 @@
+#!/usr/bin/env python3
+"""Generate RM Pipeline Dashboard with fresh data from PostgreSQL.
+v3: includes Fortnox financial data with label breakdown for overdue invoices."""
+import subprocess, json, sys, re
+from datetime import datetime
+
+def psql(query, db="rm_central"):
+    r = subprocess.run(
+        ["docker","exec","rm-postgres","psql","-U","rmadmin","-d",db,"-t","-A","-c",query],
+        capture_output=True, text=True
+    )
+    return r.stdout.strip()
+
+# Get deals
+deals_raw = psql("""
+SELECT json_agg(row_to_json(t)) FROM (
+  SELECT name, stage, deal_type,
+    COALESCE(estimated_value,0)::bigint as estimated_value,
+    COALESCE(calculated_value,0)::bigint as calculated_value,
+    COALESCE(hit_rate,25)::int as hit_rate,
+    twenty_id
+  FROM pipeline_deal WHERE company_code='RM'
+  ORDER BY estimated_value DESC
+) t
+""")
+deals = json.loads(deals_raw) if deals_raw and deals_raw != '' else []
+
+# Get hitrate matrix
+hr_raw = psql("""
+SELECT json_object_agg(deal_type, stages) FROM (
+  SELECT deal_type, json_object_agg(stage, hitrate::int) as stages
+  FROM hitrate_matrix GROUP BY deal_type
+) t
+""")
+hitrate = json.loads(hr_raw) if hr_raw and hr_raw != '' else {}
+
+# Get Fortnox financial summary
+fortnox = {}
+try:
+    inv_count = psql("SELECT COUNT(*) FROM fortnox_invoice WHERE company_code='RM'")
+    if int(inv_count or 0) > 0:
+        fortnox['revenue'] = float(psql("SELECT COALESCE(SUM(total),0) FROM fortnox_invoice WHERE company_code='RM' AND NOT is_credit AND status != 'cancelled' AND invoice_date >= CURRENT_DATE - INTERVAL '12 months'") or 0)
+        fortnox['credit_notes'] = float(psql("SELECT COALESCE(SUM(total),0) FROM fortnox_invoice WHERE company_code='RM' AND is_credit AND status != 'cancelled' AND invoice_date >= CURRENT_DATE - INTERVAL '12 months'") or 0)
+        fortnox['net_revenue'] = fortnox['revenue'] - abs(fortnox['credit_notes'])
+        fortnox['receivables'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND status != 'cancelled'") or 0)
+        fortnox['overdue_receivables'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND due_date < CURRENT_DATE AND status != 'cancelled'") or 0)
+        # Label breakdown for overdue
+        fortnox['overdue_real'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND status='overdue' AND (label IS NULL OR label = '')") or 0)
+        fortnox['overdue_labeled'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND status='overdue' AND label IS NOT NULL AND label != ''") or 0)
+
+        # CFO risk classification of receivables
+        fortnox['recv_safe'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND status != 'cancelled' AND due_date >= CURRENT_DATE AND (label IS NULL OR label = '')") or 0)
+        fortnox['recv_risk'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND status != 'cancelled' AND label = 'Bevakas'") or 0)
+        fortnox['recv_critical'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND status='overdue' AND (label IS NULL OR label = '')") or 0)
+        fortnox['recv_parked'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND status != 'cancelled' AND label = 'Parkerad'") or 0)
+        # Risk-weighted receivables: safe=100%, risk=50%, critical=25%, parked=0%
+        fortnox['recv_weighted'] = fortnox['recv_safe'] + fortnox['recv_risk'] * 0.5 + fortnox['recv_critical'] * 0.25
+
+        fortnox['supplier_costs'] = float(psql("SELECT COALESCE(SUM(total),0) FROM fortnox_supplier_invoice WHERE company_code='RM' AND status != 'cancelled' AND invoice_date >= CURRENT_DATE - INTERVAL '12 months'") or 0)
+        fortnox['payables'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_supplier_invoice WHERE company_code='RM' AND balance > 0 AND status != 'cancelled'") or 0)
+        fortnox['overdue_payables'] = float(psql("SELECT COALESCE(SUM(balance),0) FROM fortnox_supplier_invoice WHERE company_code='RM' AND balance > 0 AND due_date < CURRENT_DATE AND status != 'cancelled'") or 0)
+        fortnox['tb1'] = fortnox['net_revenue'] - fortnox['supplier_costs']
+        fortnox['tb1_margin'] = (fortnox['tb1'] / fortnox['net_revenue'] * 100) if fortnox['net_revenue'] > 0 else 0
+        fortnox['invoice_count'] = int(psql("SELECT COUNT(*) FROM fortnox_invoice WHERE company_code='RM' AND NOT is_credit AND status != 'cancelled' AND invoice_date >= CURRENT_DATE - INTERVAL '12 months'") or 0)
+        fortnox['supplier_invoice_count'] = int(psql("SELECT COUNT(*) FROM fortnox_supplier_invoice WHERE company_code='RM' AND status != 'cancelled'") or 0)
+        # Top 5 customers by revenue
+        top_cust_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT customer_name as name, SUM(total)::numeric(14,0) as total, COUNT(*) as count
+                FROM fortnox_invoice WHERE company_code='RM' AND NOT is_credit AND status != 'cancelled' AND invoice_date >= CURRENT_DATE - INTERVAL '12 months'
+                GROUP BY customer_name ORDER BY SUM(total) DESC LIMIT 5
+            ) t
+        """)
+        fortnox['top_customers'] = json.loads(top_cust_raw) if top_cust_raw and top_cust_raw != '' else []
+        # Top 5 suppliers by cost
+        top_sup_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT supplier_name as name, SUM(total)::numeric(14,0) as total, COUNT(*) as count
+                FROM fortnox_supplier_invoice WHERE company_code='RM' AND status != 'cancelled' AND invoice_date >= CURRENT_DATE - INTERVAL '12 months'
+                GROUP BY supplier_name ORDER BY SUM(total) DESC LIMIT 5
+            ) t
+        """)
+        fortnox['top_suppliers'] = json.loads(top_sup_raw) if top_sup_raw and top_sup_raw != '' else []
+        # Overdue invoice details (for table)
+        overdue_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT fortnox_id, customer_name, due_date::text, balance::numeric(14,0), COALESCE(label,'') as label
+                FROM fortnox_invoice WHERE company_code='RM' AND status='overdue' AND balance > 0
+                ORDER BY balance DESC
+            ) t
+        """)
+        fortnox['overdue_invoices'] = json.loads(overdue_raw) if overdue_raw and overdue_raw != '' else []
+        # Overdue supplier invoice details
+        overdue_si_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT fortnox_id, supplier_name, due_date::text, balance::numeric(14,0), COALESCE(label,'') as label
+                FROM fortnox_supplier_invoice WHERE company_code='RM' AND balance > 0 AND due_date < CURRENT_DATE AND status != 'cancelled'
+                ORDER BY balance DESC LIMIT 10
+            ) t
+        """)
+        fortnox['overdue_supplier_invoices'] = json.loads(overdue_si_raw) if overdue_si_raw and overdue_si_raw != '' else []
+
+        # ALL supplier invoices with outstanding balance (for label breakdown: Parkerad, Bevakas, Forfallna)
+        all_si_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT fortnox_id, supplier_name, due_date::text, balance::numeric(14,0),
+                       COALESCE(label,'') as label,
+                       CASE WHEN due_date < CURRENT_DATE THEN true ELSE false END as is_overdue
+                FROM fortnox_supplier_invoice
+                WHERE company_code='RM' AND balance > 0 AND status != 'cancelled'
+                ORDER BY label NULLS LAST, due_date
+            ) t
+        """)
+        fortnox['all_supplier_invoices'] = json.loads(all_si_raw) if all_si_raw and all_si_raw != '' else []
+
+        # Label breakdown summaries for supplier invoices
+        fortnox['si_parkerad_count'] = len([i for i in fortnox['all_supplier_invoices'] if i.get('label') == 'Parkerad'])
+        fortnox['si_parkerad_total'] = sum(float(i['balance']) for i in fortnox['all_supplier_invoices'] if i.get('label') == 'Parkerad')
+        fortnox['si_bevakas_count'] = len([i for i in fortnox['all_supplier_invoices'] if i.get('label') == 'Bevakas'])
+        fortnox['si_bevakas_total'] = sum(float(i['balance']) for i in fortnox['all_supplier_invoices'] if i.get('label') == 'Bevakas')
+        fortnox['si_overdue_unlabeled_count'] = len([i for i in fortnox['all_supplier_invoices'] if i.get('is_overdue') and not i.get('label')])
+        fortnox['si_overdue_unlabeled_total'] = sum(float(i['balance']) for i in fortnox['all_supplier_invoices'] if i.get('is_overdue') and not i.get('label'))
+
+        # ── Likviditetsprognos (kassaflöde per vecka) ────────────
+        # Risk-weighted receivables per week:
+        #   Safe (ej förfallen, ej etiketterad) = 100%
+        #   Bevakas = 50%
+        #   Förfallen utan etikett = 25%
+        #   Parkerad = 0% (exkluderad)
+        forecast_recv_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT
+                    CASE WHEN due_date < CURRENT_DATE THEN 0
+                         ELSE GREATEST(EXTRACT(WEEK FROM due_date) - EXTRACT(WEEK FROM CURRENT_DATE)
+                              + 52 * (EXTRACT(YEAR FROM due_date) - EXTRACT(YEAR FROM CURRENT_DATE)), 0)
+                    END::int as week_offset,
+                    SUM(balance)::numeric(14,0) as amount,
+                    SUM(CASE
+                        WHEN label = 'Parkerad' THEN 0
+                        WHEN label = 'Tvist' THEN 0
+                        WHEN label = 'Bevakas' THEN balance * 0.5
+                        WHEN due_date < CURRENT_DATE AND (label IS NULL OR label = '') THEN balance * 0.25
+                        ELSE balance
+                    END)::numeric(14,0) as weighted_amount
+                FROM fortnox_invoice
+                WHERE company_code='RM' AND balance > 0 AND status != 'cancelled'
+                GROUP BY 1 ORDER BY 1
+            ) t
+        """)
+        forecast_recv = json.loads(forecast_recv_raw) if forecast_recv_raw and forecast_recv_raw != '' else []
+
+        # Utbetalningar: leverantörsskulder per vecka
+        # Parkerade (väntar på kundbetalning) exkluderas helt
+        forecast_pay_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT
+                    CASE WHEN due_date < CURRENT_DATE THEN 0
+                         ELSE GREATEST(EXTRACT(WEEK FROM due_date) - EXTRACT(WEEK FROM CURRENT_DATE)
+                              + 52 * (EXTRACT(YEAR FROM due_date) - EXTRACT(YEAR FROM CURRENT_DATE)), 0)
+                    END::int as week_offset,
+                    SUM(balance)::numeric(14,0) as amount,
+                    SUM(CASE
+                        WHEN label = 'Parkerad' THEN 0
+                        WHEN label = 'Tvist' THEN 0
+                        WHEN label = 'Bevakas' THEN balance * 0.5
+                        ELSE balance
+                    END)::numeric(14,0) as adjusted_amount
+                FROM fortnox_supplier_invoice
+                WHERE company_code='RM' AND balance > 0 AND status != 'cancelled'
+                GROUP BY 1 ORDER BY 1
+            ) t
+        """)
+        forecast_pay = json.loads(forecast_pay_raw) if forecast_pay_raw and forecast_pay_raw != '' else []
+
+        # Build weekly arrays for up to 52 weeks
+        import datetime as _dt
+        current_week = int(_dt.date.today().isocalendar()[1])
+        current_year = _dt.date.today().year
+        forecast_weeks = []
+        recv_by_week = {int(r['week_offset']): float(r['amount']) for r in forecast_recv}
+        recv_weighted_by_week = {int(r['week_offset']): float(r['weighted_amount']) for r in forecast_recv}
+        pay_by_week = {int(r['week_offset']): float(r['amount']) for r in forecast_pay}
+        pay_adj_by_week = {int(r['week_offset']): float(r['adjusted_amount']) for r in forecast_pay}
+
+        for w in range(52):
+            abs_week = ((current_week - 1 + w) % 52) + 1
+            forecast_weeks.append({
+                'label': f'V{abs_week}',
+                'inbetalningar': recv_by_week.get(w, 0),
+                'inbetalningar_viktat': recv_weighted_by_week.get(w, 0),
+                'utbetalningar': pay_by_week.get(w, 0),
+                'utbetalningar_justerat': pay_adj_by_week.get(w, 0)
+            })
+
+
+        # Project profitability data — individual projects
+        projects_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT project_number, project_name, COALESCE(project_group,'') as project_group,
+                       COALESCE(project_leader,'') as project_leader,
+                       revenue::numeric(14,0), net_revenue::numeric(14,0), 
+                       supplier_costs::numeric(14,0), tb1::numeric(14,0), tb1_margin, 
+                       invoice_count, supplier_invoice_count
+                FROM project_profitability 
+                WHERE company_code='RM' AND status='ONGOING' AND (net_revenue > 0 OR supplier_costs > 0)
+                ORDER BY supplier_costs DESC
+            ) t
+        """)
+        fortnox['projects'] = json.loads(projects_raw) if projects_raw and projects_raw != '' else []
+
+        # Project profitability data — grouped by project_group
+        grouped_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT COALESCE(NULLIF(project_group,''), project_name) as group_name,
+                       SUM(net_revenue)::numeric(14,0) as net_revenue,
+                       SUM(supplier_costs)::numeric(14,0) as supplier_costs,
+                       SUM(tb1)::numeric(14,0) as tb1,
+                       CASE WHEN SUM(net_revenue) > 0 
+                            THEN ((SUM(tb1) / SUM(net_revenue)) * 100)::numeric(6,1)
+                            ELSE 0 END as tb1_margin,
+                       SUM(invoice_count) as invoice_count,
+                       SUM(supplier_invoice_count) as supplier_invoice_count,
+                       string_agg(DISTINCT project_leader, ', ') FILTER (WHERE project_leader != '') as leaders
+                FROM project_unified
+                WHERE company_code='RM' AND fortnox_status='ONGOING' AND (net_revenue > 0 OR supplier_costs > 0)
+                GROUP BY COALESCE(NULLIF(project_group,''), project_name)
+                ORDER BY supplier_costs DESC
+            ) t
+        """)
+        fortnox['project_groups'] = json.loads(grouped_raw) if grouped_raw and grouped_raw != '' else []
+
+        fortnox['forecast_weeks'] = forecast_weeks
+
+        # Banksaldo — bokfört saldo från Fortnox SIE4 (konto 1930)
+        bank_raw = psql("SELECT balance::numeric(14,2), balance_date::text, updated_at::text FROM bank_balance WHERE company_code='RM'")
+        if bank_raw:
+            bparts = bank_raw.split("|")
+            fortnox['bank_balance'] = float(bparts[0]) if bparts[0] else None
+            fortnox['bank_balance_date'] = bparts[1]
+            fortnox['bank_balance_updated'] = bparts[2]
+        else:
+            fortnox['bank_balance'] = None
+
+        # Kundfakturor med labels (for overdue table)
+        labeled_ci_raw = psql("""
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT fortnox_id, customer_name, due_date::text, balance::numeric(14,0), COALESCE(label,'') as label
+                FROM fortnox_invoice WHERE company_code='RM' AND balance > 0 AND status != 'cancelled' AND label IS NOT NULL AND label != ''
+                ORDER BY label, balance DESC
+            ) t
+        """)
+        fortnox['labeled_customer_invoices'] = json.loads(labeled_ci_raw) if labeled_ci_raw and labeled_ci_raw != '' else []
+
+        # Kundfaktura label summor
+        fortnox['ci_parkerad_count'] = len([i for i in fortnox['labeled_customer_invoices'] if i.get('label') == 'Parkerad'])
+        fortnox['ci_parkerad_total'] = sum(float(i['balance']) for i in fortnox['labeled_customer_invoices'] if i.get('label') == 'Parkerad')
+        fortnox['ci_bevakas_count'] = len([i for i in fortnox['labeled_customer_invoices'] if i.get('label') == 'Bevakas'])
+        fortnox['ci_bevakas_total'] = sum(float(i['balance']) for i in fortnox['labeled_customer_invoices'] if i.get('label') == 'Bevakas')
+
+        fortnox['has_data'] = True
+        fortnox['period_label'] = 'Rullande 12 mån'
+        # Fortnox deep-link base URL
+        try:
+            fnx_cfg = json.load(open('/opt/rm-infra/fortnox-config.json'))
+            fortnox['app_id'] = fnx_cfg.get('app_id', '')
+        except Exception:
+            fortnox['app_id'] = ''
+    else:
+        fortnox['has_data'] = False
+except Exception as e:
+    print(f"Fortnox data fetch error: {e}")
+    fortnox['has_data'] = False
+
+
+# Get Planner tasks
+planner_raw = psql("""
+SELECT json_agg(row_to_json(t)) FROM (
+    SELECT task_id, plan_id, plan_name, bucket_name, title,
+        assignee_name, assignee_email,
+        due_date::text, percent_complete, priority,
+        created_at::text, completed_at::text
+    FROM planner_task
+    WHERE company_code='RM'
+    ORDER BY
+        percent_complete ASC,
+        CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
+        due_date ASC
+) t
+""")
+planner = json.loads(planner_raw) if planner_raw and planner_raw != '' else []
+
+
+# Get Next projects + workorders
+next_projects_raw = psql("""
+SELECT json_agg(row_to_json(t)) FROM (
+    SELECT project_id, project_no, project_name, status_code, status_name, customer_id
+    FROM next_project ORDER BY status_code, project_no
+) t
+""")
+next_projects = json.loads(next_projects_raw) if next_projects_raw and next_projects_raw != '' else []
+
+next_workorders_raw = psql("""
+SELECT json_agg(row_to_json(t)) FROM (
+    SELECT w.workorder_id, w.project_id, w.project_name, w.project_no, w.workorder_no,
+           w.name, w.project_status_code,
+           p.status_name
+    FROM next_workorder w
+    JOIN next_project p ON p.project_id = w.project_id
+    ORDER BY w.project_no, w.workorder_no
+) t
+""")
+next_workorders = json.loads(next_workorders_raw) if next_workorders_raw and next_workorders_raw != '' else []
+
+# Next project economy data (from next_project_economy table)
+next_economy_raw = psql("""
+SELECT json_agg(row_to_json(t)) FROM (
+    SELECT ne.project_no, ne.project_name as next_name,
+           ne.customer_name, ne.project_manager, ne.status_name as next_status,
+           ne.status_code,
+           ne.project_type, ne.price_type,
+           ne.booked_cost::numeric(14,0) as next_cost,
+           ne.booked_revenue::numeric(14,0) as next_revenue,
+           ne.booked_hours::numeric(10,1) as next_hours,
+           ne.booked_awo_cost::numeric(14,0) as next_awo_cost,
+           ne.booked_awo_revenue::numeric(14,0) as next_awo_revenue,
+           ne.contribution_margin::numeric(14,0) as next_tb,
+           ne.contribution_margin_pct::numeric(6,1) as next_tb_pct,
+           ne.budget_cost::numeric(14,0) as next_budget_cost,
+           ne.budget_revenue::numeric(14,0) as next_budget_rev,
+           ne.budget_contribution_margin::numeric(14,0) as next_budget_tb,
+           ne.slp_contribution_margin::numeric(14,0) as next_slp_tb,
+           ne.slp_contribution_margin_pct::numeric(6,1) as next_slp_pct,
+           ne.earned_revenue::numeric(14,0) as next_earned,
+           ne.earned_revenue_not_invoiced::numeric(14,0) as next_earned_not_inv,
+           ne.invoiceable::numeric(14,0) as next_invoiceable,
+           ne.invoiceable_running::numeric(14,0) as next_invoiceable_running,
+           ne.forecast::numeric(14,0) as next_forecast,
+           ne.payment_plan_amount::numeric(14,0) as next_payment_plan,
+           ne.payment_plan_withheld::numeric(14,0) as next_payment_withheld,
+           ne.project_start::text, ne.project_end::text,
+           ne.final_inspection_date::text,
+           COALESCE(pp.net_revenue,0)::numeric(14,0) as fnx_revenue,
+           COALESCE(pp.supplier_costs,0)::numeric(14,0) as fnx_cost,
+           COALESCE(pp.tb1,0)::numeric(14,0) as fnx_tb,
+           COALESCE(pp.tb1_margin,0)::numeric(6,1) as fnx_tb_pct,
+           COALESCE(pp.invoice_count,0) as fnx_inv_count,
+           COALESCE(pp.supplier_invoice_count,0) as fnx_si_count,
+           COALESCE(pp.project_leader,'') as fnx_leader,
+           (ne.booked_cost - COALESCE(pp.supplier_costs,0))::numeric(14,0) as cost_diff,
+           ne.synced_at::text as next_synced
+    FROM next_project_economy ne
+    LEFT JOIN project_profitability pp
+        ON pp.project_number = ne.project_no AND pp.company_code = ne.company_code
+    WHERE ne.company_code='RM' AND (ne.booked_cost > 0 OR ne.booked_revenue > 0 OR COALESCE(pp.supplier_costs,0) > 0)
+    ORDER BY GREATEST(ne.booked_cost, COALESCE(pp.supplier_costs,0)) DESC
+) t
+""")
+next_economy = json.loads(next_economy_raw) if next_economy_raw and next_economy_raw != '' else []
+
+
+# Read template
+with open("/opt/rm-infra/dashboard-template.html", "r") as f:
+    html = f.read()
+
+# Inject data
+html = re.sub(
+    r'const DEALS = \[[\s\S]*?\];',
+    f'const DEALS = {json.dumps(deals, ensure_ascii=False)};',
+    html
+)
+html = re.sub(
+    r'const HITRATE_MATRIX = \{[\s\S]*?\n\};',
+    f'const HITRATE_MATRIX = {json.dumps(hitrate, ensure_ascii=False)};',
+    html
+)
+html = re.sub(
+    r'const FORTNOX = \{[\s\S]*?\n\};',
+    f'const FORTNOX = {json.dumps(fortnox, ensure_ascii=False)};',
+    html
+)
+
+
+html = re.sub(
+    r'const PLANNER = \[[\s\S]*?\];',
+    f'const PLANNER = {json.dumps(planner, ensure_ascii=False)};',
+    html
+)
+
+
+html = re.sub(
+    r'const NEXT_PROJECTS = \[[\s\S]*?\];',
+    f'const NEXT_PROJECTS = {json.dumps(next_projects, ensure_ascii=False)};',
+    html
+)
+html = re.sub(
+    r'const NEXT_WORKORDERS = \[[\s\S]*?\];',
+    f'const NEXT_WORKORDERS = {json.dumps(next_workorders, ensure_ascii=False)};',
+    html
+)
+
+html = re.sub(
+    r'const NEXT_ECONOMY = \[[\s\S]*?\];',
+    f'const NEXT_ECONOMY = {json.dumps(next_economy, ensure_ascii=False)};',
+    html
+)
+
+# CRM + Next unified data
+try:
+    unified_raw = psql("""
+    SELECT json_agg(row_to_json(t)) FROM (
+        SELECT deal_name, crm_stage, next_project_no, company_name,
+               contact_name, contact_phone, contact_email,
+               next_name, next_status, next_customer,
+               budget_revenue::numeric(14,0), budget_cost::numeric(14,0),
+               budget_contribution_margin::numeric(14,0), budget_contribution_margin_pct::numeric(6,1),
+               booked_revenue::numeric(14,0), booked_cost::numeric(14,0),
+               contribution_margin::numeric(14,0), contribution_margin_pct::numeric(6,1),
+               forecast::numeric(14,0),
+               earned_revenue::numeric(14,0), earned_revenue_not_invoiced::numeric(14,0),
+               invoiceable::numeric(14,0),
+               project_start::text, project_end::text,
+               project_manager,
+               final_inspection_date::text
+        FROM crm_next_unified
+        ORDER BY deal_name
+    ) t
+    """)
+    crm_next_unified = json.loads(unified_raw) if unified_raw and unified_raw != '' else []
+except Exception as e:
+    print(f"CRM_NEXT_UNIFIED fetch error: {e}")
+    crm_next_unified = []
+
+html = re.sub(
+    r'const CRM_NEXT_UNIFIED = \[[\s\S]*?\];',
+    f'const CRM_NEXT_UNIFIED = {json.dumps(crm_next_unified, ensure_ascii=False)};',
+    html
+)
+
+# Write output
+out = "/opt/rm-infra/www/index.html"
+with open(out, "w") as f:
+    f.write(html)
+
+print(f"{datetime.now()}: Dashboard generated — {len(deals)} deals, {len(planner)} tasks, {len(next_projects)} next projects, {len(next_economy)} next economy, {len(crm_next_unified)} unified, Fortnox: {fortnox.get('has_data', False)}")
+if fortnox.get('has_data'):
+    print(f"  Overdue real: {fortnox.get('overdue_real',0)} SEK, labeled: {fortnox.get('overdue_labeled',0)} SEK")
+    print(f"  Overdue invoices: {len(fortnox.get('overdue_invoices',[]))}")

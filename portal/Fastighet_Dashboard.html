@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fastighetsutveckling — Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-card: #ffffff;
+            --bg-header: #1a1a2e;
+            --positive: #28a745;
+            --negative: #dc3545;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #e0e0e0;
+            --accent: #0056b3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--bg-header);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .header-date {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--accent);
+        }
+
+        .kpi-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        thead {
+            background-color: #f5f5f5;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+        tbody tr:hover {
+            background-color: #fafafa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: var(--positive);
+        }
+
+        .status-pending {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-planning {
+            background-color: #e3f2fd;
+            color: var(--accent);
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 0.3rem 0.7rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            background-color: #f0f0f0;
+            color: var(--text-primary);
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .finance-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .finance-item:last-child {
+            border-bottom: none;
+        }
+
+        .finance-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .finance-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        footer {
+            background-color: var(--bg-header);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Fastighetsutveckling — Dashboard</h1>
+            <div class="header-date" id="headerDate"></div>
+        </div>
+    </header>
+
+    <main>
+        <!-- KPI-kort -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Aktiva markprojekt</div>
+                <div class="kpi-value">3</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Estimerat projektvärde</div>
+                <div class="kpi-value">42 MSEK</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Förhandsbesked under handläggning</div>
+                <div class="kpi-value">1</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Detaljplaner pågående</div>
+                <div class="kpi-value">0</div>
+            </div>
+        </section>
+
+        <!-- Projektfaser chart -->
+        <section class="section">
+            <div class="card">
+                <h2>Projektfaser</h2>
+                <div class="chart-container">
+                    <canvas id="phasesChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projekttabell -->
+        <section class="section">
+            <div class="card">
+                <h2>Pågående projekt</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Projekt</th>
+                            <th>Fas</th>
+                            <th>Tomter</th>
+                            <th>Kalkylerat värde</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsTable">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Planner Tasks -->
+        <section class="section">
+            <div class="card">
+                <h2>Planneruppdrag</h2>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    // TODO: Hämta från Microsoft Planner API via Graph
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Uppgift</th>
+                            <th>Bucket</th>
+                            <th>Ansvarig</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTable">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Finansiering -->
+        <section class="section">
+            <div class="two-column">
+                <div class="card">
+                    <h2>Kapitalisering</h2>
+                    <div class="finance-item">
+                        <span class="finance-label">Totalt investerat kapital</span>
+                        <span class="finance-value">7 MSEK</span>
+                    </div>
+                    <div class="finance-item">
+                        <span class="finance-label">Beviljade lån</span>
+                        <span class="finance-value">0 MSEK</span>
+                    </div>
+                    <div class="finance-item">
+                        <span class="finance-label">Eget kapital insatt</span>
+                        <span class="finance-value">3,5 MSEK</span>
+                    </div>
+                    <div class="finance-item">
+                        <span class="finance-label">Revers NKP Sydost</span>
+                        <span class="finance-value">7 MSEK</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Sammanfattning</h2>
+                    <div class="finance-item">
+                        <span class="finance-label">Antal aktiva projekt</span>
+                        <span class="finance-value">3</span>
+                    </div>
+                    <div class="finance-item">
+                        <span class="finance-label">Totalt planerade tomter</span>
+                        <span class="finance-value">18</span>
+                    </div>
+                    <div class="finance-item">
+                        <span class="finance-label">Totalt projektvärde</span>
+                        <span class="finance-value">42 MSEK</span>
+                    </div>
+                    <div class="finance-item">
+                        <span class="finance-label">Kapitaliserings­grad</span>
+                        <span class="finance-value">24%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>RM Entreprenad och Fasad AB — Fastighetsutveckling | <span id="footerDate"></span></p>
+    </footer>
+
+    <script>
+        // Data
+        const dashboardData = {
+            projects: [
+                {
+                    name: "Projekt Grimvägen",
+                    phase: "Byggnation",
+                    lots: 4,
+                    value: "14 MSEK",
+                    status: "Pågår"
+                },
+                {
+                    name: "Projekt Roslag Mark 2",
+                    phase: "Förhandsbesked",
+                    lots: 6,
+                    value: "18 MSEK",
+                    status: "Inväntar beslut"
+                },
+                {
+                    name: "Projekt Vallentuna",
+                    phase: "Markanskaffning",
+                    lots: 8,
+                    value: "24 MSEK",
+                    status: "Under förhandling"
+                }
+            ],
+            tasks: [
+                {
+                    task: "Slutför detaljplan för Grimvägen",
+                    bucket: "Detaljplan",
+                    responsible: "Mattias Eklund",
+                    deadline: "2026-04-15",
+                    status: "Pågår"
+                },
+                {
+                    task: "Inlämning av förhandsbesked Roslag",
+                    bucket: "Ansökan",
+                    responsible: "Daniel Lopez",
+                    deadline: "2026-04-01",
+                    status: "Inväntar"
+                },
+                {
+                    task: "Mark­förvärvs­förhandlingar Vallentuna",
+                    bucket: "Förhandlingar",
+                    responsible: "Anna Bergström",
+                    deadline: "2026-05-31",
+                    status: "Pågår"
+                },
+                {
+                    task: "Kalkyl­uppdatering Grimvägen",
+                    bucket: "Projektstyrning",
+                    responsible: "Mattias Eklund",
+                    deadline: "2026-03-30",
+                    status: "Pågår"
+                }
+            ],
+            phases: {
+                "Markanskaffning": 1,
+                "Förhandsbesked": 1,
+                "Detaljplan": 0,
+                "Byggnation": 1,
+                "Exit/Försäljning": 0
+            }
+        };
+
+        // Format date
+        function formatDate(date) {
+            return new Intl.DateTimeFormat('sv-SE', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }).format(date);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            document.getElementById('headerDate').textContent = formatDate(today);
+            document.getElementById('footerDate').textContent = formatDate(today);
+
+            // Populate projects table
+            const projectsTable = document.getElementById('projectsTable');
+            dashboardData.projects.forEach(project => {
+                const row = document.createElement('tr');
+                let statusClass = 'status-active';
+                if (project.status === 'Inväntar beslut') statusClass = 'status-pending';
+                if (project.status === 'Under förhandling') statusClass = 'status-planning';
+
+                row.innerHTML = `
+                    <td><strong>${project.name}</strong></td>
+                    <td><span class="phase-badge">${project.phase}</span></td>
+                    <td>${project.lots}</td>
+                    <td>${project.value}</td>
+                    <td><span class="status-badge ${statusClass}">${project.status}</span></td>
+                `;
+                projectsTable.appendChild(row);
+            });
+
+            // Populate tasks table
+            const tasksTable = document.getElementById('tasksTable');
+            dashboardData.tasks.forEach(task => {
+                const row = document.createElement('tr');
+                let statusClass = 'status-active';
+                if (task.status === 'Inväntar') statusClass = 'status-pending';
+
+                row.innerHTML = `
+                    <td><strong>${task.task}</strong></td>
+                    <td>${task.bucket}</td>
+                    <td>${task.responsible}</td>
+                    <td>${task.deadline}</td>
+                    <td><span class="status-badge ${statusClass}">${task.status}</span></td>
+                `;
+                tasksTable.appendChild(row);
+            });
+
+            // Chart: Projektfaser
+            const ctx = document.getElementById('phasesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(dashboardData.phases),
+                    datasets: [{
+                        data: Object.values(dashboardData.phases),
+                        backgroundColor: [
+                            '#4CAF50',
+                            '#2196F3',
+                            '#FF9800',
+                            '#f44336',
+                            '#9C27B0'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { size: 12 },
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

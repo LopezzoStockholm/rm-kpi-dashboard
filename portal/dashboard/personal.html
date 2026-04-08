@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min sida — RM Entreprenad och Fasad</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f1117;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            font-size: 14px;
+        }
+
+        nav a {
+            padding: 16px;
+            color: #8b949e;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s;
+        }
+
+        nav a:first-child {
+            padding: 16px 24px 16px 0;
+            border-right: 1px solid #30363d;
+            margin-right: 8px;
+            color: #f0f6fc;
+            font-weight: 600;
+            font-size: 16px;
+            border-bottom: none;
+        }
+
+        nav a:hover {
+            color: #f0f6fc;
+        }
+
+        nav a[href="personal.html"] {
+            color: #f0f6fc;
+            border-bottom-color: #3b82f6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 48px;
+            padding: 24px;
+            background: #1a1d27;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: #f97316;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #0f1117;
+            flex-shrink: 0;
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .header-info h1 {
+            margin: 0 0 4px 0;
+            font-size: 24px;
+            color: #f0f6fc;
+        }
+
+        .header-info p {
+            margin: 4px 0;
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 32px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .header-meta div {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .header-meta label {
+            color: #8b949e;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-meta value {
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 6px;
+            background: #30363d;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #f97316;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        section {
+            margin-bottom: 48px;
+        }
+
+        section h2 {
+            font-size: 18px;
+            margin: 0 0 20px 0;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1a1d27;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        .card.primary {
+            border-color: #f97316;
+            border-width: 2px;
+        }
+
+        .card h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+
+        .card p {
+            margin: 0 0 16px 0;
+            color: #8b949e;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .badge.on-track {
+            background: #10b98133;
+            color: #10b981;
+        }
+
+        .badge.at-risk {
+            background: #f59e0b33;
+            color: #f59e0b;
+        }
+
+        .badge.off-track {
+            background: #ef444433;
+            color: #ef4444;
+        }
+
+        .progress-container {
+            margin-top: 12px;
+        }
+
+        .progress-bar-card {
+            width: 100%;
+            height: 6px;
+            background: #30363d;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill-card {
+            height: 100%;
+            background: linear-gradient(90deg, #f97316, #fb923c);
+            border-radius: 3px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .kpi-card {
+            background: #1a1d27;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .kpi-title {
+            font-size: 13px;
+            color: #8b949e;
+            margin: 0;
+        }
+
+        .kpi-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .kpi-indicator.green {
+            background: #10b981;
+        }
+
+        .kpi-indicator.red {
+            background: #ef4444;
+        }
+
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f0f6fc;
+            margin: 8px 0;
+        }
+
+        .kpi-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .sparkline {
+            width: 100%;
+            height: 40px;
+            margin-top: 12px;
+        }
+
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .tasks-table thead {
+            background: #0d1117;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .tasks-table th {
+            padding: 12px;
+            text-align: left;
+            color: #8b949e;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .tasks-table td {
+            padding: 12px;
+            border-bottom: 1px solid #30363d;
+            color: #e2e8f0;
+        }
+
+        .tasks-table tbody tr:hover {
+            background: #0d1117;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-pagar {
+            background: #3b82f633;
+            color: #3b82f6;
+        }
+
+        .status-nasta {
+            background: #8b5cf633;
+            color: #8b5cf6;
+        }
+
+        .status-backlog {
+            background: #30363d;
+            color: #8b949e;
+        }
+
+        .deadline {
+            color: #e2e8f0;
+        }
+
+        .deadline.today {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .deadline.overdue {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .blocker {
+            background: #1a1d27;
+            border: 1px solid #30363d;
+            border-left: 4px solid;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .blocker.high {
+            border-left-color: #ef4444;
+        }
+
+        .blocker.medium {
+            border-left-color: #f59e0b;
+        }
+
+        .blocker h4 {
+            margin: 0 0 12px 0;
+            color: #f0f6fc;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .blocker p {
+            margin: 0 0 16px 0;
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .escalate-btn {
+            background: #30363d;
+            color: #f0f6fc;
+            border: 1px solid #30363d;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .escalate-btn:hover {
+            background: #3d444d;
+        }
+
+        .textarea-group {
+            margin-bottom: 20px;
+        }
+
+        .textarea-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8b949e;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .textarea-input {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e2e8f0;
+            padding: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.2s;
+        }
+
+        .textarea-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .weekly-pulse {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        footer {
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 24px;
+            text-align: center;
+            color: #8b949e;
+            font-size: 12px;
+            margin-top: 48px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">RM Entreprenad och Fasad</a>
+        <a href="index.html">Oversikt</a>
+        <a href="ekonomi.html">Ekonomi</a>
+        <a href="drift.html">Drift &amp; Projekt</a>
+        <a href="fastighet.html">Fastighet</a>
+        <a href="bolagsstyrning.html">Bolagsstyrning</a>
+        <a href="personal.html">Min sida</a>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <div class="avatar">DL</div>
+            <div class="header-info">
+                <h1>Daniel Lopez</h1>
+                <p>VD</p>
+                <p>RM Entreprenad och Fasad</p>
+                <div class="header-meta">
+                    <div>
+                        <label>Kvartal</label>
+                        <value>Q1 2026</value>
+                    </div>
+                    <div>
+                        <label>Vecka</label>
+                        <value id="week-number">V13 av 13</value>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="quarter-progress"></div>
+                </div>
+            </div>
+        </div>
+
+        <section>
+            <h2>Kvartalets Rocks</h2>
+            <div class="grid-4">
+                <div class="card primary">
+                    <div class="badge on-track">På väg</div>
+                    <h3>Bygg portal och dashboards för hela bolaget</h3>
+                    <p>Implementera unified dashboard system för alla verksamhetsdelar och följ-upp nyckeltal i realtid.</p>
+                    <div class="progress-container">
+                        <div class="progress-bar-card">
+                            <div class="progress-fill-card" style="width: 65%;"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span>Färdigställd</span>
+                            <span>65%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="badge on-track">På väg</div>
+                    <h3>Säkra 3 nya projekt i pipeline &gt; 5 MSEK</h3>
+                    <p>Avsluta försäljning av tre större projekt för att stärka omsättningen och kassaflödet.</p>
+                    <div class="progress-container">
+                        <div class="progress-bar-card">
+                            <div class="progress-fill-card" style="width: 40%;"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span>Färdigställd</span>
+                            <span>40%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="badge at-risk">Risk</div>
+                    <h3>Implementera ATA-process i alla aktiva projekt</h3>
+                    <p>Rulla ut nya arbetsorder-processen för att säkra dokumentering och kostnadsövervakning.</p>
+                    <div class="progress-container">
+                        <div class="progress-bar-card">
+                            <div class="progress-fill-card" style="width: 25%;"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span>Färdigställd</span>
+                            <span>25%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="badge on-track">På väg</div>
+                    <h3>Kassaflödesoptimering — 30 dagars leverantörsbetalning</h3>
+                    <p>Förhandla ut längre betalningsvillkor hos nyckeleverantörer och automatisera faktureringsflöde.</p>
+                    <div class="progress-container">
+                        <div class="progress-bar-card">
+                            <div class="progress-fill-card" style="width: 70%;"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span>Färdigställd</span>
+                            <span>70%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Personliga KPIer</h2>
+            <div class="grid-2">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <p class="kpi-title">Omsättning YTD</p>
+                        <div class="kpi-indicator red"></div>
+                    </div>
+                    <div class="kpi-value">15,7 MSEK</div>
+                    <div class="kpi-meta">
+                        <span>Target: 16,7 MSEK</span>
+                        <span style="color: #ef4444;">-1,0 MSEK</span>
+                    </div>
+                    <canvas class="sparkline" id="chart-omsattning"></canvas>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <p class="kpi-title">Täckningsbidrag</p>
+                        <div class="kpi-indicator red"></div>
+                    </div>
+                    <div class="kpi-value">22%</div>
+                    <div class="kpi-meta">
+                        <span>Target: 25%</span>
+                        <span style="color: #ef4444;">-3 pp</span>
+                    </div>
+                    <canvas class="sparkline" id="chart-tackningsbidrag"></canvas>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <p class="kpi-title">Pipeline weighted</p>
+                        <div class="kpi-indicator red"></div>
+                    </div>
+                    <div class="kpi-value">8,2 MSEK</div>
+                    <div class="kpi-meta">
+                        <span>Target: 15 MSEK</span>
+                        <span style="color: #ef4444;">-6,8 MSEK</span>
+                    </div>
+                    <canvas class="sparkline" id="chart-pipeline"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Mina Uppgifter</h2>
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Uppgift</th>
+                        <th style="width: 25%;">Plan</th>
+                        <th style="width: 20%;">Deadline</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Slutbesiktning Projekt 2401</td>
+                        <td>Projekt RMEF</td>
+                        <td class="deadline today">2026-03-25 (IDAG)</td>
+                        <td><span class="status-badge status-pagar">Pågår</span></td>
+                    </tr>
+                    <tr>
+                        <td>Granska anbud Signalisten</td>
+                        <td>Försäljning &amp; Affär</td>
+                        <td class="deadline">2026-03-26</td>
+                        <td><span class="status-badge status-pagar">Pågår</span></td>
+                    </tr>
+                    <tr>
+                        <td>Kolla nya lokaler</td>
+                        <td>LG Actions</td>
+                        <td class="deadline">2026-03-28</td>
+                        <td><span class="status-badge status-pagar">Pågår</span></td>
+                    </tr>
+                    <tr>
+                        <td>Koda 82 kundfakturor</td>
+                        <td>RM Ekonomi</td>
+                        <td class="deadline">2026-03-31</td>
+                        <td><span class="status-badge status-nasta">Nästa</span></td>
+                    </tr>
+                    <tr>
+                        <td>Uppdatera TE-avtal Grimvägen</td>
+                        <td>Fastighet</td>
+                        <td class="deadline">2026-04-01</td>
+                        <td><span class="status-badge status-backlog">Backlog</span></td>
+                    </tr>
+                    <tr>
+                        <td>KMA-revision intern</td>
+                        <td>RM Drift</td>
+                        <td class="deadline">2026-04-05</td>
+                        <td><span class="status-badge status-nasta">Nästa</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Blockeringar</h2>
+            <div class="blocker high">
+                <h4>API-nyckel från Next Tech saknas — blockerar projektekonomisk vy</h4>
+                <p>Kan inte importera projektbudgetar och faktisk kostnad. Väntar på Next Tech. Risk att kundfakturering fördröjs.</p>
+                <button class="escalate-btn">Eskalera</button>
+            </div>
+            <div class="blocker medium">
+                <h4>Mikael har inte börjat koda de 82 fakturorna</h4>
+                <p>Beräknad start var 2026-03-20. Ingen uppdatering från Mikael. Måste kolla status och omprioritera ifall nödvändigt.</p>
+                <button class="escalate-btn">Eskalera</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>Veckopuls</h2>
+            <div class="weekly-pulse">
+                <div>
+                    <label class="textarea-label">Vad gick bra denna vecka?</label>
+                    <textarea class="textarea-input" placeholder="Skriv dina reflektioner..."></textarea>
+                </div>
+                <div>
+                    <label class="textarea-label">Vad fastnade? (blockeringar, ineffektivitet)</label>
+                    <textarea class="textarea-input" placeholder="Skriv dina reflektioner..."></textarea>
+                </div>
+                <div>
+                    <label class="textarea-label">Fokus nästa vecka</label>
+                    <textarea class="textarea-input" placeholder="Skriv dina reflektioner..."></textarea>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        RM Entreprenad och Fasad | Scaling Up Personal Dashboard | Uppdaterad: <span id="footer-date"></span>
+    </footer>
+
+    <script>
+        // Calculate week of quarter and quarter progress
+        function initializeQuarterInfo() {
+            const today = new Date('2026-03-25');
+            const quarterStart = new Date('2026-01-01');
+            const quarterEnd = new Date('2026-03-31');
+
+            // Calculate week number (assuming Q1 has 13 weeks)
+            const daysIntoPeriod = Math.floor((today - quarterStart) / (1000 * 60 * 60 * 24));
+            const weekNumber = Math.floor(daysIntoPeriod / 7) + 1;
+            const totalWeeks = 13;
+
+            document.getElementById('week-number').textContent = `V${weekNumber} av ${totalWeeks}`;
+
+            // Quarter progress (Jan 1 - Mar 31 = 90 days)
+            const totalDays = 90;
+            const progressPercent = (daysIntoPeriod / totalDays) * 100;
+            document.getElementById('quarter-progress').style.width = progressPercent + '%';
+
+            // Footer date
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('footer-date').textContent = today.toLocaleDateString('sv-SE', options);
+        }
+
+        // Create sparkline charts
+        function createSparkline(canvasId, data, label, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Vecka 1', 'Vecka 2', 'Vecka 3', 'Vecka 4', 'Vecka 5'],
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color + '22',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: color,
+                        pointBorderColor: color,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1d27',
+                            borderColor: '#30363d',
+                            borderWidth: 1,
+                            titleColor: '#f0f6fc',
+                            bodyColor: '#e2e8f0',
+                            padding: 8,
+                            font: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false,
+                            grid: { display: false }
+                        },
+                        y: {
+                            display: false,
+                            grid: { display: false },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        initializeQuarterInfo();
+        createSparkline('chart-omsattning', [12.1, 13.4, 14.2, 15.0, 15.7], 'Omsättning', '#ef4444');
+        createSparkline('chart-tackningsbidrag', [18, 20, 21, 23, 22], 'Täckningsbidrag', '#ef4444');
+        createSparkline('chart-pipeline', [5.0, 6.1, 7.3, 7.8, 8.2], 'Pipeline', '#ef4444');
+    </script>
+</body>
+</html>

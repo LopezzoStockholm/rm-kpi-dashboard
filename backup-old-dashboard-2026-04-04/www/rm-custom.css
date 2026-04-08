@@ -1,0 +1,83 @@
+/* RM Entreprenad och Fasad — Twenty CRM Custom Theme
+   Matches dashboard palette: GitHub-dark inspired
+   Injected via nginx reverse proxy */
+
+.dark {
+  /* Background — match dashboard #0D1117, #161B22, #21262D */
+  --t-background-primary: #0D1117 !important;
+  --t-background-secondary: #161B22 !important;
+  --t-background-tertiary: #1C2128 !important;
+
+  /* Borders — match dashboard #21262D, #30363D */
+  --t-border-color-medium: #21262D !important;
+  --t-border-color-light: #161B22 !important;
+  --t-border-color-strong: #30363D !important;
+
+  /* Text — match dashboard #E6EDF3, #8B949E */
+  --t-font-color-primary: #E6EDF3 !important;
+  --t-font-color-secondary: #8B949E !important;
+  --t-font-color-tertiary: #6E7681 !important;
+
+  /* Accent — match dashboard blue #58A6FF */
+  --t-accent-primary: #1F6FEB !important;
+  --t-accent-secondary: #1A4B8F !important;
+  --t-accent-tertiary: #132D5E !important;
+  --t-accent-accent9: #58A6FF !important;
+  --t-accent-accent11: #79C0FF !important;
+}
+
+/* Sidebar — darker to match dashboard nav */
+.dark nav,
+.dark [data-testid="left-panel"],
+.dark aside {
+  background: #0D1117 !important;
+  border-color: #21262D !important;
+}
+
+/* Table rows hover — match dashboard */
+.dark tr:hover td,
+.dark [data-testid="record-table-row"]:hover {
+  background: #161B22 !important;
+}
+
+/* Card/Panel backgrounds */
+.dark [data-testid="record-board-card"],
+.dark [role="dialog"],
+.dark [data-testid="modal"] {
+  background: #161B22 !important;
+  border-color: #21262D !important;
+}
+
+/* Top bar */
+.dark header {
+  background: #0D1117 !important;
+  border-color: #21262D !important;
+}
+
+/* Input fields */
+.dark input,
+.dark textarea,
+.dark select {
+  background: #0D1117 !important;
+  border-color: #21262D !important;
+  color: #E6EDF3 !important;
+}
+.dark input:focus,
+.dark textarea:focus {
+  border-color: #58A6FF !important;
+}
+
+/* Stage tag colors — match dashboard exactly */
+.dark [data-tag-color="green"],
+.dark [style*="background-color: rgb("] {
+  font-weight: 600 !important;
+}
+
+/* Scrollbar — dark */
+.dark ::-webkit-scrollbar { width: 8px; height: 8px; }
+.dark ::-webkit-scrollbar-track { background: #0D1117; }
+.dark ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #484F58; }
+
+/* Font — match dashboard Inter */
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
