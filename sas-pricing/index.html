@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Priser – Bonusradar</title>
+<meta name="description" content="Priser för Bonusradar – sök och bevaka bonusresor med SAS EuroBonus. Basic, Gold och Diamond.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f4f6fb;
+    --surface: #ffffff;
+    --text: #0b1b33;
+    --muted: #5a6b85;
+    --faint: #8a97ab;
+    --border: #e2e7f0;
+    --accent: #1f4fd1;
+    --accent-hover: #1a43b3;
+    --accent-ink: #ffffff;
+    --accent-soft: #e9efff;
+    --gold: #a8740c;
+    --gold-soft: #fcf3dc;
+    --gold-line: #ecd193;
+    --diamond: #0c7f94;
+    --diamond-soft: #e1f4f7;
+    --diamond-line: #a6dbe4;
+    --ok: #15803d;
+    --save: #15803d;
+    --save-soft: #dcf5e4;
+    --shadow: 0 1px 2px rgba(11, 27, 51, .05), 0 10px 30px rgba(11, 27, 51, .07);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a1120;
+      --bg-soft: #0e172a;
+      --surface: #111b30;
+      --text: #e8eef8;
+      --muted: #9aa7bc;
+      --faint: #6f7d95;
+      --border: #22304b;
+      --accent: #7096ff;
+      --accent-hover: #8aa9ff;
+      --accent-ink: #0a1120;
+      --accent-soft: #19274a;
+      --gold: #e6b94f;
+      --gold-soft: #2a2312;
+      --gold-line: #5c4a1c;
+      --diamond: #55c7da;
+      --diamond-soft: #0f2a31;
+      --diamond-line: #1f5560;
+      --ok: #4ade80;
+      --save: #4ade80;
+      --save-soft: #11301d;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a1120;
+    --bg-soft: #0e172a;
+    --surface: #111b30;
+    --text: #e8eef8;
+    --muted: #9aa7bc;
+    --faint: #6f7d95;
+    --border: #22304b;
+    --accent: #7096ff;
+    --accent-hover: #8aa9ff;
+    --accent-ink: #0a1120;
+    --accent-soft: #19274a;
+    --gold: #e6b94f;
+    --gold-soft: #2a2312;
+    --gold-line: #5c4a1c;
+    --diamond: #55c7da;
+    --diamond-soft: #0f2a31;
+    --diamond-line: #1f5560;
+    --ok: #4ade80;
+    --save: #4ade80;
+    --save-soft: #11301d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  /* NAV */
+  .nav { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--border); }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
+  .brand svg { width: 28px; height: 28px; color: var(--accent); flex: none; }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; font-weight: 500; color: var(--muted); }
+  .nav-links a:hover, .nav-links a[aria-current="page"] { color: var(--text); }
+  .nav-actions { display: flex; align-items: center; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; font-size: 14px; font-weight: 600; border: 1px solid transparent; transition: background .15s, border-color .15s, color .15s; white-space: nowrap; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { color: var(--text); }
+  .btn-ghost:hover { background: var(--bg-soft); }
+  .btn-outline { border-color: var(--border); background: var(--surface); color: var(--text); }
+  .btn-outline:hover { border-color: var(--faint); }
+  .btn-block { width: 100%; height: 46px; font-size: 15px; }
+
+  /* HERO */
+  .hero { text-align: center; padding: 64px 0 36px; }
+  .eyebrow { display: inline-block; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 5px 12px; border-radius: 999px; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(30px, 5vw, 50px); line-height: 1.08; letter-spacing: -.03em; font-weight: 800; max-width: 820px; margin: 0 auto 16px; text-wrap: balance; }
+  .hero .lead { font-size: clamp(16px, 2vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto 32px; text-wrap: pretty; }
+  .facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: 13px; color: var(--muted); margin-top: 22px; }
+  .facts span { display: inline-flex; align-items: center; gap: 6px; }
+  .facts svg { width: 16px; height: 16px; color: var(--ok); }
+
+  /* BILLING TOGGLE */
+  .billing { display: inline-flex; padding: 4px; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 999px; gap: 2px; }
+  .billing button { border: 0; background: transparent; height: 40px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; transition: background .15s, color .15s; }
+  .billing button[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(11, 27, 51, .12); }
+  .save-pill { font-size: 11px; font-weight: 700; color: var(--save); background: var(--save-soft); padding: 3px 8px; border-radius: 999px; }
+
+  /* PLANS */
+  .plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; padding-bottom: 20px; }
+  .plan { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px 26px; }
+  .plan--gold { border: 2px solid var(--gold-line); box-shadow: var(--shadow); }
+  .plan--diamond { border-color: var(--diamond-line); }
+  .ribbon { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--gold); color: #fff; white-space: nowrap; }
+  :root[data-theme="dark"] .ribbon { color: #1b1405; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ribbon { color: #1b1405; } }
+  .tier { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; letter-spacing: .02em; padding: 5px 11px 5px 9px; border-radius: 999px; align-self: flex-start; background: var(--bg-soft); color: var(--muted); }
+  .tier svg { width: 16px; height: 16px; }
+  .plan--gold .tier { background: var(--gold-soft); color: var(--gold); }
+  .plan--diamond .tier { background: var(--diamond-soft); color: var(--diamond); }
+  .tagline { margin-top: 14px; font-size: 14px; color: var(--muted); min-height: 42px; }
+  .price { display: flex; align-items: baseline; gap: 6px; margin-top: 18px; }
+  .amount { font-size: 44px; font-weight: 800; letter-spacing: -.035em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .per { font-size: 15px; color: var(--muted); font-weight: 500; }
+  .price-note { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 40px; }
+  .price-note strong { color: var(--save); font-weight: 600; }
+  .plan .btn-block { margin-top: 18px; }
+  .plan--gold .btn-primary { background: var(--gold); color: #fff; }
+  .plan--gold .btn-primary:hover { filter: brightness(.95); }
+  :root[data-theme="dark"] .plan--gold .btn-primary { color: #1b1405; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .plan--gold .btn-primary { color: #1b1405; } }
+  .plan--diamond .btn-primary { background: var(--diamond); color: #fff; }
+  .plan--diamond .btn-primary:hover { filter: brightness(.95); }
+  :root[data-theme="dark"] .plan--diamond .btn-primary { color: #04181c; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .plan--diamond .btn-primary { color: #04181c; } }
+  .cta-sub { font-size: 12px; color: var(--faint); text-align: center; margin-top: 8px; min-height: 18px; }
+  .divider { height: 1px; background: var(--border); margin: 22px 0 18px; }
+  .includes { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .features { list-style: none; display: grid; gap: 11px; font-size: 14px; }
+  .features li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; }
+  .features svg { width: 18px; height: 18px; margin-top: 1px; }
+  .features .yes svg { color: var(--ok); }
+  .features .no { color: var(--faint); }
+  .features .no svg { color: var(--faint); }
+
+  .trial-note { text-align: center; font-size: 14px; color: var(--muted); max-width: 680px; margin: 18px auto 0; }
+  .trial-note a { color: var(--accent); font-weight: 600; }
+
+  /* SECTIONS */
+  section.block { padding: 80px 0 0; }
+  .block-head { text-align: center; margin-bottom: 36px; }
+  .block-head h2 { font-size: clamp(26px, 3.4vw, 36px); letter-spacing: -.025em; line-height: 1.15; font-weight: 800; text-wrap: balance; }
+  .block-head p { color: var(--muted); margin-top: 10px; font-size: 16px; max-width: 620px; margin-left: auto; margin-right: auto; }
+
+  /* ALERT EXPLAINER */
+  .alerts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .alert-card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; }
+  .alert-card h3 { font-size: 18px; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+  .alert-card h3 svg { width: 22px; height: 22px; color: var(--accent); }
+  .alert-card p { color: var(--muted); font-size: 15px; margin-top: 10px; }
+  .example { margin-top: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 13px; }
+  .example b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin-bottom: 4px; font-weight: 700; }
+  .limits { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .limit { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+  .limit.g { color: var(--gold); border-color: var(--gold-line); }
+  .limit.d { color: var(--diamond); border-color: var(--diamond-line); }
+
+  /* COMPARE TABLE */
+  .table-wrap { position: relative; border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--surface); }
+  table.compare { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px; }
+  .compare th, .compare td { padding: 14px 18px; text-align: center; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .compare th:first-child, .compare td:first-child { text-align: left; width: 38%; }
+  .compare thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; padding-top: 20px; padding-bottom: 18px; }
+  .compare thead .tname { display: block; font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+  .compare thead .tprice { display: block; font-size: 13px; color: var(--muted); font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .compare thead .col-gold .tname { color: var(--gold); }
+  .compare thead .col-diamond .tname { color: var(--diamond); }
+  .compare tbody th { font-weight: 500; }
+  .compare .group th { background: var(--bg-soft); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding-top: 10px; padding-bottom: 10px; }
+  .compare td { color: var(--text); font-variant-numeric: tabular-nums; }
+  .compare td.col-gold { background: color-mix(in srgb, var(--gold-soft) 45%, transparent); }
+  .compare td svg { width: 20px; height: 20px; vertical-align: middle; }
+  .compare .ic-yes { color: var(--ok); }
+  .compare .ic-no { color: var(--faint); }
+  .compare tbody tr:last-child th, .compare tbody tr:last-child td { border-bottom: 0; }
+  .hint { display: block; font-size: 12px; color: var(--faint); font-weight: 400; margin-top: 2px; }
+  .footnote { font-size: 13px; color: var(--faint); margin-top: 12px; }
+
+  /* FAQ */
+  .faq { max-width: 800px; margin: 0 auto; }
+  .faq details { border-bottom: 1px solid var(--border); }
+  .faq details:first-child { border-top: 1px solid var(--border); }
+  .faq summary { list-style: none; cursor: pointer; padding: 20px 4px; font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary svg { width: 20px; height: 20px; color: var(--muted); flex: none; transition: transform .2s; }
+  .faq details[open] summary svg { transform: rotate(45deg); }
+  .faq .answer { padding: 0 4px 22px; color: var(--muted); font-size: 15px; max-width: 700px; }
+  .faq .answer p + p { margin-top: 10px; }
+
+  /* CTA BAND */
+  .cta-band { margin: 88px 0 0; background: var(--accent); color: var(--accent-ink); border-radius: 22px; padding: 48px 32px; text-align: center; }
+  .cta-band h2 { font-size: clamp(24px, 3.2vw, 34px); letter-spacing: -.025em; font-weight: 800; line-height: 1.15; text-wrap: balance; }
+  .cta-band p { opacity: .85; margin: 10px auto 24px; max-width: 520px; }
+  .cta-band .btn { background: var(--accent-ink); color: var(--accent); height: 48px; padding: 0 22px; font-size: 15px; }
+  .cta-band .btn:hover { opacity: .92; }
+
+  /* FOOTER */
+  footer { margin-top: 80px; border-top: 1px solid var(--border); background: var(--bg-soft); }
+  footer .wrap { padding-top: 40px; padding-bottom: 40px; display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 28px; }
+  footer h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+  footer ul { list-style: none; display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
+  footer ul a:hover { color: var(--text); }
+  footer .about { font-size: 14px; color: var(--muted); max-width: 300px; margin-top: 12px; }
+  .legal { border-top: 1px solid var(--border); }
+  .legal .wrap { display: block; padding-top: 18px; padding-bottom: 28px; font-size: 12px; color: var(--faint); }
+
+  @media (max-width: 960px) {
+    .plans { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; gap: 28px; }
+    .tagline, .price-note { min-height: 0; }
+    .nav-links { display: none; }
+    footer .wrap { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .hero { padding: 44px 0 28px; }
+    .alerts { grid-template-columns: 1fr; }
+    .nav .btn-ghost { display: none; }
+    .billing button { padding: 0 14px; }
+    .cta-band { padding: 36px 20px; border-radius: 18px; }
+    .compare th, .compare td { padding: 12px 12px; }
+    section.block { padding-top: 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 10h8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></symbol>
+  <symbol id="i-basic" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="6.5"/></symbol>
+  <symbol id="i-gold" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2.2l2.35 4.9 5.35.72-3.9 3.73.96 5.32L10 14.3l-4.76 2.57.96-5.32L2.3 7.82l5.35-.72z"/></symbol>
+  <symbol id="i-diamond" viewBox="0 0 20 20" fill="currentColor"><path d="M5.6 3h8.8l3.4 4.6L10 17.5 2.2 7.6z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2.5L4.5 13.5H12l-1 8 8.5-11H12z"/></symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a href="./" class="brand" aria-label="Bonusradar startsida">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+        <circle cx="16" cy="16" r="13" opacity=".35"/>
+        <circle cx="16" cy="16" r="7.5" opacity=".6"/>
+        <path d="M16 16L25.5 7"/>
+        <circle cx="16" cy="16" r="2.2" fill="currentColor" stroke="none"/>
+        <circle cx="22.5" cy="20.5" r="1.8" fill="currentColor" stroke="none"/>
+      </svg>
+      Bonusradar
+    </a>
+    <nav class="nav-links" aria-label="Huvudmeny">
+      <a href="#">Sök</a>
+      <a href="#">Bevakningar</a>
+      <a href="#">Resplanerare</a>
+      <a href="#">Guider</a>
+      <a href="#" aria-current="page">Priser</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-ghost">Logga in</a>
+      <a href="#planer" class="btn btn-primary">Prova gratis</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">Priser</span>
+      <h1>Hitta bonusresor med SAS EuroBonus – utan att leta datum för datum</h1>
+      <p class="lead">Bonusradar söker igenom SAS bonusplatser i hela bokningsfönstret och larmar när platser släpps i SAS Go, SAS Plus eller SAS Business. Välj plan efter hur ofta du reser.</p>
+      <div class="billing" role="radiogroup" aria-label="Betalningsperiod">
+        <button type="button" role="radio" aria-checked="true" data-interval="month">Månadsvis</button>
+        <button type="button" role="radio" aria-checked="false" data-interval="year">Årsvis <span class="save-pill">Spara 17 %</span></button>
+      </div>
+      <div class="facts">
+        <span><svg aria-hidden="true"><use href="#i-check"/></svg>24 timmar gratis</span>
+        <span><svg aria-hidden="true"><use href="#i-check"/></svg>Ingen bindningstid</span>
+        <span><svg aria-hidden="true"><use href="#i-check"/></svg>Avsluta när du vill</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="planer" aria-label="Planer">
+    <div class="wrap">
+      <div class="plans">
+
+        <article class="plan plan--basic" data-plan="basic">
+          <span class="tier"><svg aria-hidden="true"><use href="#i-basic"/></svg>Basic</span>
+          <p class="tagline">Se hur det fungerar och få en känsla för tillgängligheten.</p>
+          <div class="price"><span class="amount" data-amount>0 kr</span><span class="per" data-per>/mån</span></div>
+          <p class="price-note" data-note>Gratis för alltid. Inget betalkort krävs.</p>
+          <a href="/signup?plan=basic" class="btn btn-outline btn-block" data-cta>Skapa gratis konto</a>
+          <p class="cta-sub">&nbsp;</p>
+          <div class="divider"></div>
+          <p class="includes">Ingår</p>
+          <ul class="features">
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Förhandsvisning av sparad tillgänglighet på SAS-flyg</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Alla kabiner: SAS Go, SAS Plus och SAS Business</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>5 sätesplatskartor per månad</span></li>
+            <li class="no"><svg aria-hidden="true"><use href="#i-dash"/></svg><span>Live-sökning</span></li>
+            <li class="no"><svg aria-hidden="true"><use href="#i-dash"/></svg><span>Flex- och livebevakningar</span></li>
+            <li class="no"><svg aria-hidden="true"><use href="#i-dash"/></svg><span>Resplanerare och flygtidtabeller</span></li>
+          </ul>
+        </article>
+
+        <article class="plan plan--gold" data-plan="gold">
+          <span class="ribbon">Populärast</span>
+          <span class="tier"><svg aria-hidden="true"><use href="#i-gold"/></svg>Gold</span>
+          <p class="tagline">För dig som gör några bonusresor per år och vill ha larm när platserna dyker upp.</p>
+          <div class="price"><span class="amount" data-amount>99 kr</span><span class="per" data-per>/mån</span></div>
+          <p class="price-note" data-note>Faktureras månadsvis.</p>
+          <a href="/signup?plan=gold&amp;interval=month" class="btn btn-primary btn-block" data-cta>Prova Gold gratis</a>
+          <p class="cta-sub">24 timmar gratis, sedan 99 kr/mån</p>
+          <div class="divider"></div>
+          <p class="includes">Allt i Basic, plus</p>
+          <ul class="features">
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>100 live-sökningar per dag</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Tillgänglighet uppdaterad varje timme</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>100 flexbevakningar och 30 livebevakningar</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Filter för 2-för-1-resebevis</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Markering av poängkampanjer</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Resplanerare och flygtidtabeller</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>30 sätesplatskartor per månad</span></li>
+          </ul>
+        </article>
+
+        <article class="plan plan--diamond" data-plan="diamond">
+          <span class="tier"><svg aria-hidden="true"><use href="#i-diamond"/></svg>Diamond</span>
+          <p class="tagline">För dig som jagar de svåraste platserna och reser med partnerflygbolag.</p>
+          <div class="price"><span class="amount" data-amount>199 kr</span><span class="per" data-per>/mån</span></div>
+          <p class="price-note" data-note>Faktureras månadsvis.</p>
+          <a href="/signup?plan=diamond&amp;interval=month" class="btn btn-primary btn-block" data-cta>Prova Diamond gratis</a>
+          <p class="cta-sub">24 timmar gratis, sedan 199 kr/mån</p>
+          <div class="divider"></div>
+          <p class="includes">Allt i Gold, plus</p>
+          <ul class="features">
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Obegränsade live-sökningar*</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Realtidsdata, uppdaterad varje minut</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Obegränsade flexbevakningar* och 500 livebevakningar</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Partnerflyg som kan bokas med EuroBonus-poäng</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Upp till 9 passagerare per sökning</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>200 sätesplatskartor per månad</span></li>
+            <li class="yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Prioriterad support</span></li>
+          </ul>
+        </article>
+
+      </div>
+      <p class="trial-note">Nya kunder kan prova Gold eller Diamond gratis i 24 timmar. Du lägger in ett betalkort när du startar, och om du inte avslutar inom 24 timmar fortsätter planen som en vanlig prenumeration. <a href="#jamfor">Jämför alla funktioner</a></p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="bevakning-rubrik">
+    <div class="wrap">
+      <div class="block-head">
+        <h2 id="bevakning-rubrik">Två sorters bevakning</h2>
+        <p>Bonusplatser hos SAS släpps och försvinner hela tiden. Bevakningarna gör jobbet åt dig och skickar ett larm via e-post och push när något matchar.</p>
+      </div>
+      <div class="alerts">
+        <div class="alert-card">
+          <h3><svg aria-hidden="true"><use href="#i-calendar"/></svg>Flexbevakning</h3>
+          <p>Bevakar en sträcka över ett datumintervall. Passar när du är flexibel och vill fånga första bästa lediga platser.</p>
+          <div class="example"><b>Exempel</b>Stockholm–New York i SAS Business, två platser, någon gång i maj</div>
+          <div class="limits"><span class="limit">Basic –</span><span class="limit g">Gold 100</span><span class="limit d">Diamond obegränsat*</span></div>
+        </div>
+        <div class="alert-card">
+          <h3><svg aria-hidden="true"><use href="#i-bolt"/></svg>Livebevakning</h3>
+          <p>Bevakar ett specifikt datum och kontrolleras oftare. Passar när du vet exakt när du vill resa och platserna går snabbt.</p>
+          <div class="example"><b>Exempel</b>Köpenhamn–Los Angeles den 14 mars i SAS Plus, en plats</div>
+          <div class="limits"><span class="limit">Basic –</span><span class="limit g">Gold 30</span><span class="limit d">Diamond 500</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="jamfor" aria-labelledby="jamfor-rubrik">
+    <div class="wrap">
+      <div class="block-head">
+        <h2 id="jamfor-rubrik">Jämför planer</h2>
+        <p>Alla planer söker i SAS Go, SAS Plus och SAS Business. Skillnaden ligger i hur ofta du kan söka, hur färsk datan är och hur mycket du kan bevaka.</p>
+      </div>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr-only">Funktion</span></th>
+              <th scope="col" class="col-basic"><span class="tname">Basic</span><span class="tprice" data-tprice="basic">0 kr</span></th>
+              <th scope="col" class="col-gold"><span class="tname">Gold</span><span class="tprice" data-tprice="gold">99 kr/mån</span></th>
+              <th scope="col" class="col-diamond"><span class="tname">Diamond</span><span class="tprice" data-tprice="diamond">199 kr/mån</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="group"><th colspan="4" scope="colgroup">Sökning</th></tr>
+            <tr><th scope="row">Förhandsvisning av sparad tillgänglighet</th><td data-v="y"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Live-sökningar</th><td data-v="n"></td><td class="col-gold">100 per dag</td><td>Obegränsat*</td></tr>
+            <tr><th scope="row">Uppdateringsfrekvens</th><td>Sparad data</td><td class="col-gold">Varje timme</td><td>Varje minut</td></tr>
+            <tr><th scope="row">SAS-opererade flyg</th><td data-v="y"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Partnerflyg bokningsbara med EuroBonus-poäng</th><td data-v="n"></td><td class="col-gold" data-v="n"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Kabiner<span class="hint">SAS Go, SAS Plus, SAS Business</span></th><td data-v="y"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Passagerare per sökning</th><td>1</td><td class="col-gold">Upp till 4</td><td>Upp till 9</td></tr>
+            <tr><th scope="row">Kalendervy över hela bokningsfönstret</th><td data-v="n"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Filter för 2-för-1-resebevis<span class="hint">Visar bara datum med minst två lediga platser</span></th><td data-v="n"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Markering av poängkampanjer</th><td data-v="n"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+
+            <tr class="group"><th colspan="4" scope="colgroup">Bevakningar</th></tr>
+            <tr><th scope="row">Flexbevakningar<span class="hint">Sträcka över ett datumintervall</span></th><td data-v="n"></td><td class="col-gold">100</td><td>Obegränsat*</td></tr>
+            <tr><th scope="row">Livebevakningar<span class="hint">Specifikt datum, kontrolleras oftare</span></th><td data-v="n"></td><td class="col-gold">30</td><td>500</td></tr>
+            <tr><th scope="row">Larm via e-post och push</th><td data-v="n"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+
+            <tr class="group"><th colspan="4" scope="colgroup">Verktyg</th></tr>
+            <tr><th scope="row">Resplanerare<span class="hint">Bygg resor med flera delsträckor</span></th><td data-v="n"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Flygtidtabeller</th><td data-v="n"></td><td class="col-gold" data-v="y"></td><td data-v="y"></td></tr>
+            <tr><th scope="row">Sätesplatskartor</th><td>5 per månad</td><td class="col-gold">30 per månad</td><td>200 per månad</td></tr>
+
+            <tr class="group"><th colspan="4" scope="colgroup">Konto</th></tr>
+            <tr><th scope="row">Gratis provperiod</th><td data-v="n"></td><td class="col-gold">24 timmar</td><td>24 timmar</td></tr>
+            <tr><th scope="row">Support</th><td>E-post</td><td class="col-gold">E-post</td><td>Prioriterad</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="footnote">* Obegränsat inom skälig användning. Begränsningar kan tillämpas för att förhindra missbruk och automatiserad trafik.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="faq-rubrik">
+    <div class="wrap">
+      <div class="block-head">
+        <h2 id="faq-rubrik">Vanliga frågor</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Hur fungerar den kostnadsfria provperioden?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Nya kunder kan prova Gold eller Diamond gratis i 24 timmar. Du lägger in ett betalkort när du startar provperioden. Avslutar du inom 24 timmar debiteras ingenting, annars fortsätter planen som en vanlig prenumeration med den period du valt.</p></div>
+        </details>
+        <details>
+          <summary>Kan jag boka resan via Bonusradar?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Nej. Bonusradar visar var och när det finns lediga bonusplatser. Själva bokningen gör du direkt hos SAS med dina EuroBonus-poäng, så att resan och poängen ligger kvar på ditt eget konto.</p></div>
+        </details>
+        <details>
+          <summary>Vad är skillnaden mellan flexbevakning och livebevakning?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>En flexbevakning följer en sträcka över ett datumintervall, till exempel en hel månad, och larmar när det finns platser som matchar. En livebevakning följer ett specifikt datum och kontrolleras oftare, vilket ger dig större chans att hinna boka när platserna går snabbt.</p></div>
+        </details>
+        <details>
+          <summary>Hur hittar jag platser till ett 2-för-1-resebevis?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Aktivera filtret för 2-för-1 i sökningen eller i en bevakning. Då visas bara datum där minst två platser finns lediga i samma kabin på samma flyg, vilket är det som krävs för att använda resebeviset.</p></div>
+        </details>
+        <details>
+          <summary>Visas kampanjrabatter på poäng?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Ja, i Gold och Diamond. Poängpriset visas före eventuell kampanjrabatt, och pågående poängkampanjer markeras i resultaten. Den slutliga rabatten dras i bokningsflödet hos SAS.</p></div>
+        </details>
+        <details>
+          <summary>Vilka flygbolag ingår?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Basic och Gold söker SAS-opererade flyg. Diamond söker dessutom partnerflyg som går att boka med EuroBonus-poäng, så att du kan kombinera SAS med partnerbolag på samma resa.</p></div>
+        </details>
+        <details>
+          <summary>Kan jag byta plan eller avsluta?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Ja, när som helst och utan bindningstid. Uppgraderar du får du tillgång direkt och betalar mellanskillnaden för resten av perioden. Nedgraderar eller avslutar du gäller den nya nivån från nästa faktureringsperiod.</p></div>
+        </details>
+        <details>
+          <summary>Är Bonusradar en del av SAS?<svg aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="answer"><p>Nej. Bonusradar är en oberoende tjänst och har ingen koppling till SAS eller EuroBonus. Vi hjälper dig att hitta platserna, men bokning, poäng och villkor hanteras alltid av SAS.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <section class="cta-band" aria-labelledby="cta-rubrik">
+      <h2 id="cta-rubrik">Nästa bonusresa börjar med ett larm</h2>
+      <p>Lägg upp din första bevakning på under en minut och få besked så fort platserna släpps.</p>
+      <a href="/signup?plan=gold&amp;interval=month" class="btn" data-cta-band>Prova Gold gratis i 24 timmar</a>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a href="./" class="brand" aria-label="Bonusradar startsida">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+          <circle cx="16" cy="16" r="13" opacity=".35"/>
+          <circle cx="16" cy="16" r="7.5" opacity=".6"/>
+          <path d="M16 16L25.5 7"/>
+          <circle cx="16" cy="16" r="2.2" fill="currentColor" stroke="none"/>
+          <circle cx="22.5" cy="20.5" r="1.8" fill="currentColor" stroke="none"/>
+        </svg>
+        Bonusradar
+      </a>
+      <p class="about">Sök och bevaka bonusresor med SAS EuroBonus.</p>
+    </div>
+    <div>
+      <h4>Produkt</h4>
+      <ul><li><a href="#">Sök</a></li><li><a href="#">Bevakningar</a></li><li><a href="#">Resplanerare</a></li><li><a href="#planer">Priser</a></li></ul>
+    </div>
+    <div>
+      <h4>Resurser</h4>
+      <ul><li><a href="#">Guider</a></li><li><a href="#">EuroBonus-kampanjer</a></li><li><a href="#">Hjälpcenter</a></li></ul>
+    </div>
+    <div>
+      <h4>Företaget</h4>
+      <ul><li><a href="#">Om oss</a></li><li><a href="#">Villkor</a></li><li><a href="#">Integritetspolicy</a></li><li><a href="#">Kontakt</a></li></ul>
+    </div>
+  </div>
+  <div class="legal">
+    <div class="wrap">Bonusradar är en oberoende tjänst utan koppling till SAS. SAS och EuroBonus är varumärken som tillhör sina respektive ägare. Alla priser anges i svenska kronor inklusive moms.</div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var PRICES = {
+      basic:   { month: 0,   year: 0 },
+      gold:    { month: 99,  year: 990 },
+      diamond: { month: 199, year: 1990 }
+    };
+    var NAMES = { basic: 'Basic', gold: 'Gold', diamond: 'Diamond' };
+
+    var fmtInt = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 });
+    var fmtDec = new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function kr(n) { return fmtInt.format(n) + ' kr'; }
+    function krDec(n) { return (Number.isInteger(n) ? fmtInt.format(n) : fmtDec.format(n)) + ' kr'; }
+
+    var CHECK = '<svg class="ic-yes" aria-hidden="true"><use href="#i-check"/></svg><span class="sr-only">Ingår</span>';
+    var DASH = '<svg class="ic-no" aria-hidden="true"><use href="#i-dash"/></svg><span class="sr-only">Ingår inte</span>';
+    document.querySelectorAll('.compare td[data-v]').forEach(function (td) {
+      td.innerHTML = td.getAttribute('data-v') === 'y' ? CHECK : DASH;
+    });
+
+    function render(interval) {
+      document.querySelectorAll('.billing [role="radio"]').forEach(function (b) {
+        b.setAttribute('aria-checked', String(b.getAttribute('data-interval') === interval));
+      });
+
+      document.querySelectorAll('.plan[data-plan]').forEach(function (card) {
+        var plan = card.getAttribute('data-plan');
+        var p = PRICES[plan];
+        var amount = card.querySelector('[data-amount]');
+        var per = card.querySelector('[data-per]');
+        var note = card.querySelector('[data-note]');
+        var cta = card.querySelector('[data-cta]');
+        var sub = card.querySelector('.cta-sub');
+
+        if (plan === 'basic') {
+          amount.textContent = kr(0);
+          per.textContent = interval === 'year' ? '/år' : '/mån';
+          return;
+        }
+
+        if (interval === 'year') {
+          var saved = p.month * 12 - p.year;
+          amount.textContent = kr(p.year);
+          per.textContent = '/år';
+          note.innerHTML = 'Motsvarar ' + krDec(p.year / 12) + ' per månad. <strong>Du sparar ' + kr(saved) + '.</strong>';
+          sub.textContent = '24 timmar gratis, sedan ' + kr(p.year) + '/år';
+        } else {
+          amount.textContent = kr(p.month);
+          per.textContent = '/mån';
+          note.textContent = 'Faktureras månadsvis.';
+          sub.textContent = '24 timmar gratis, sedan ' + kr(p.month) + '/mån';
+        }
+        cta.setAttribute('href', '/signup?plan=' + plan + '&interval=' + interval);
+        cta.textContent = 'Prova ' + NAMES[plan] + ' gratis';
+      });
+
+      Object.keys(PRICES).forEach(function (plan) {
+        var el = document.querySelector('[data-tprice="' + plan + '"]');
+        if (!el) return;
+        if (plan === 'basic') { el.textContent = kr(0); return; }
+        el.textContent = interval === 'year' ? kr(PRICES[plan].year) + '/år' : kr(PRICES[plan].month) + '/mån';
+      });
+
+      var band = document.querySelector('[data-cta-band]');
+      if (band) band.setAttribute('href', '/signup?plan=gold&interval=' + interval);
+    }
+
+    var radios = Array.prototype.slice.call(document.querySelectorAll('.billing [role="radio"]'));
+    radios.forEach(function (b, i) {
+      b.addEventListener('click', function () { render(b.getAttribute('data-interval')); });
+      b.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        var next = radios[(i + (e.key === 'ArrowRight' ? 1 : radios.length - 1)) % radios.length];
+        next.focus();
+        render(next.getAttribute('data-interval'));
+      });
+    });
+
+    var initial = new URLSearchParams(location.search).get('interval') === 'year' ? 'year' : 'month';
+    render(initial);
+  })();
+</script>
+</body>
+</html>
